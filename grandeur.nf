@@ -3,13 +3,34 @@
 println("Currently using the Grandeur workflow for use with microbial Illumina MiSeq sequencing\n")
 println("Author: Erin Young")
 println("email: eriny@utah.gov")
-println("Version: v.20210430")
+println("Version: v.20210830")
 println("")
 
-//TBA : bgzip the seqyclean files?
+// TODO : mycosnp
+// TODO : something for plasmids
+// TODO : multiqc
+// params.multiqc = false
+// params.multiqc_options = ''
+// container 'staphb/multiqc:latest'
+// TODO : frp_plasmid
+// params.rfp_plasmid = false
+// params.rfp_plasmid_options = ''
+// TODO : pointfinder
+// params.pointfinder = false
+// params.pointfinder_options = ''
+// TODO : mubsuite
+// params.mobsuite = false
+// params.mobsuite_options = ''
+// params.sistr = false
+// params.sistr_options = ''
+// //container 'staphb/sistr:latest'
+// params.plasmidseeker = false
+// params.plasmidseeker_options = ''
+// container 'staphb/plasmidseeker:latest'
 
 params.reads = workflow.launchDir + '/reads'
 params.outdir = workflow.launchDir + '/grandeur'
+println("The files and directory for results is " + params.outdir)
 
 params.maxmem = Math.round(Runtime.runtime.totalMemory() / 10241024).GB
 println("The maximum amount of memory used in this workflow is ${params.maxmem}")
@@ -58,9 +79,10 @@ process seqyclean {
   set val(sample), file(reads) from reads_seqyclean
 
   output:
-  tuple sample, file("seqyclean/${sample}_clean_PE{1,2}.fastq.gz") into clean_reads_shovill, clean_reads_mash, clean_reads_cg, clean_reads_seqsero2, clean_reads_bwa, clean_reads_shigatyper, clean_reads_serotypefinder
+  tuple sample, file("seqyclean/${sample}_clean_PE{1,2}.fastq.gz") into clean_reads_shovill, clean_reads_mash, clean_reads_cg, clean_reads_seqsero2, clean_reads_bwa, clean_reads_shigatyper
   file("seqyclean/${sample}_clean_SE.fastq.gz")
-  file("seqyclean/${sample}_clean_SummaryStatistics.{txt,tsv}")
+  file("seqyclean/${sample}_clean_SummaryStatistics.tsv") into seqyclean_files
+  file("seqyclean/${sample}_clean_SummaryStatistics.txt")
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
   tuple sample, env(perc_kept) into seqyclean_perc_kept_results
   tuple sample, env(kept) into seqyclean_pairskept_results
@@ -93,6 +115,12 @@ process seqyclean {
   '''
 }
 
+seqyclean_files
+  .collectFile(name: "SummaryStatistics.tsv",
+    keepHeader: true,
+    sort: true,
+    storeDir: "${params.outdir}/seqyclean")
+
 params.shovill_options = ''
 process shovill {
   publishDir "${params.outdir}", mode: 'copy'
@@ -102,6 +130,7 @@ process shovill {
   cpus params.maxcpus
   errorStrategy { task.attempt<=3 ? 'retry' : 'ignore' }
   container 'staphb/shovill:latest'
+  time { 2.h * task.attempt }
 
   input:
   set val(sample), file(reads) from clean_reads_shovill
@@ -110,7 +139,7 @@ process shovill {
   file("shovill/${sample}/contigs.{fa,gfa}")
   file("shovill/${sample}/shovill.{corrections,log}")
   file("shovill/${sample}/spades.fasta")
-  tuple sample, file("contigs/${sample}_contigs.fa") into contigs_prokka, contigs_quast, contigs_gc, contigs_abricate, contigs_abricate_ecoli, contigs_index, contigs_blastn, contigs_mlst, contigs_bwa, contigs_create, contigs_kleborate, contigs_amrfinder
+  tuple sample, file("contigs/${sample}_contigs.fa") into contigs_prokka, contigs_quast, contigs_blastn, contigs_mlst, contigs_bwa, contigs_create, contigs_kleborate, contigs_amrfinder, contigs_serotypefinder
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
   shell:
@@ -123,17 +152,16 @@ process shovill {
     date | tee -a $log_file $err_file > /dev/null
     shovill --version >> $log_file
 
-    echo "the cpus are !{task.cpus}"
-    echo "the memory is !{task.memory}"
+    memory=$(echo !{task.memory} | awk '{ print $1 }' )
 
-    shovill !{params.shovill_options}\
+    shovill !{params.shovill_options} \
       --cpu !{task.cpus} \
-      --ram !{task.memory} \
+      --ram $memory \
       --outdir !{task.process}/!{sample} \
       --R1 !{reads[0]} \
       --R2 !{reads[1]} \
       2>> $err_file >> tee $log_file
-    cp shovill/!{sample}/contigs.fa contigs/!{sample}_contigs.fa
+    cp !{task.process}/!{sample}/contigs.fa contigs/!{sample}_contigs.fa
   '''
 }
 
@@ -216,8 +244,8 @@ process mash_sketch {
 
     cat !{reads} | mash sketch -m 2 -o mash/!{sample} - 2>> $err_file | tee $log_file
 
-    genome_size=$(grep "Estimated genome size" $err_file | awk '{print $4}')
-    coverage=$(grep "Estimated coverage" $err_file | awk '{print $3}')
+    genome_size=$(grep "Estimated genome size" $err_file | awk '{print $4}' )
+    coverage=$(grep "Estimated coverage" $err_file | awk '{print $3}' )
   '''
 }
 
@@ -239,9 +267,9 @@ process mash_dist {
   set val(sample), file(msh) from mash_sketch_files
 
   output:
-  tuple sample, file("mash/${sample}_mashdist.txt") into mash_dist_files
-  tuple sample, env(genus) into mash_genus_results, mash_genus_prokka, mash_genus_gc
-  tuple sample, env(species) into mash_species_results, mash_species_prokka, mash_species_gc
+  tuple sample, file("mash/${sample}_mashdist.txt")
+  tuple sample, env(genus) into mash_genus_results, mash_genus_prokka, mash_genus_gc, mash_genus_amrfinder
+  tuple sample, env(species) into mash_species_results, mash_species_prokka, mash_species_gc, mash_species_amrfinder
   tuple sample, env(full_mash) into mash_full_results
   tuple sample, env(pvalue) into mash_pvalue_results
   tuple sample, env(distance) into mash_distance_results
@@ -271,9 +299,12 @@ process mash_dist {
     mash_result=($(head -n 1 mash/!{sample}_mashdist.txt | head -n 1 | cut -f 1 | cut -f 8 -d "-" | cut -f 1,2 -d "_" | cut -f 1 -d "." | tr "_" " " ) 'missing' 'missing')
     genus=${mash_result[0]}
     species=${mash_result[1]}
-    full_mash=$(head -n 1 mash/!{sample}_mashdist.txt | cut -f 1)
-    pvalue=$(head -n 1 mash/!{sample}_mashdist.txt | cut -f 4)
-    distance=$(head -n 1 mash/!{sample}_mashdist.txt | cut -f 3)
+    full_mash=$(head -n 1 mash/!{sample}_mashdist.txt | cut -f 1 )
+    pvalue=$(head -n 1 mash/!{sample}_mashdist.txt | cut -f 4 )
+    distance=$(head -n 1 mash/!{sample}_mashdist.txt | cut -f 3 )
+    if [ -z "$full_mash" ] ; then full_mash='missing' ; fi
+    if [ -z "$pvalue" ] ; then pvalue='NA' ; fi
+    if [ -z "$distance" ] ; then distance='NA' ; fi
 
     find_salmonella=''
     salmonella_flag=''
@@ -312,7 +343,7 @@ contigs_prokka
   .join(mash_species_prokka, remainder: true, by:0)
   .set { for_prokka }
 
-params.prokka = true
+params.prokka = false
 params.prokka_options = ''
 params.center = 'STAPHB'
 params.mincontiglen = 500
@@ -320,7 +351,7 @@ process prokka {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
   echo false
-  cpus 1
+  cpus params.maxcpus
   container 'staphb/prokka:latest'
 
   when:
@@ -378,6 +409,7 @@ process quast {
   output:
   file("quast/${sample}/*")
   file("quast/${sample}/{basic_stats,icarus_viewers}/*{pdf,html}")
+  file("quast/${sample}/transposed_report.tsv") into quast_files
   tuple sample, env(gc) into quast_gc_results
   tuple sample, env(num_contigs) into quast_contigs_results
   tuple sample, env(n50) into quast_N50_contigs_results
@@ -394,17 +426,28 @@ process quast {
     date | tee -a $log_file $err_file > /dev/null
     quast.py --version >> $log_file
 
-    quast.py !{params.quast_options}\
+    quast.py !{params.quast_options} \
       !{contigs} \
       --output-dir quast/!{sample} \
-      --threads !{task.cpus} 2>> $err_file | tee -a $log_file
+      --threads !{task.cpus} \
+      2>> $err_file | tee -a $log_file
 
     gc=$(grep "GC (" quast/!{sample}/report.txt | awk '{print $3}' )
     num_contigs=$(grep "contigs" quast/!{sample}/report.txt | grep -v "(" | awk '{print $3}' )
     n50=$(grep "N50" quast/!{sample}/report.txt | awk '{print $2}' )
     length=$(grep "Total length" quast/!{sample}/report.txt | grep -v "(" | awk '{print $3}' )
+    if [ -z "$gc" ] ; then gc='NA' ; fi
+    if [ -z "$num_contigs" ] ; then num_contigs='NA' ; fi
+    if [ -z "$n50" ] ; then n50='NA' ; fi
+    if [ -z "$length" ] ; then length='NA' ; fi
   '''
 }
+
+quast_files
+  .collectFile(name: "report.tsv",
+    keepHeader: true,
+    sort: true,
+    storeDir: "${params.outdir}/quast")
 
 process shuffle {
   publishDir "${params.outdir}", mode: 'copy'
@@ -436,8 +479,6 @@ process shuffle {
   '''
 }
 
-
-
 shuffled_files
   .join(quast_length_gc, remainder: true, by:0)
   .join(mash_genome_size_gc, remainder: true, by:0)
@@ -463,7 +504,7 @@ process cg_pipeline {
   set val(sample), file(fastq), val(quast), val(mash), val(genus), val(species), file(genome_file) from for_gc
 
   output:
-  file("cg_pipeline/${sample}_cg_pipeline_report.txt")
+  file("cg_pipeline/${sample}_cg_pipeline_report.txt") into cg_pipeline_files
   tuple sample, env(read_length) into cg_avrl_results
   tuple sample, env(quality) into cg_quality_results
   tuple sample, env(coverage) into cg_cov_results
@@ -501,8 +542,17 @@ process cg_pipeline {
     read_length=$(cut -f 2 cg_pipeline/!{sample}_cg_pipeline_report.txt | tail -n 1 )
     quality=$(cut -f 6 cg_pipeline/!{sample}_cg_pipeline_report.txt | tail -n 1 )
     coverage=$(cut -f 9 cg_pipeline/!{sample}_cg_pipeline_report.txt | tail -n 1 )
+    if [ -z "$read_length" ] ; then read_length='NA' ; fi
+    if [ -z "$quality" ] ; then quality='NA' ; fi
+    if [ -z "$coverage" ] ; then coverage='NA' ; fi
   '''
 }
+
+cg_pipeline_files
+  .collectFile(name: "cg_pipeline_report.txt",
+    keepHeader: true,
+    sort: true,
+    storeDir: "${params.outdir}/cg_pipeline")
 
 clean_reads_seqsero2
   .join(salmonella_flag, by:0)
@@ -530,6 +580,7 @@ process seqsero2 {
   tuple sample, env(serotype) into seqsero2_serotype_results
   tuple sample, env(contamination) into seqsero2_contamination_results
   file("seqsero2/${sample}/*")
+  file("seqsero2/${sample}/SeqSero_result.tsv") into seqsero2_files
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
   shell:
@@ -552,24 +603,46 @@ process seqsero2 {
       -n !{sample} \
       2>> $err_file >> $log_file
 
-    antigenic_profile=$(cut -f 8 seqsero2/!{sample}/SeqSero_result.tsv | tail -n 1)
     serotype=$(cut -f 9 seqsero2/!{sample}/SeqSero_result.tsv | tail -n 1)
     contamination=$(cut -f 10 seqsero2/!{sample}/SeqSero_result.tsv | tail -n 1)
+    antigenic_profile=$(cut -f 8 seqsero2/!{sample}/SeqSero_result.tsv | tail -n 1)
+    enteritidis_check=$(grep "Enteritidis" seqsero2/!{sample}/SeqSero_result.tsv | head -n 1 )
+    sdf_check=$(grep "Detected Sdf" seqsero2/!{sample}/SeqSero_result.tsv | head -n 1 )
+
+    if [ -n "$sdf_check" ] && [ -n "$enteritidis_check" ]
+    then
+      serotype="$serotype (Sdf+)"
+    elif [ -z "$sdf_check" ] && [ -n "$enteritidis_check" ]
+    then
+      serotype="$serotype (Sdf-)"
+    fi
+
+    if [ -z "$serotype" ] ; then serotype='NA' ; fi
+    if [ -z "$contamination" ] ; then contamination='NA' ; fi
+    if [ -z "$antigenic_profile" ] ; then antigenic_profile='NA' ; fi
   '''
 }
+
+seqsero2_files
+  .collectFile(name: "SeqSero_result.tsv",
+    keepHeader: true,
+    sort: true,
+    storeDir: "${params.outdir}/seqsero2")
 
 clean_reads_shigatyper
   .join(shigella_flag, by:0)
   .set { for_shigatyper }
 
-params.shigatyper = false
+params.shigatyper = true
 params.shigatyper_options = ''
 process shigatyper {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
   echo false
   cpus params.medcpus
-  container 'staphb/shigatyper:latest'
+  // if no file is created, this ends in failure
+  errorStrategy 'ignore'
+  container 'docker://quay.io/biocontainers/shigatyper:1.0.6--py_0'
 
   when:
   params.shigatyper && flag =~ 'found'
@@ -578,7 +651,8 @@ process shigatyper {
   set val(sample), file(fastq), val(flag) from for_shigatyper
 
   output:
-  file("${task.process}/${sample}/*")
+  file("${task.process}/${sample}_shigatyper.csv") optional true
+  tuple sample, env(shigatyper_hits) into shigatyper_results
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
   shell:
@@ -589,14 +663,20 @@ process shigatyper {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
-    shigatyper.py --version >> $log_file
+    shigatyper --version >> $log_file
 
-    shigatyper.py !{params.shigatyper_options} \
-      -n !{sample} \
+    shigatyper !{params.shigatyper_options} \
+      --name !{sample}_shigatyper \
       !{fastq} \
       2>> $err_file >> $log_file
 
-    exit 1
+    if [ -f "!{sample}_shigatyper.csv" ]
+    then
+      cp !{sample}_shigatyper.csv !{task.process}/!{sample}_shigatyper.csv
+      shigatyper_hits=$(grep -v Hit !{task.process}/!{sample}_shigatyper.csv | cut -f 2 -d "," | tr '\\n' ',' | sed 's/,$//g' )
+    fi
+
+    if [ -z "$shigatyper_hits" ] ; then shigatyper_hits='none' ; fi
   '''
 }
 
@@ -604,7 +684,7 @@ contigs_kleborate
   .join(klebsiella_flag, by:0)
   .set { for_kleborate }
 
-params.kleborate = false
+params.kleborate = true
 params.kleborate_options = '-all'
 process kleborate {
   publishDir "${params.outdir}", mode: 'copy'
@@ -620,8 +700,9 @@ process kleborate {
   set val(sample), file(contig), val(flag) from for_kleborate
 
   output:
-  tuple sample, env(kleborate_score) into kleborate_results
-  file("${task.process}/${sample}_results.txt")
+  tuple sample, env(kleborate_score) into kleborate_score
+  tuple sample, env(kleborate_mlst) into kleborate_mlst
+  file("${task.process}/${sample}_results.txt") into kleborate_files
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
   shell:
@@ -639,67 +720,26 @@ process kleborate {
       -a !{contig} \
       2>> $err_file >> $log_file
 
-    kleborate_score=''
-    exit 1
+    virulence_column=$(head -n 1 !{task.process}/!{sample}_results.txt | tr '\\t' '\\n' | grep -n virulence_score | cut -f 1 -d ":" )
+    mlst_column=$(head -n 1 !{task.process}/!{sample}_results.txt | tr '\\t' '\\n' | grep -n ST | cut -f 1 -d ":" )
+    if [ -n "$virulence_column" ] ; then kleborate_score=$(cut -f $virulence_column !{task.process}/!{sample}_results.txt | tail -n 1 ) ; fi
+    if [ -n "$mlst_column" ] ; then kleborate_mlst=$(cut -f $mlst_column !{task.process}/!{sample}_results.txt | tail -n 1 ) ; fi
+    if [ -z "$kleborate_score" ] ; then kleborate_score='NA' ; fi
+    if [ -z "$kleborate_mlst" ] ; then kleborate_mlst='NA' ; fi
   '''
 }
 
-params.abricate = true
-params.abricate_db = ['ncbi', 'vfdb']
-params.abricate_minid = 80
-params.abricate_mincov = 80
-process abricate {
-  publishDir "${params.outdir}", mode: 'copy'
-  tag "${sample} : ${db}"
-  echo false
-  cpus params.medcpus
-  container 'staphb/abricate:latest'
+kleborate_files
+  .collectFile(name: "kleborate_results.txt",
+    keepHeader: true,
+    sort: true,
+    storeDir: "${params.outdir}/kleborate")
 
-  when:
-  params.abricate
-
-  input:
-  set val(sample), file(contig) from contigs_abricate
-  each db from params.abricate_db
-
-  output:
-  tuple sample, file("abricate/${db}/${sample}_${db}_results.txt") into abricate_files
-  file("logs/${task.process}/${sample}_${db}.${workflow.sessionId}.{log,err}")
-
-  shell:
-  '''
-    mkdir -p !{task.process}/!{db} logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}_!{db}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}_!{db}.!{workflow.sessionId}.err
-
-    # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
-    abricate --version >> $log_file
-    abricate --list >> $log_file
-
-    abricate \
-      --db !{db} \
-      --threads !{task.cpus} \
-      --minid !{params.abricate_minid} \
-      --mincov !{params.abricate_mincov} \
-      !{contig} > abricate/!{db}/!{sample}_!{db}_results.txt \
-      2>> $err_file
-  '''
-}
-
-abricate_files
-  .groupTuple()
-  .set { abricate_results }
-
-contigs_abricate_ecoli
-  .join(ecoli_flag2, by:0)
-  .set { for_abricate_ecoli }
-
-clean_reads_serotypefinder
+contigs_serotypefinder
   .join(ecoli_flag, by:0)
   .set { for_serotypefinder }
 
-params.serotypefinder = false
+params.serotypefinder = true
 params.serotypefinder_options = ''
 process serotypefinder {
   publishDir "${params.outdir}", mode: 'copy'
@@ -712,10 +752,12 @@ process serotypefinder {
   params.serotypefinder && flag =~ 'found'
 
   input:
-  set val(sample), file(fastq), val(flag) from for_serotypefinder
+  set val(sample), file(fasta), val(flag) from for_serotypefinder
 
   output:
   file("${task.process}/${sample}/*")
+  tuple sample, env(o_type) into serotypefinder_results_o
+  tuple sample, env(h_type) into serotypefinder_results_h
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
   shell:
@@ -726,123 +768,30 @@ process serotypefinder {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
-    serotypefinder --version >> $log_file
 
-    serotypefinder !{params.serotypefinder} \
-      --infile !{fastq} \
-      --outputPath !{task.process} \
-      --mincov !{params.serotypefinder_mincov} \
-      --threshold !{params.serotypefinder_threshold} \
-      --extented_output \
+    serotypefinder.py !{params.serotypefinder_options} \
+      -i !{fasta} \
+      -o !{task.process}/!{sample} \
+      -x \
       2>> $err_file >> $log_file
 
-      exit 1
+    h_type=$(cut -f 3 !{task.process}/!{sample}/results_tab.tsv | grep ^H | sort | uniq | tr '\\n' ',' | sed 's/,$//g' )
+    o_type=$(cut -f 3 !{task.process}/!{sample}/results_tab.tsv | grep ^O | sort | uniq | tr '\\n' ',' | sed 's/,$//g' )
+    if [ -z "$h_type" ] ; then h_type="none" ; fi
+    if [ -z "$o_type" ] ; then o_type="none" ; fi
   '''
 }
 
-
-
-
-params.abricate_ecoli = true
-params.abricate_ecoli_db = ['ecoh', 'serotypefinder']
-process abricate_ecoli_serotyping {
-  publishDir "${params.outdir}", mode: 'copy'
-  tag "${sample} : ${db}"
-  echo false
-  cpus params.medcpus
-  container 'staphb/abricate:0.8.13s'
-
-  when:
-  params.abricate_ecoli && flag =~ 'found'
-
-  input:
-  set val(sample), file(contig), val(flag) from for_abricate_ecoli
-  each db from params.abricate_ecoli_db
-
-  output:
-  tuple sample, file("abricate/${db}/${sample}_${db}_results.txt") into abricate_ecoli_files
-  file("logs/${task.process}/${sample}_${db}.${workflow.sessionId}.{log,err}")
-
-  shell:
-  '''
-    mkdir -p abricate/!{db} logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}_!{db}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}_!{db}.!{workflow.sessionId}.err
-
-    # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
-    abricate --version >> $log_file
-    abricate --list >> $log_file
-
-    abricate \
-      --db !{db} \
-      --threads !{task.cpus} \
-      --minid !{params.abricate_minid} \
-      --mincov !{params.abricate_mincov} \
-      !{contig} > abricate/!{db}/!{sample}_!{db}_results.txt \
-      2>> $err_file
-  '''
-}
-
-abricate_ecoli_files
-  .groupTuple()
-  .set {abricate_ecoli_results}
-
-// abricate_files.collect()
-//   .concat(abricate_ecoli_files)
-//   .set { for_abricate_summary }
-//
-// if (params.abricate && params.abricate_ecoli) {
-//   abricate_summary_db = params.abricate_ecoli_db + params.abricate_db
-//   } else if (params.abricate) {
-//     abricate_summary_db = params.abricate_db
-//   } else if (params.abricate_ecoli) {
-//     abricate_summary_db = params.abricate_ecoli_db
-//   } else {
-//     abricate_summary_db = ''
-//   }
-//
-// process abricate_summary {
-//   publishDir "${params.outdir}", mode: 'copy'
-//   tag "${db}"
-//   echo false
-//   cpus params.medcpus
-//   container 'staphb/abricate:latest'
-//
-//   input:
-//   file(files) from for_abricate_summary.collect()
-//   each db from abricate_summary_db
-//
-//   output:
-//   file("abricate/${db}/${db}_summary.txt")
-//   file("logs/${task.process}/${db}.${workflow.sessionId}.{log,err}")
-//
-//   shell:
-//   '''
-//     mkdir -p abricate/!{db} logs/!{task.process}
-//     log_file=logs/!{task.process}/!{db}.!{workflow.sessionId}.log
-//     err_file=logs/!{task.process}/!{db}.!{workflow.sessionId}.err
-//
-//     # time stamp + capturing tool versions
-//     date | tee -a $log_file $err_file > /dev/null
-//     abricate --version >> $log_file
-//     abricate --list >> $log_file
-//
-//     num=$(ls *_results.txt | grep !{db} | wc -l )
-//     if [ -z "$num" ] ; then num=0 ; fi
-//     if [[ "$num" > 0 ]]
-//     then
-//       abricate --summary *_!{db}_results.txt > abricate/!{db}/!{db}_summary.txt 2>> $err_file
-//       cat *_!{db}_results.txt > abricate/!{db}/!{db}_all.txt 2>> $err_file
-//     fi
-//   '''
-// }
+contigs_amrfinder
+  .join(mash_genus_amrfinder, by: 0)
+  .join(mash_species_amrfinder, by: 0)
+  .set { for_amrfinder }
 
 params.amrfinderplus = false
 params.amrfinderplus_options = ''
 process amrfinderplus {
   publishDir "${params.outdir}", mode: 'copy'
-  tag "${sample} : ${db}"
+  tag "${sample}"
   echo true
   cpus params.medcpus
   container 'staphb/ncbi-amrfinderplus:latest'
@@ -851,36 +800,68 @@ process amrfinderplus {
   params.amrfinderplus
 
   input:
-  set val(sample), file(contigs) from contigs_amrfinder
+  set val(sample), file(contigs), val(genus), val(species) from for_amrfinder
 
   output:
+  file("ncbi-AMRFinderplus/${sample}_amrfinder_plus.txt") into amrfinder_files
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
   shell:
   '''
-    mkdir -p ncbi-AMRFinderplus/ logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}_!{db}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}_!{db}.!{workflow.sessionId}.err
+    mkdir -p ncbi-AMRFinderplus logs/!{task.process}
+    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
-    amrfinder -l >> $log_file
 
-    amrfinder -h
+    organism_options=(Acinetobacter_baumannii
+    Campylobacter
+    Enterococcus_faecalis
+    Enterococcus_faecium
+    Escherichia:Shigella
+    Klebsiella
+    Salmonella
+    Staphylococcus_aureus
+    Staphylococcus_pseudintermedius
+    Streptococcus_agalactiae
+    Streptococcus_pneumoniae
+    Streptococcus_pyogenes
+    Vibrio_cholerae)
 
-    amrfinder -l
+    organism=$(history -p ${organism_options[@]} | grep -i !{genus} | grep -i !{species} | head -n 1 )
+    if [ -z "$organism" ] ; then organism=$(history -p ${organism_options[@]} | grep -i !{genus} | head -n 1 ) ; fi
+    if [ -n "$organism" ]
+    then
+      organism_check="--organism $organism"
+      echo "Mash result of !{genus} !{species} matched with $organism" >> $log_file
+    else
+      organism_check=''
+      echo "Mash result of !{genus} !{species} did not match any of the organisms" >> $log_file
+    fi
 
-    amrfinder !{params.amrfinderplus_options} \
+    amrfinder \
       -n !{contigs} \
-      --threads !{task.cpus} \
-      --name !{sample} \
-      -o whatever.txt \
-      --oranism tbd \
-      2>> $err_file
+      -o !{sample}
+
+      #amrfinder !{params.amrfinderplus_options} \
+      #  --nucleotide !{contigs} \
+      #  --threads !{task.cpus} \
+      #  --name !{sample} \
+      #  --output ncbi-AMRFinderplus/!{sample}_amrfinder_plus.txt \
+      #  $organism_check \
+      #  --plus \
+      #  2>> $err_file >> $log_file
 
     exit 1
   '''
 }
+
+amrfinder_files
+  .collectFile(name: "ncbi-AMRFinderplus.txt",
+    keepHeader: true,
+    sort: true,
+    storeDir: "${params.outdir}/ncbi-AMRFinderplus")
 
 contigs_blastn
   .combine(local_blastdb)
@@ -1154,7 +1135,7 @@ process mlst {
   set val(sample), file(contig) from contigs_mlst
 
   output:
-  file("${task.process}/${sample}_mlst.txt")
+  file("${task.process}/${sample}_mlst.txt") into mlst_files
   tuple sample, env(mlst) into mlst_results
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
@@ -1174,37 +1155,11 @@ process mlst {
   '''
 }
 
-// // TODO : multiqc
-// params.multiqc = false
-// params.multiqc_options = ''
-// //container 'staphb/multiqc:latest'
-// // TODO : amrfinder_plus
-// params.amrfinder_plus = false
-// params.amrfinder_plus_options = ''
-// //container 'staphb/ncbi-amrfinderplus:latest'
-// // TODO : frp_plasmid
-// params.rfp_plasmid = false
-// params.rfp_plasmid_options = ''
-// //container 'none'
-// // TODO : pointfinder
-// params.pointfinder = false
-// params.pointfinder_options = ''
-// //container 'none'
-// // TODO : mubsuite
-// params.mobsuite = false
-// params.mobsuite_options = ''
-// //container 'none'
-// params.sistr = false
-// params.sistr_options = ''
-// //container 'staphb/sistr:latest'
-// params.serotypefinder = false
-// params.serotypefinder_options = ''
-// //container 'staphb/serotypefinder:latest'
-// params.plasmidseeker = false
-// params.plasmidseeker_options = ''
-// //container 'staphb/plasmidseeker:latest'
-// // TODO : kleborate
-
+mlst_files
+  .collectFile(name: "mlst_result.tsv",
+    keepHeader: false,
+    sort: true,
+    storeDir: "${params.outdir}/mlst")
 
 seqyclean_perc_kept_results
   .join(seqyclean_pairskept_results, remainder: true, by: 0)
@@ -1228,11 +1183,14 @@ seqyclean_perc_kept_results
   .join(seqsero2_profile_results, remainder: true, by: 0)
   .join(seqsero2_serotype_results, remainder: true, by: 0)
   .join(seqsero2_contamination_results, remainder: true, by: 0)
+  .join(serotypefinder_results_o, remainder: true, by: 0)
+  .join(serotypefinder_results_h, remainder: true, by: 0)
+  .join(shigatyper_results, remainder: true, by: 0)
+  .join(kleborate_score, remainder: true, by: 0)
+  .join(kleborate_mlst, remainder: true, by: 0)
   .join(blobtools_species_results, remainder: true, by: 0)
   .join(blobtools_perc_results, remainder: true, by: 0)
   .join(mlst_results, remainder: true, by: 0)
-  .join(abricate_results, remainder: true, by: 0)
-  .join(abricate_ecoli_results, remainder: true, by: 0)
   .set { results }
 
 process summary {
@@ -1265,14 +1223,18 @@ process summary {
     val(seqsero2_profile_results),
     val(seqsero2_serotype_results),
     val(seqsero2_contamination_results),
+    val(serotypefinder_results_o),
+    val(serotypefinder_results_h),
+    val(shigatyper_hits),
+    val(kleborate_score),
+    val(kleborate_mlst),
     val(blobtools_species_results),
     val(blobtools_perc_results),
-    val(mlst_results),
-    file(abricate_results),
-    file(abricate_serotype_results) from results
+    val(mlst_results) from results
 
   output:
-  file("summary/${sample}.summary.txt") into summary_files
+  file("summary/${sample}.summary.txt") into summary_files_txt
+  file("summary/${sample}.summary.tsv") into summary_files_tsv
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
   shell:
@@ -1306,104 +1268,39 @@ process summary {
     header=$header";seqsero2_profile;seqsero2_serotype;seqsero2_contamination"
     result=$result";!{seqsero2_profile_results};!{seqsero2_serotype_results};!{seqsero2_contamination_results}"
 
+    header=$header";serotypefinder_o_group;serotypefinder_h_group"
+    result=$result";!{serotypefinder_results_o};!{serotypefinder_results_h}"
+
+    header=$header";shigatyper_hits"
+    result=$result";!{shigatyper_hits}"
+
+    header=$header";kleborate_score;kleborate_mlst"
+    result=$result";!{kleborate_score};!{kleborate_mlst}"
+
     header=$header";blobtools_top_species;blobtools_percentage"
     result=$result";!{blobtools_species_results};!{blobtools_perc_results}"
 
     header=$header";mlst"
     result=$result";!{mlst_results}"
 
-    abricate_result=";"
-    abricate_result_header=";"
-    abricate_db=($(echo "!{params.abricate_db}" | tr -d '[](){},'))
-    for db in ${abricate_db[@]}
-    do
-      found=''
-      if [ -f "!{sample}_${db}_results.txt" ]
-      then
-        gene_col=''
-        gene_col=$(head -n 1 !{sample}_${db}_results.txt | tr '\t' '\n' | grep -n "GENE" | cut -f 1 -d ":")
-        if [ -z "$gene_col" ] ; then gene_col=5 ; fi
-
-        found="$(cat !{sample}_${db}_results.txt | cut -f $gene_col | grep -v "GENE" | tr '\\n' ' ')"
-      fi
-      if [ -z "$found" ] ; then found='none' ; fi
-      abricate_result="$abricate_result;$found"
-      abricate_result_header="$abricate_result_header;$db"
-    done
-    abricate_result="$(echo $abricate_result | sed 's/;;//g' | sed 's/  / /g' )"
-    abricate_result_header="$(echo $abricate_result_header | sed 's/;;//g')"
-
-    serotype_result=";"
-    serotype_result_header=";"
-    abricate_serotype_db=($(echo "!{params.abricate_ecoli_db}" | tr -d '[](){},'))
-    for db in ${abricate_serotype_db[@]}
-    do
-      O=''
-      H=''
-      if [ -f "!{sample}_${db}_results.txt" ]
-      then
-        gene_col=''
-        gene_col=$(head -n 1 !{sample}_${db}_results.txt | tr '\t' '\n' | grep -n "GENE" | cut -f 1 -d ":")
-        if [ -z "$gene_col" ] ; then gene_col=5 ; fi
-
-        O_H=($(cat !{sample}_${db}_results.txt | cut -f $gene_col | grep -v "GENE" | tr '/' '_'))
-        for gene in ${O_H[@]}
-        do
-          h=($(echo "$gene" | tr "-" "\\n" | tr "_" "\\n" | grep ^"H" | tr "\\n" " " | head) ' ')
-          o=($(echo "$gene" | tr "-" "\\n" | tr "_" "\\n" | grep ^"O" | tr "\\n" " " | head) ' ')
-          O="${O[@]}""${o[@]}"
-          H="${H[@]}""${h[@]}"
-        done
-      fi
-      if [ -z "$O" ] ; then O='none' ; fi
-      if [ -z "$H" ] ; then H='none' ; fi
-      O="$(history -p ${O[@]} | sort | uniq -c | tr '\\n' ',')"
-      H="$(history -p ${H[@]} | sort | uniq -c | tr '\\n' ',')"
-      serotype_result="$serotype_result;$O,;$H,"
-      serotype_result_header="$serotype_result_header;$db : O ; $db : H"
-    done
-    serotype_result="$(echo $serotype_result | sed 's/;;//g' | sed 's/,,//g' | sed 's/  / /g' )"
-    serotype_result_header="$(echo $serotype_result_header | sed 's/;;//g')"
-
-    header=$header";$abricate_result_header;$serotype_result_header"
-    result=$result";$abricate_result;$serotype_result"
-
     echo $header > summary/!{sample}.summary.txt
     echo $result >> summary/!{sample}.summary.txt
+
+    cat summary/!{sample}.summary.txt | tr ';' '\t' > summary/!{sample}.summary.tsv
   '''
 }
 
-process combined_summary {
-  publishDir "${params.outdir}", mode: 'copy', overwrite: true, pattern: "summary.txt"
-  publishDir "${params.outdir}", mode: 'copy', overwrite: true, pattern: "logs/summary/*.{log,err}"
-  publishDir "${workflow.launchDir}", mode: 'copy', overwrite: true, pattern: "grandeur_results.txt"
-  tag "summary"
-  echo false
-  cpus 1
-  container 'staphb/parallel-perl:latest'
+summary_files_txt
+  .collectFile(name: "grandeur_summary.txt",
+    keepHeader: true,
+    sort: true,
+    storeDir: "${params.outdir}/summary")
 
-  input:
-  file(summary) from summary_files.collect()
-
-  output:
-  file("summary.txt")
-  file("grandeur_results.txt")
-  file("logs/${task.process}/summary.${workflow.sessionId}.{log,err}")
-
-  shell:
-  '''
-    mkdir -p logs/!{task.process}
-    log_file=logs/!{task.process}/summary.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/summary.!{workflow.sessionId}.err
-
-    date | tee -a $log_file $err_file > /dev/null
-
-    cat *.summary.txt | grep "sample_id" | head -n 1 > summary.txt
-    cat *.summary.txt | grep -v "sample_id" | sort | uniq >> summary.txt 2>> $err_file
-
-    cat summary.txt | tr ';' '\t' > grandeur_results.txt
-  '''
-}
+summary_files_tsv
+  .collectFile(name: "grandeur_results.tsv",
+    keepHeader: true,
+    sort: true,
+    storeDir: "${params.outdir}")
 
 workflow.onComplete {
     println("Pipeline completed at: $workflow.complete")
