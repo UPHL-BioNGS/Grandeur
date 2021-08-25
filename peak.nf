@@ -6,18 +6,13 @@ println("email: eriny@utah.gov")
 println("Version: v.20210830")
 println("")
 
-// TODO add ETE3
+// TODO : add ete3 or some tree building software
 
 params.outdir = workflow.launchDir + '/peaks'
 println("The files and directory for results is " + params.outdir)
 
 params.maxcpus = Runtime.runtime.availableProcessors()
 println("The maximum number of CPUS used in this workflow is ${params.maxcpus}")
-if ( params.maxcpus < 5 ) {
-  params.medcpus = params.maxcpus
-} else {
-  params.medcpus = 5
-}
 
 params.contigs = workflow.launchDir + '/contigs'
 params.from_contigs = true
@@ -25,24 +20,24 @@ contigs = params.from_contigs
   ? Channel
       .fromPath("${params.contigs}/*.{fa,fasta,fna}", type: 'file')
       .map { file -> tuple(file.baseName, file) }
-      .view { "Contigs or Fasta files : $it" }
+      .view { "fasta file : $it" }
   : Channel.empty()
 
 params.gff = workflow.launchDir + '/gff'
 params.from_gff = true
 local_gffs = params.from_gff
-  ? Channel.fromPath("${params.gff}/*.gff", type: 'file').view { "gff files : $it" }
+  ? Channel.fromPath("${params.gff}/*.gff", type: 'file').view { "gff file : $it" }
   : Channel.empty()
 
 params.kraken2 = false
-params.local_kraken2 = '/kraken2_db'
+params.kraken2_db = '/kraken2_db'
 local_kraken2 = params.kraken2
   ? Channel
-    .fromPath(params.local_kraken2, type:'dir')
+    .fromPath(params.kraken2_db, type:'dir')
     .view { "Local kraken2 database : $it" }
     .ifEmpty{
-      println("No kraken2 database was found at ${params.local_kraken2}")
-      println("Set 'params.local_kraken2' to directory with kraken2 database")
+      println("No kraken2 database was found at ${params.kraken2_db}")
+      println("Set 'params.kraken2_db' to directory with kraken2 database")
       exit 1
     }
   : Channel.empty()
@@ -106,7 +101,7 @@ prokka_gffs
 params.roary = true
 params.roary_options = ''
 if (params.kraken2) {
-  process roary {
+  process roary_qc {
     publishDir "${params.outdir}", mode: 'copy'
     echo false
     cpus params.maxcpus
@@ -116,16 +111,18 @@ if (params.kraken2) {
     params.roary
 
     input:
-    file(contigs), dir(kraken2) from gffs.collect()
-    dir(local_kraken2) from local_kraken2
+    file(contigs) from gffs.collect()
+    path(local_kraken2) from local_kraken2
 
     output:
-    file("output") into roary_core_genome_iqtree, roary_core_genome_snp_dists
-    file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
+    file("roary/*")
+    file("roary/fixed_input_files/*")
+    file("roary/core_gene_alignment.aln") into roary_core_genome_iqtree, roary_core_genome_snp_dists
+    file("logs/${task.process}/${task.process}.${workflow.sessionId}.{log,err}")
 
     shell:
     '''
-      mkdir -p !{task.process} logs/!{task.process}
+      mkdir -p logs/!{task.process}
       log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
       err_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.err
 
@@ -135,13 +132,11 @@ if (params.kraken2) {
 
       roary !{params.roary_options} \
         -p !{task.cpus} \
-        -f !{task.process} \
+        -f roary \
         -e -n \
-        -qc -k !{kraken2} \
+        -qc -k !{local_kraken2} \
         *.gff \
         2>> $err_file >> $log_file
-
-      exit 1
     '''
   }
 } else {
@@ -155,15 +150,17 @@ if (params.kraken2) {
     params.roary
 
     input:
-    file(contigs), dir(kraken2) from gffs.collect()
+    file(contigs) from gffs.collect()
 
     output:
-    file("output") into roary_core_genome_iqtree, roary_core_genome_snp_dists
-    file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
+    file("${task.process}/*")
+    file("${task.process}/fixed_input_files/*")
+    file("${task.process}/core_gene_alignment.aln") into roary_core_genome_iqtree, roary_core_genome_snp_dists
+    file("logs/${task.process}/${task.process}.${workflow.sessionId}.{log,err}")
 
     shell:
     '''
-      mkdir -p !{task.process} logs/!{task.process}
+      mkdir -p logs/!{task.process}
       log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
       err_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.err
 
@@ -177,8 +174,6 @@ if (params.kraken2) {
         -e -n \
         *.gff \
         2>> $err_file >> $log_file
-
-      exit 1
     '''
   }
 }
@@ -198,9 +193,9 @@ process iqtree {
   file(msa) from roary_core_genome_iqtree
 
   output:
-  file("output")
-  file("output") into treefile
-  file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
+  file("${task.process}/iqtree{.ckp.gz,.treefile,.iqtree,.log,.splits.nex}")
+  file("${task.process}/iqtree.contree") into treefile
+  file("logs/${task.process}/${task.process}.${workflow.sessionId}.{log,err}")
 
   shell:
   '''
@@ -218,30 +213,27 @@ process iqtree {
       -nt AUTO \
       -ntmax !{task.cpus} \
       2>> $err_file >> $log_file
-
-    exit 1
   '''
 }
 
-params.ete3 = true
+// WARNING : THIS CONTAINER DOESN'T EXIST
+params.ete3 = false
 params.ete3_options = ''
 process ete3 {
   publishDir "${params.outdir}", mode: 'copy'
-  echo false
-  cpus params.maxcpus
-  container 'reslp/ete3:3.1.1'
-  // barikan/ete3_with_qt:3.1.1
-  // bhntools/dockerete:latest
+  cpus 1
+  //container 'staphb/ete3:latest'
+  //container 'docker://quay.io/biocontainers/ete3:3.1.2'
 
   when:
   params.ete3
 
   input:
-  file(treefile) from treefile
+  file(newick) from treefile
 
   output:
-  file("output")
-  file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
+  file("${task.process}/tree.svg")
+  file("logs/${task.process}/${task.process}.${workflow.sessionId}.{log,err}")
 
   shell:
   '''
@@ -251,11 +243,9 @@ process ete3 {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
-    ete3 -v >> $log_file
+    echo "ETE3 version : $(ete3 version | head -n 1 )" | tee -a $log_file
 
-    ete3
-
-    exit 1
+    ete3 view --image !{task.process}/tree.svg -t !{newick}
   '''
 }
 
@@ -274,7 +264,7 @@ process snp_dists {
   file(contigs) from roary_core_genome_snp_dists
 
   output:
-  file("${task.process}/results.txt")
+  file("${task.process}/snp_matrix.txt")
   file("logs/${task.process}/${task.process}.${workflow.sessionId}.{log,err}")
 
   shell:
@@ -290,9 +280,7 @@ process snp_dists {
     snp-dists !{params.snp_dists_options} \
       !{contigs} \
       2>> $err_file \
-      > !{task.process}/results.txt
-
-    exit 1
+      > !{task.process}/snp_matrix.txt
   '''
 }
 

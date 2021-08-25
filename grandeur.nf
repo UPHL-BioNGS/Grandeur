@@ -6,9 +6,12 @@ println("email: eriny@utah.gov")
 println("Version: v.20210830")
 println("")
 
+// TODO : shigatyper
+// TODO : amrfinderplus
 // TODO : mycosnp
 // TODO : something for plasmids
-// TODO : multiqc
+// TODO : kraken2
+// TODO : multiqc - fastqc, seqyclean, kraken2, prokka, quast
 // params.multiqc = false
 // params.multiqc_options = ''
 // container 'staphb/multiqc:latest'
@@ -274,7 +277,7 @@ process mash_dist {
   tuple sample, env(pvalue) into mash_pvalue_results
   tuple sample, env(distance) into mash_distance_results
   tuple sample, env(salmonella_flag) into salmonella_flag
-  tuple sample, env(ecoli_flag) into ecoli_flag, ecoli_flag2, shigella_flag
+  tuple sample, env(ecoli_flag) into ecoli_flag, shigella_flag
   tuple sample, env(klebsiella_flag) into klebsiella_flag
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
@@ -633,7 +636,7 @@ clean_reads_shigatyper
   .join(shigella_flag, by:0)
   .set { for_shigatyper }
 
-params.shigatyper = true
+params.shigatyper = false
 params.shigatyper_options = ''
 process shigatyper {
   publishDir "${params.outdir}", mode: 'copy'
@@ -641,8 +644,9 @@ process shigatyper {
   echo false
   cpus params.medcpus
   // if no file is created, this ends in failure
-  errorStrategy 'ignore'
-  container 'docker://quay.io/biocontainers/shigatyper:1.0.6--py_0'
+  // errorStrategy 'ignore'
+  // container 'docker://quay.io/biocontainers/shigatyper:1.0.6--py_0'
+  container 'staphb/shigatyper:latest'
 
   when:
   params.shigatyper && flag =~ 'found'
@@ -651,8 +655,10 @@ process shigatyper {
   set val(sample), file(fastq), val(flag) from for_shigatyper
 
   output:
-  file("${task.process}/${sample}_shigatyper.csv") optional true
-  tuple sample, env(shigatyper_hits) into shigatyper_results
+  file("${task.process}/${sample}_shigatyper_hits.csv")
+  file("${task.process}/${sample}_shigatyper.tsv")
+  tuple sample, env(hits) into shigatyper_hits
+  tuple sample, env(predictions) into shigatyper_predictions
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
   shell:
@@ -666,17 +672,15 @@ process shigatyper {
     shigatyper --version >> $log_file
 
     shigatyper !{params.shigatyper_options} \
-      --name !{sample}_shigatyper \
+      --name !{task.process}/!{sample}_shigatyper_hits \
       !{fastq} \
-      2>> $err_file >> $log_file
+      2>> $err_file \
+      > !{task.process}/!{sample}_shigatyper.tsv
 
-    if [ -f "!{sample}_shigatyper.csv" ]
-    then
-      cp !{sample}_shigatyper.csv !{task.process}/!{sample}_shigatyper.csv
-      shigatyper_hits=$(grep -v Hit !{task.process}/!{sample}_shigatyper.csv | cut -f 2 -d "," | tr '\\n' ',' | sed 's/,$//g' )
-    fi
-
-    if [ -z "$shigatyper_hits" ] ; then shigatyper_hits='none' ; fi
+    if [ -f "!{task.process}/!{sample}_shigatyper_hits.csv" ] ; then hits=$(grep -v Hit !{task.process}/!{sample}_shigatyper_hits.csv | cut -f 2 -d "," | tr '\\n' ',' | sed 's/,$//g' ) ; fi
+    if [ -f "!{task.process}/!{sample}_shigatyper.tsv" ] ; then predictions=$(grep -v prediction !{task.process}/!{sample}_shigatyper.tsv | cut -f 2 | tr '\\n' ',' | sed 's/,$//g' )  ; fi
+    if [ -z "$hits" ] ; then hits='none' ; fi
+    if [ -z "$predictions" ] ; then hits='predictions' ; fi
   '''
 }
 
@@ -1185,7 +1189,8 @@ seqyclean_perc_kept_results
   .join(seqsero2_contamination_results, remainder: true, by: 0)
   .join(serotypefinder_results_o, remainder: true, by: 0)
   .join(serotypefinder_results_h, remainder: true, by: 0)
-  .join(shigatyper_results, remainder: true, by: 0)
+  .join(shigatyper_hits, remainder: true, by: 0)
+  .join(shigatyper_predictions, remainder: true, by: 0)
   .join(kleborate_score, remainder: true, by: 0)
   .join(kleborate_mlst, remainder: true, by: 0)
   .join(blobtools_species_results, remainder: true, by: 0)
@@ -1226,6 +1231,7 @@ process summary {
     val(serotypefinder_results_o),
     val(serotypefinder_results_h),
     val(shigatyper_hits),
+    val(shigatyper_predictions),
     val(kleborate_score),
     val(kleborate_mlst),
     val(blobtools_species_results),
@@ -1271,8 +1277,8 @@ process summary {
     header=$header";serotypefinder_o_group;serotypefinder_h_group"
     result=$result";!{serotypefinder_results_o};!{serotypefinder_results_h}"
 
-    header=$header";shigatyper_hits"
-    result=$result";!{shigatyper_hits}"
+    header=$header";shigatyper_hits;shigatyper_predictions"
+    result=$result";!{shigatyper_hits};!{shigatyper_predictions}"
 
     header=$header";kleborate_score;kleborate_mlst"
     result=$result";!{kleborate_score};!{kleborate_mlst}"
@@ -1301,6 +1307,7 @@ summary_files_tsv
     keepHeader: true,
     sort: true,
     storeDir: "${params.outdir}")
+  .subscribe { println("Summary can be found at $it") }
 
 workflow.onComplete {
     println("Pipeline completed at: $workflow.complete")
