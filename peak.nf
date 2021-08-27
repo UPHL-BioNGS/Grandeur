@@ -8,29 +8,26 @@ println("")
 
 // TODO : add ete3 or some tree building software
 
-params.outdir = workflow.launchDir + '/peaks'
+params.outdir = workflow.launchDir + '/peak'
 println("The files and directory for results is " + params.outdir)
 
 params.maxcpus = Runtime.runtime.availableProcessors()
 println("The maximum number of CPUS used in this workflow is ${params.maxcpus}")
 
-params.contigs = workflow.launchDir + '/contigs'
-params.from_contigs = true
-contigs = params.from_contigs
-  ? Channel
-      .fromPath("${params.contigs}/*.{fa,fasta,fna}", type: 'file')
-      .map { file -> tuple(file.baseName, file) }
-      .view { "fasta file : $it" }
-  : Channel.empty()
+params.fastas = workflow.launchDir + '/fastas'
+Channel
+  .fromPath("${params.fastas}/*.{fa,fasta,fna}", type: 'file')
+  .map { file -> tuple(file.baseName, file) }
+  .view { "fasta file : ${it[1]}" }
+  .set { contigs }
 
 params.gff = workflow.launchDir + '/gff'
-params.from_gff = true
-local_gffs = params.from_gff
-  ? Channel.fromPath("${params.gff}/*.gff", type: 'file').view { "gff file : $it" }
-  : Channel.empty()
+Channel.fromPath("${params.gff}/*.gff", type: 'file')
+  .view { "gff file : $it" }
+  .set {local_gffs}
 
 params.kraken2 = false
-params.kraken2_db = '/kraken2_db'
+params.kraken2_db = 'kraken2_db'
 local_kraken2 = params.kraken2
   ? Channel
     .fromPath(params.kraken2_db, type:'dir')
@@ -49,7 +46,6 @@ params.mincontiglen = 500
 process prokka {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
-  echo false
   cpus params.maxcpus
   container 'staphb/prokka:latest'
 
@@ -91,9 +87,9 @@ prokka_gffs
   .concat(local_gffs)
   .ifEmpty{
     println("No gff files were found at ${params.gff}")
-    println("No contig or fasta files ending with '.fa', '.fna', or '.fasta' were found at ${params.contigs}")
+    println("No contig or fasta files ending with '.fa', '.fna', or '.fasta' were found at ${params.fastas}")
     println("Set 'params.gff' to directory with gff files")
-    println("Set 'params.contigs' to directory with fastas")
+    println("Set 'params.fastas' to directory with fastas")
     exit 1
   }
   .set { gffs }
@@ -103,7 +99,7 @@ params.roary_options = ''
 if (params.kraken2) {
   process roary_qc {
     publishDir "${params.outdir}", mode: 'copy'
-    echo false
+    tag "Roary with Kraken2 QC"
     cpus params.maxcpus
     container 'staphb/roary:latest'
 
@@ -142,7 +138,7 @@ if (params.kraken2) {
 } else {
   process roary {
     publishDir "${params.outdir}", mode: 'copy'
-    echo false
+    tag "Roary"
     cpus params.maxcpus
     container 'staphb/roary:latest'
 
@@ -178,16 +174,16 @@ if (params.kraken2) {
   }
 }
 
-params.iqtree = true
-params.iqtree_options = '-t RANDOM -m GTR+F+I -bb 1000 -alrt 1000'
-process iqtree {
+params.iqtree2 = true
+params.iqtree2_options = '-t RANDOM -m GTR+F+I -bb 1000 -alrt 1000'
+process iqtree2 {
   publishDir "${params.outdir}", mode: 'copy'
-  echo false
+  tag "Pylogenetic Tree"
   cpus params.maxcpus
-  container 'staphb/iqtree:latest'
+  container 'staphb/iqtree2:latest'
 
   when:
-  params.iqtree
+  params.iqtree2
 
   input:
   file(msa) from roary_core_genome_iqtree
@@ -205,55 +201,56 @@ process iqtree {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
-    iqtree -v >> $log_file
+    iqtree2 -v >> $log_file
 
-    iqtree !{params.iqtree_options} \
+    iqtree2 !{params.iqtree2_options} \
       -s !{msa} \
-      -pre !{task.process}/!{task.process} \
+      -pre !{task.process}/iqtree \
       -nt AUTO \
       -ntmax !{task.cpus} \
       2>> $err_file >> $log_file
   '''
 }
 
-// WARNING : THIS CONTAINER DOESN'T EXIST
-params.ete3 = false
-params.ete3_options = ''
-process ete3 {
-  publishDir "${params.outdir}", mode: 'copy'
-  cpus 1
-  //container 'staphb/ete3:latest'
-  //container 'docker://quay.io/biocontainers/ete3:3.1.2'
-
-  when:
-  params.ete3
-
-  input:
-  file(newick) from treefile
-
-  output:
-  file("${task.process}/tree.svg")
-  file("logs/${task.process}/${task.process}.${workflow.sessionId}.{log,err}")
-
-  shell:
-  '''
-    mkdir -p !{task.process} logs/!{task.process}
-    log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.err
-
-    # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
-    echo "ETE3 version : $(ete3 version | head -n 1 )" | tee -a $log_file
-
-    ete3 view --image !{task.process}/tree.svg -t !{newick}
-  '''
-}
+// // WARNING : THIS CONTAINER DOESN'T EXIST
+// params.ete3 = false
+// params.ete3_options = ''
+// process ete3 {
+//   publishDir "${params.outdir}", mode: 'copy'
+//   tag "Tree Visualization"
+//   cpus 1
+//   //container 'staphb/ete3:latest'
+//   //container 'docker://quay.io/biocontainers/ete3:3.1.2'
+//
+//   when:
+//   params.ete3
+//
+//   input:
+//   file(newick) from treefile
+//
+//   output:
+//   file("${task.process}/tree.svg")
+//   file("logs/${task.process}/${task.process}.${workflow.sessionId}.{log,err}")
+//
+//   shell:
+//   '''
+//     mkdir -p !{task.process} logs/!{task.process}
+//     log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
+//     err_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.err
+//
+//     # time stamp + capturing tool versions
+//     date | tee -a $log_file $err_file > /dev/null
+//     echo "ETE3 version : $(ete3 version | head -n 1 )" | tee -a $log_file
+//
+//     ete3 view --image !{task.process}/tree.svg -t !{newick}
+//   '''
+// }
 
 params.snp_dists = true
 params.snp_dists_options = ''
 process snp_dists {
   publishDir "${params.outdir}", mode: 'copy'
-  echo false
+  tag "SNP matrix"
   cpus 1
   container 'staphb/snp-dists:latest'
 
