@@ -10,11 +10,6 @@ println("")
 // TODO : amrfinderplus
 // TODO : mycosnp
 // TODO : something for plasmids
-// TODO : kraken2
-// TODO : multiqc - fastqc, seqyclean, kraken2, prokka, quast
-// params.multiqc = false
-// params.multiqc_options = ''
-// container 'staphb/multiqc:latest'
 // TODO : frp_plasmid
 // params.rfp_plasmid = false
 // params.rfp_plasmid_options = ''
@@ -54,19 +49,49 @@ Channel
     println("Set 'params.reads' to directory with paired-end reads")
     exit 1
   }
+  .view { "Paired-end fastq files : ${it[0]}" }
   .into { reads_seqyclean ; reads_fastqc }
 
 params.cg_pipeline = 'true'
 params.genome_sizes = workflow.projectDir + "/configs/genome_sizes.json"
-genome_sizes = params.cg_pipeline
-              ? Channel.fromPath(params.genome_sizes, type:'file', checkIfExists: true).view { "Genome Sizes File : $it" }
-              : Channel.empty()
+Channel
+  .fromPath(params.genome_sizes, type:'file')
+  .view { "Genome Sizes File : $it" }
+  .ifEmpty{
+    println("WARNING : No file with genome sizes was found at ${params.genome_sizes}")
+    println("This file is required for cg-pipeline.")
+  }
+  .set { genome_sizes }
 
 params.blobtools = false
-params.local_blastdb='/blast/blastdb'
+params.blast_db = 'blast_db'
 local_blastdb = params.blobtools
-              ? Channel.fromPath(params.local_blastdb, type:'dir').view { "Local Blast Database : $it" }
+              ? Channel
+                  .fromPath(params.blast_db, type:'dir')
+                  .ifEmpty{
+                    println("No blast database was found at ${params.blast_db}")
+                    println("Set 'params.blast_db' to directory with blast database")
+                    exit 1
+                  }
+                  .view { "Local Blast Database for Blobtools : $it" }
               : Channel.empty()
+
+params.kraken2 = false
+params.kraken2_db = 'kraken2_db'
+if ( params.kraken2 ) {
+  Channel
+    .fromPath(params.kraken2_db, type:'dir')
+    .ifEmpty{
+      println("No kraken2 database was found at ${params.kraken2_db}")
+      println("Set 'params.kraken2_db' to directory with kraken2 database")
+      exit 1
+      }
+    .view { "Local kraken2 database : $it" }
+    .set { local_kraken2 }
+} else {
+  kraken2_files = Channel.empty()
+  local_kraken2 = Channel.empty()
+}
 
 params.seqyclean_minlen = 25
 params.seqyclean_contaminant_file = "/Adapters_plus_PhiX_174.fasta"
@@ -82,9 +107,9 @@ process seqyclean {
   set val(sample), file(reads) from reads_seqyclean
 
   output:
-  tuple sample, file("seqyclean/${sample}_clean_PE{1,2}.fastq.gz") into clean_reads_shovill, clean_reads_mash, clean_reads_cg, clean_reads_seqsero2, clean_reads_bwa, clean_reads_shigatyper
+  tuple sample, file("seqyclean/${sample}_clean_PE{1,2}.fastq.gz") into clean_reads_shovill, clean_reads_mash, clean_reads_cg, clean_reads_seqsero2, clean_reads_bwa, clean_reads_shigatyper, clean_reads_kraken2
   file("seqyclean/${sample}_clean_SE.fastq.gz")
-  file("seqyclean/${sample}_clean_SummaryStatistics.tsv") into seqyclean_files
+  file("seqyclean/${sample}_clean_SummaryStatistics.tsv") into seqyclean_files, seqyclean_files_combine
   file("seqyclean/${sample}_clean_SummaryStatistics.txt")
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
   tuple sample, env(perc_kept) into seqyclean_perc_kept_results
@@ -118,7 +143,7 @@ process seqyclean {
   '''
 }
 
-seqyclean_files
+seqyclean_files_combine
   .collectFile(name: "SummaryStatistics.tsv",
     keepHeader: true,
     sort: true,
@@ -184,7 +209,8 @@ process fastqc {
   set val(sample), file(raw) from reads_fastqc
 
   output:
-  file("fastqc/*.{html,zip}")
+  file("${task.process}/*.html")
+  file("${task.process}/*_fastqc.zip") into fastqc_files
   tuple sample, env(raw_1) into fastqc_1_results
   tuple sample, env(raw_2) into fastqc_2_results
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
@@ -364,7 +390,8 @@ process prokka {
   set val(sample), file(contigs), val(genus), val(species) from for_prokka
 
   output:
-  file("prokka/${sample}/${sample}.{err,faa,ffn,fna,fsa,gbk,gff,log,sqn,tbl,tsv,txt}")
+  file("prokka/${sample}/${sample}.{err,faa,ffn,fna,fsa,gbk,gff,log,sqn,tbl,tsv}")
+  file("prokka/${sample}/${sample}.txt") into prokka_files
   file("gff/${sample}.gff")
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
@@ -411,8 +438,9 @@ process quast {
 
   output:
   file("quast/${sample}/*")
+  file("quast/${sample}/report.tsv") into quast_files
   file("quast/${sample}/{basic_stats,icarus_viewers}/*{pdf,html}")
-  file("quast/${sample}/transposed_report.tsv") into quast_files
+  file("quast/${sample}/transposed_report.tsv") into quast_files_combine
   tuple sample, env(gc) into quast_gc_results
   tuple sample, env(num_contigs) into quast_contigs_results
   tuple sample, env(n50) into quast_N50_contigs_results
@@ -446,7 +474,7 @@ process quast {
   '''
 }
 
-quast_files
+quast_files_combine
   .collectFile(name: "report.tsv",
     keepHeader: true,
     sort: true,
@@ -867,6 +895,58 @@ amrfinder_files
     sort: true,
     storeDir: "${params.outdir}/ncbi-AMRFinderplus")
 
+clean_reads_kraken2
+  .combine(local_kraken2)
+  .set { for_kraken2 }
+
+params.kraken2_options = ''
+process kraken2 {
+  publishDir "${params.outdir}", mode: 'copy'
+  tag "${sample}"
+  echo false
+  cpus params.maxcpus
+  container 'staphb/kraken2:latest'
+
+  when:
+  params.kraken2
+
+  input:
+  set val(sample), file(clean), path(kraken2_db) from for_kraken2
+
+  output:
+  file("${task.process}/${sample}_kraken2_report.txt") into kraken2_files
+  file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
+  tuple sample, env(top_hit) into kraken2_top_hit
+  tuple sample, env(top_perc) into kraken2_top_perc
+  tuple sample, env(top_reads) into kraken2_top_reads
+
+  shell:
+  '''
+    mkdir -p !{task.process} logs/!{task.process}
+    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
+
+    date | tee -a $log_file $err_file > /dev/null
+    kraken2 --version >> $log_file
+
+    kraken2 !{params.kraken2_options} \
+      --paired \
+      --classified-out cseqs#.fq \
+      --threads !{task.cpus} \
+      --db !{kraken2_db} \
+      !{clean} \
+      --report !{task.process}/!{sample}_kraken2_report.txt \
+      2>> $err_file >> $log_file
+
+    top_hit=$(cat !{task.process}/!{sample}_kraken2_report.txt | grep -w S | sort | tail -n 1 | awk '{print $6 " " $7}')
+    top_perc=$(cat !{task.process}/!{sample}_kraken2_report.txt | grep -w S | sort | tail -n 1 | awk '{print $1}')
+    top_reads=$(cat !{task.process}/!{sample}_kraken2_report.txt | grep -w S | sort | tail -n 1 | awk '{print $3}')
+    if [ -z "$top_hit" ] ; then top_hit="NA" ; fi
+    if [ -z "$top_perc" ] ; then top_perc="0" ; fi
+    if [ -z "$top_reads" ] ; then top_reads="0" ; fi
+  '''
+}
+
 contigs_blastn
   .combine(local_blastdb)
   .set { for_blastn }
@@ -1195,6 +1275,9 @@ seqyclean_perc_kept_results
   .join(kleborate_mlst, remainder: true, by: 0)
   .join(blobtools_species_results, remainder: true, by: 0)
   .join(blobtools_perc_results, remainder: true, by: 0)
+  .join(kraken2_top_hit, remainder: true, by: 0)
+  .join(kraken2_top_perc, remainder: true, by: 0)
+  .join(kraken2_top_reads, remainder: true, by: 0)
   .join(mlst_results, remainder: true, by: 0)
   .set { results }
 
@@ -1236,6 +1319,9 @@ process summary {
     val(kleborate_mlst),
     val(blobtools_species_results),
     val(blobtools_perc_results),
+    val(kraken2_top_hit),
+    val(kraken2_top_perc),
+    val(kraken2_top_reads),
     val(mlst_results) from results
 
   output:
@@ -1286,6 +1372,9 @@ process summary {
     header=$header";blobtools_top_species;blobtools_percentage"
     result=$result";!{blobtools_species_results};!{blobtools_perc_results}"
 
+    header=$header";kraken2_top_species;kraken2_num_reads;kraken2_percentage"
+    result=$result";!{kraken2_top_hit};!{kraken2_top_reads};!{kraken2_top_perc}"
+
     header=$header";mlst"
     result=$result";!{mlst_results}"
 
@@ -1308,6 +1397,48 @@ summary_files_tsv
     sort: true,
     storeDir: "${params.outdir}")
   .subscribe { println("Summary can be found at $it") }
+
+params.multiqc_options = ''
+params.multiqc = true
+process multiqc {
+  publishDir "${params.outdir}", mode: 'copy'
+  tag "multiqc"
+  echo false
+  cpus 1
+  container 'staphb/multiqc:latest'
+
+  when:
+  params.multiqc
+
+  input:
+  fastqc_files.collect()
+  quast_files.collect()
+  seqyclean_files.collect()
+  kraken2_files.collect()
+  prokka_files.collect()
+
+  output:
+  file("output.txt")
+  file("logs/${task.process}/${task.process}.${workflow.sessionId}.{log,err}")
+
+  shell:
+  '''
+    export PYTHONNOUSERSITE=1
+    mkdir -p !{task.process} logs/!{task.process}
+    log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
+    err_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.err
+
+    # time stamp + capturing tool versions
+    date | tee -a $log_file $err_file > /dev/null
+    multiqc --version >> $log_file
+
+    multiqc !{params.multiqc_options} \
+      --outdir !{task.process} \
+      --cl_config "prokka_fn_snames: True"  \
+      . \
+      2>> $err_file >> $log_file
+  '''
+}
 
 workflow.onComplete {
     println("Pipeline completed at: $workflow.complete")
