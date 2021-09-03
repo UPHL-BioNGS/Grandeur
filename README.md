@@ -59,7 +59,7 @@ nextflow run grandeur.nf -c configs/singularity.config --reads <directory of rea
 ```
 A directory will produce files at `workflow.launchDir + '/grandeur'`, but this can also be adjusted with `params.outdir` the same way. 
 
-Additionally, "Graundeur" can use two optional tools to find contamination : [kraken2](https://ccb.jhu.edu/software/kraken2/) or [blobtools](https://blobtools.readme.io/docs) (or both!). These both use large databases that are not included in any container. 
+Additionally, "Grandeur" can use two optional tools to find contamination : [kraken2](https://ccb.jhu.edu/software/kraken2/) or [blobtools](https://blobtools.readme.io/docs) (or both!). These both use large databases that should be downloaded separately. 
 
 ## If the **End User** would like to use [kraken2](https://ccb.jhu.edu/software/kraken2/) to identify contamination:
 
@@ -368,6 +368,12 @@ Many of these additional tools are added by need locally or from the **End User*
 [@erinyoung](https://github.com/erinyoung) also appreciates pull requests from forks.
 
 **Warning** : If there's not a relaible container of the suggested tool, [@erinyoung](https://github.com/erinyoung) will request that the **End User** create a container for that tool and contribute to [StaPH-B's docker repositories](https://github.com/StaPH-B/docker-builds).
+
+## What about organisms with large genomes?
+Organisms with large genomes can still contribute to disease, but this is not the workflow for those. "Grandeur" uses [shovill](https://github.com/tseemann/shovill), which is a wrapper for [spades](https://cab.spbu.ru/software/spades/). Large genomes may be too much for these tools. 
+
+## What about SARS-CoV-2?
+As of the time of writing this README, reference-based alignment of SARS-CoV-2 is still the norm. "Grandeur" is for _de novo_ assembly of things with small genome. [Cecret](https://github.com/UPHL-BioNGS/Cecret) would be a better workflow for SARS-CoV-2 sequencing. 
 
 ## What is genome_sizes.json used for?
 [genome_sizes.json](./configs/genome_sizes.json) has a list of commonly sequenced organisms and the approximate expected genome size for each organism. This is only used for the "cg-pipeline" process to estimate coverage. A file from the **End User** can be used instead and specified with `params.genome_sizes`. 
