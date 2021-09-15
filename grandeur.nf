@@ -6,25 +6,14 @@ println("email: eriny@utah.gov")
 println("Version: v.20210830")
 println("")
 
-// TODO : shigatyper
-// TODO : amrfinderplus
+// TODO : blobtools
 // TODO : mycosnp
 // TODO : something for plasmids
 // TODO : frp_plasmid
-// params.rfp_plasmid = false
-// params.rfp_plasmid_options = ''
 // TODO : pointfinder
-// params.pointfinder = false
-// params.pointfinder_options = ''
 // TODO : mubsuite
-// params.mobsuite = false
-// params.mobsuite_options = ''
-// params.sistr = false
-// params.sistr_options = ''
-// //container 'staphb/sistr:latest'
-// params.plasmidseeker = false
-// params.plasmidseeker_options = ''
-// container 'staphb/plasmidseeker:latest'
+// TODO : sistr
+// TODO : plasmidseeker
 
 params.reads = workflow.launchDir + '/reads'
 params.outdir = workflow.launchDir + '/grandeur'
@@ -63,7 +52,7 @@ Channel
   }
   .set { genome_sizes }
 
-params.blobtools = false
+params.blobtools = false // right now this isn't currently working
 params.blast_db = 'blast_db'
 local_blastdb = params.blobtools
               ? Channel
@@ -99,7 +88,6 @@ params.seqyclean_options = ''
 process seqyclean {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
-  echo false
   cpus 1
   container 'staphb/seqyclean:latest'
 
@@ -123,7 +111,10 @@ process seqyclean {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
     echo "seqyclean version: $(seqyclean -h | grep Version | head -n 1)" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     seqyclean !{params.seqyclean_options} \
       -minlen !{params.seqyclean_minlen} \
@@ -153,7 +144,6 @@ params.shovill_options = ''
 process shovill {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
-  echo false
   memory params.maxmem
   cpus params.maxcpus
   errorStrategy { task.attempt<=3 ? 'retry' : 'ignore' }
@@ -178,7 +168,10 @@ process shovill {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
     shovill --version >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     memory=$(echo !{task.memory} | awk '{ print $1 }' )
 
@@ -198,7 +191,6 @@ params.fastqc_options = ''
 process fastqc {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
-  echo false
   cpus 1
   container 'staphb/fastqc:latest'
 
@@ -223,7 +215,10 @@ process fastqc {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
     fastqc --version >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     fastqc !{params.fastqc_options} \
       --outdir fastqc \
@@ -245,7 +240,6 @@ params.mash = true
 process mash_sketch {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
-  echo false
   cpus 1
   container 'staphb/mash:latest'
 
@@ -269,7 +263,10 @@ process mash_sketch {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
     echo "mash version: $(mash --version | head -n 1 )" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     cat !{reads} | mash sketch -m 2 -o mash/!{sample} - 2>> $err_file | tee $log_file
 
@@ -278,14 +275,11 @@ process mash_sketch {
   '''
 }
 
-params.mash_reference = "/db/RefSeqSketchesDefaults.msh"
-params.mash_pvalue = 0
-params.mash_distance = 0.5
-params.mash_options = ''
+params.mash_reference = '/db/RefSeqSketchesDefaults.msh'
+params.mash_options = '-v 0 -d 0.5'
 process mash_dist {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
-  echo false
   cpus params.medcpus
   container 'staphb/mash:latest'
 
@@ -315,14 +309,17 @@ process mash_dist {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
     echo "mash version: $(mash --version | head -n 1 )" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
-    mash dist -p !{task.cpus} !{params.mash_options} -v !{params.mash_pvalue} -d !{params.mash_distance} !{params.mash_reference} !{msh} | sort -gk3 > mash/!{sample}_mashdist.txt 2>> $err_file
+    mash dist -p !{task.cpus} !{params.mash_options} !{params.mash_reference} !{msh} | sort -gk3 > mash/!{sample}_mashdist.txt 2>> $err_file
 
     if [ ! -s "mash/!{sample}_mashdist.txt" ]
     then
-      echo "!{sample} had no mash results with '-v ${params.mash_pvalue}' and -d '{params.mash_distance}'. Trying again without those parameters."
-      mash dist -p !{task.cpus} !{params.mash_options} !{params.mash_reference} !{msh} | sort -gk3 > mash/!{sample}_mashdist.txt 2>> $err_file
+      echo "!{sample} had no mash results with '${params.mash_pvalue}'. Trying again without those parameters."
+      mash dist -p !{task.cpus} !{params.mash_reference} !{msh} | sort -gk3 > mash/!{sample}_mashdist.txt 2>> $err_file
     fi
 
     mash_result=($(head -n 1 mash/!{sample}_mashdist.txt | head -n 1 | cut -f 1 | cut -f 8 -d "-" | cut -f 1,2 -d "_" | cut -f 1 -d "." | tr "_" " " ) 'missing' 'missing')
@@ -367,11 +364,6 @@ process mash_dist {
   '''
 }
 
-contigs_prokka
-  .join(mash_genus_prokka, remainder: true, by:0)
-  .join(mash_species_prokka, remainder: true, by:0)
-  .set { for_prokka }
-
 params.prokka = false
 params.prokka_options = ''
 params.center = 'STAPHB'
@@ -379,7 +371,6 @@ params.mincontiglen = 500
 process prokka {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
-  echo false
   cpus params.maxcpus
   container 'staphb/prokka:latest'
 
@@ -387,7 +378,7 @@ process prokka {
   params.prokka
 
   input:
-  set val(sample), file(contigs), val(genus), val(species) from for_prokka
+  set val(sample), file(contigs), val(genus), val(species) from contigs_prokka.join(mash_genus_prokka, remainder: true, by:0).join(mash_species_prokka, remainder: true, by:0)
 
   output:
   file("prokka/${sample}/${sample}.{err,faa,ffn,fna,fsa,gbk,gff,log,sqn,tbl,tsv}")
@@ -403,7 +394,10 @@ process prokka {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
     prokka -v >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     prokka !{params.prokka_options} \
       --cpu !{task.cpus} \
@@ -426,7 +420,6 @@ params.quast_options = ''
 process quast {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
-  echo false
   cpus 1
   container 'staphb/quast:latest'
 
@@ -438,7 +431,7 @@ process quast {
 
   output:
   file("quast/${sample}/*")
-  file("quast/${sample}/report.tsv") into quast_files
+  file("quast/${sample}_quast_report.tsv") into quast_files
   file("quast/${sample}/{basic_stats,icarus_viewers}/*{pdf,html}")
   file("quast/${sample}/transposed_report.tsv") into quast_files_combine
   tuple sample, env(gc) into quast_gc_results
@@ -455,7 +448,10 @@ process quast {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
     quast.py --version >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     quast.py !{params.quast_options} \
       !{contigs} \
@@ -471,6 +467,8 @@ process quast {
     if [ -z "$num_contigs" ] ; then num_contigs='NA' ; fi
     if [ -z "$n50" ] ; then n50='NA' ; fi
     if [ -z "$length" ] ; then length='NA' ; fi
+
+    cp quast/!{sample}/report.tsv quast/!{sample}_quast_report.tsv
   '''
 }
 
@@ -483,7 +481,6 @@ quast_files_combine
 process shuffle {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
-  echo false
   cpus 1
   container 'staphb/lyveset:latest'
 
@@ -505,6 +502,9 @@ process shuffle {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     run_assembly_shuffleReads.pl -gz !{reads} 2>> $err_file > shuffled/!{sample}_shuffled.fastq.gz
   '''
@@ -524,7 +524,6 @@ params.cg_pipeline_options = ''
 process cg_pipeline {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
-  echo false
   cpus params.medcpus
   container 'staphb/lyveset:latest'
 
@@ -550,6 +549,9 @@ process cg_pipeline {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     genome_length=''
     if [ "!{genus}" != "null" ] && [ "!{species}" != "null" ]
@@ -585,18 +587,11 @@ cg_pipeline_files
     sort: true,
     storeDir: "${params.outdir}/cg_pipeline")
 
-clean_reads_seqsero2
-  .join(salmonella_flag, by:0)
-  .set { for_seqsero2 }
-
 params.seqsero2 = true
-params.seqsero_workflow = 'a'
-params.seqsero_mapping_algorithm = 'mem'
-params.seqsero_options = ''
+params.seqsero_options = '-m a -b mem'
 process seqsero2 {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
-  echo false
   cpus params.medcpus
   container 'staphb/seqsero2:latest'
 
@@ -604,7 +599,7 @@ process seqsero2 {
   params.seqsero2 && flag =~ 'found'
 
   input:
-  set val(sample), file(fastq), val(flag) from for_seqsero2
+  set val(sample), file(fastq), val(flag) from clean_reads_seqsero2.join(salmonella_flag, by:0)
 
   output:
   tuple sample, env(antigenic_profile) into seqsero2_profile_results
@@ -622,14 +617,15 @@ process seqsero2 {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
     SeqSero2_package.py --version >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     SeqSero2_package.py !{params.seqsero_options} \
-      -m !{params.seqsero_workflow} \
       -t 2 \
       -i !{fastq} \
       -p !{task.cpus} \
-      -b !{params.seqsero_mapping_algorithm} \
       -d seqsero2/!{sample} \
       -n !{sample} \
       2>> $err_file >> $log_file
@@ -660,32 +656,22 @@ seqsero2_files
     sort: true,
     storeDir: "${params.outdir}/seqsero2")
 
-clean_reads_shigatyper
-  .join(shigella_flag, by:0)
-  .set { for_shigatyper }
-
-params.shigatyper = false
+params.shigatyper = true
 params.shigatyper_options = ''
 process shigatyper {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
-  echo false
   cpus params.medcpus
-  // if no file is created, this ends in failure
-  // errorStrategy 'ignore'
-  // container 'docker://quay.io/biocontainers/shigatyper:1.0.6--py_0'
-  container 'staphb/shigatyper:latest'
+  container 'andrewlangvt/shigatyper:1'
 
   when:
   params.shigatyper && flag =~ 'found'
 
   input:
-  set val(sample), file(fastq), val(flag) from for_shigatyper
+  set val(sample), file(fastq), val(flag) from clean_reads_shigatyper.join(shigella_flag, by:0)
 
   output:
-  file("${task.process}/${sample}_shigatyper_hits.csv")
   file("${task.process}/${sample}_shigatyper.tsv")
-  tuple sample, env(hits) into shigatyper_hits
   tuple sample, env(predictions) into shigatyper_predictions
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
@@ -697,31 +683,27 @@ process shigatyper {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
     shigatyper --version >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     shigatyper !{params.shigatyper_options} \
-      --name !{task.process}/!{sample}_shigatyper_hits \
+      --name !{sample} \
       !{fastq} \
       2>> $err_file \
       > !{task.process}/!{sample}_shigatyper.tsv
 
-    if [ -f "!{task.process}/!{sample}_shigatyper_hits.csv" ] ; then hits=$(grep -v Hit !{task.process}/!{sample}_shigatyper_hits.csv | cut -f 2 -d "," | tr '\\n' ',' | sed 's/,$//g' ) ; fi
-    if [ -f "!{task.process}/!{sample}_shigatyper.tsv" ] ; then predictions=$(grep -v prediction !{task.process}/!{sample}_shigatyper.tsv | cut -f 2 | tr '\\n' ',' | sed 's/,$//g' )  ; fi
-    if [ -z "$hits" ] ; then hits='none' ; fi
-    if [ -z "$predictions" ] ; then hits='predictions' ; fi
+    predictions=$(grep -v prediction !{task.process}/!{sample}_shigatyper.tsv | cut -f 2 | tr '\\n' ',' | sed 's/,$//g' )
+    if [ -z "$predictions" ] ; then predictions='none' ; fi
   '''
 }
-
-contigs_kleborate
-  .join(klebsiella_flag, by:0)
-  .set { for_kleborate }
 
 params.kleborate = true
 params.kleborate_options = '-all'
 process kleborate {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
-  echo false
   cpus params.medcpus
   container 'staphb/kleborate:latest'
 
@@ -729,7 +711,7 @@ process kleborate {
   params.kleborate && flag =~ 'found'
 
   input:
-  set val(sample), file(contig), val(flag) from for_kleborate
+  set val(sample), file(contig), val(flag) from contigs_kleborate.join(klebsiella_flag, by:0)
 
   output:
   tuple sample, env(kleborate_score) into kleborate_score
@@ -745,7 +727,10 @@ process kleborate {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
     kleborate --version >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     kleborate !{params.kleborate_options} \
       -o !{task.process}/!{sample}_results.txt \
@@ -767,16 +752,11 @@ kleborate_files
     sort: true,
     storeDir: "${params.outdir}/kleborate")
 
-contigs_serotypefinder
-  .join(ecoli_flag, by:0)
-  .set { for_serotypefinder }
-
 params.serotypefinder = true
 params.serotypefinder_options = ''
 process serotypefinder {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
-  echo false
   cpus params.medcpus
   container 'staphb/serotypefinder:latest'
 
@@ -784,7 +764,7 @@ process serotypefinder {
   params.serotypefinder && flag =~ 'found'
 
   input:
-  set val(sample), file(fasta), val(flag) from for_serotypefinder
+  set val(sample), file(fasta), val(flag) from contigs_serotypefinder.join(ecoli_flag, by:0)
 
   output:
   file("${task.process}/${sample}/*")
@@ -800,6 +780,9 @@ process serotypefinder {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     serotypefinder.py !{params.serotypefinder_options} \
       -i !{fasta} \
@@ -814,17 +797,11 @@ process serotypefinder {
   '''
 }
 
-contigs_amrfinder
-  .join(mash_genus_amrfinder, by: 0)
-  .join(mash_species_amrfinder, by: 0)
-  .set { for_amrfinder }
-
-params.amrfinderplus = false
+params.amrfinderplus = true
 params.amrfinderplus_options = ''
 process amrfinderplus {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
-  echo true
   cpus params.medcpus
   container 'staphb/ncbi-amrfinderplus:latest'
 
@@ -832,10 +809,11 @@ process amrfinderplus {
   params.amrfinderplus
 
   input:
-  set val(sample), file(contigs), val(genus), val(species) from for_amrfinder
+  set val(sample), file(contigs), val(genus), val(species) from contigs_amrfinder.join(mash_genus_amrfinder, by: 0).join(mash_species_amrfinder, by: 0)
 
   output:
   file("ncbi-AMRFinderplus/${sample}_amrfinder_plus.txt") into amrfinder_files
+  tuple sample, env(amr_genes) into amr_genes
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
   shell:
@@ -846,6 +824,9 @@ process amrfinderplus {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     organism_options=(Acinetobacter_baumannii
     Campylobacter
@@ -862,7 +843,7 @@ process amrfinderplus {
     Vibrio_cholerae)
 
     organism=$(history -p ${organism_options[@]} | grep -i !{genus} | grep -i !{species} | head -n 1 )
-    if [ -z "$organism" ] ; then organism=$(history -p ${organism_options[@]} | grep -i !{genus} | head -n 1 ) ; fi
+    if [ -z "$organism" ] ; then organism=$(history -p ${organism_options[@]} | grep -i !{genus} | head -n 1 | cut -f 1 -d ":" ) ; fi
     if [ -n "$organism" ]
     then
       organism_check="--organism $organism"
@@ -872,20 +853,17 @@ process amrfinderplus {
       echo "Mash result of !{genus} !{species} did not match any of the organisms" >> $log_file
     fi
 
-    amrfinder \
-      -n !{contigs} \
-      -o !{sample}
+    amrfinder !{params.amrfinderplus_options} \
+      --nucleotide !{contigs} \
+      --threads !{task.cpus} \
+      --name !{sample} \
+      --output ncbi-AMRFinderplus/!{sample}_amrfinder_plus.txt \
+      $organism_check \
+      --plus \
+      2>> $err_file >> $log_file
 
-      #amrfinder !{params.amrfinderplus_options} \
-      #  --nucleotide !{contigs} \
-      #  --threads !{task.cpus} \
-      #  --name !{sample} \
-      #  --output ncbi-AMRFinderplus/!{sample}_amrfinder_plus.txt \
-      #  $organism_check \
-      #  --plus \
-      #  2>> $err_file >> $log_file
-
-    exit 1
+    amr_genes=$(cut -f 7 ncbi-AMRFinderplus/!{sample}_amrfinder_plus.txt | tail +2 | tr '\\n' ',' | sed 's/,$//g' )
+    if [ -z "$amr_genes" ] ; then amr_genes="none" ; fi
   '''
 }
 
@@ -895,15 +873,10 @@ amrfinder_files
     sort: true,
     storeDir: "${params.outdir}/ncbi-AMRFinderplus")
 
-clean_reads_kraken2
-  .combine(local_kraken2)
-  .set { for_kraken2 }
-
 params.kraken2_options = ''
 process kraken2 {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
-  echo false
   cpus params.maxcpus
   container 'staphb/kraken2:latest'
 
@@ -911,7 +884,7 @@ process kraken2 {
   params.kraken2
 
   input:
-  set val(sample), file(clean), path(kraken2_db) from for_kraken2
+  set val(sample), file(clean), path(kraken2_db) from clean_reads_kraken2.combine(local_kraken2)
 
   output:
   file("${task.process}/${sample}_kraken2_report.txt") into kraken2_files
@@ -927,7 +900,10 @@ process kraken2 {
     err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
     kraken2 --version >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     kraken2 !{params.kraken2_options} \
       --paired \
@@ -938,8 +914,8 @@ process kraken2 {
       --report !{task.process}/!{sample}_kraken2_report.txt \
       2>> $err_file >> $log_file
 
-    top_hit=$(cat !{task.process}/!{sample}_kraken2_report.txt | grep -w S | sort | tail -n 1 | awk '{print $6 " " $7}')
-    top_perc=$(cat !{task.process}/!{sample}_kraken2_report.txt | grep -w S | sort | tail -n 1 | awk '{print $1}')
+    top_hit=$(cat !{task.process}/!{sample}_kraken2_report.txt   | grep -w S | sort | tail -n 1 | awk '{print $6 " " $7}')
+    top_perc=$(cat !{task.process}/!{sample}_kraken2_report.txt  | grep -w S | sort | tail -n 1 | awk '{print $1}')
     top_reads=$(cat !{task.process}/!{sample}_kraken2_report.txt | grep -w S | sort | tail -n 1 | awk '{print $3}')
     if [ -z "$top_hit" ] ; then top_hit="NA" ; fi
     if [ -z "$top_perc" ] ; then top_perc="0" ; fi
@@ -947,15 +923,10 @@ process kraken2 {
   '''
 }
 
-contigs_blastn
-  .combine(local_blastdb)
-  .set { for_blastn }
-
 params.local_db_type = 'nt'
 process blastn {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
-  echo false
   cpus params.medcpus
   container 'ncbi/blast:latest'
 
@@ -963,7 +934,7 @@ process blastn {
   params.blobtools
 
   input:
-  set val(sample), file(contig), path(blastdb) from for_blastn
+  set val(sample), file(contig), path(blastdb) from contigs_blastn.combine(local_blastdb)
 
   output:
   tuple sample, file("blastn/${sample}.tsv") into blastn_files
@@ -977,7 +948,10 @@ process blastn {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
     blastn -version >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     blastn -query !{contig} \
       -out blastn/!{sample}.tsv \
@@ -991,15 +965,10 @@ process blastn {
   '''
 }
 
-clean_reads_bwa
-  .join(contigs_bwa, by:0)
-  .set { for_bwa }
-
 params.bwa_options = ''
 process bwa {
   publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}/*.{log,err}"
   tag "${sample}"
-  echo false
   cpus params.medcpus
   container 'staphb/bwa:latest'
 
@@ -1007,7 +976,7 @@ process bwa {
   params.blobtools
 
   input:
-  set val(sample), file(reads), file(contig) from for_bwa
+  set val(sample), file(reads), file(contig) from clean_reads_bwa.join(contigs_bwa, by:0)
 
   output:
   tuple sample, file("${task.process}/${sample}.sam") into sam_files
@@ -1021,7 +990,10 @@ process bwa {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
     echo "bwa $(bwa 2>&1 | grep Version )" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     bwa index !{contig} 2>> $err_file >> $log_file
 
@@ -1038,7 +1010,6 @@ params.samtools_sort_options=''
 process sort {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
-  echo false
   cpus params.medcpus
   container 'staphb/samtools:latest'
 
@@ -1060,7 +1031,10 @@ process sort {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
     samtools --version >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     samtools sort !{params.samtools_sort_options} \
       --threads !{task.cpus} \
@@ -1071,23 +1045,17 @@ process sort {
   '''
 }
 
-contigs_create
-  .join(blastn_files, by:0)
-  .join(bam_files, by:0)
-  .set { for_create }
-
 params.blobtools_create_options=''
 process create {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
-  echo false
   cpus 1
   container 'chrishah/blobtools:v1.1.1'
   when:
   params.blobtools
 
   input:
-  set val(sample), file(contig), file(blastn), file(bam) from for_create
+  set val(sample), file(contig), file(blastn), file(bam) from contigs_create.join(blastn_files, by:0).join(bam_files, by:0)
 
   output:
   tuple sample, file("blobtools/${sample}.blobDB.json") into create_files_view, create_files_plot
@@ -1102,7 +1070,10 @@ process create {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
     echo "blobtools version $(blobtools -v)" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     blobtools create !{params.blobtools_create_options} \
       -o blobtools/!{sample} \
@@ -1117,7 +1088,6 @@ params.blobtools_view_options=''
 process view {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
-  echo false
   cpus 1
   container 'chrishah/blobtools:v1.1.1'
   when:
@@ -1138,7 +1108,10 @@ process view {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
     echo "blobtools version $(blobtools -v)" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     blobtools view !{params.blobtools_view_options} \
       -i !{json} \
@@ -1153,7 +1126,6 @@ params.blobtools_format = 'png'
 process blobtools {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
-  echo false
   cpus 1
   container 'chrishah/blobtools:v1.1.1'
 
@@ -1179,7 +1151,10 @@ process blobtools {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
     echo "blobtools version $(blobtools -v)" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     blobtools plot !{params.blobtools_plot_options} \
       -i !{json} \
@@ -1208,7 +1183,6 @@ params.mlst = true
 process mlst {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
-  echo false
   cpus 1
   container 'staphb/mlst:latest'
 
@@ -1231,7 +1205,10 @@ process mlst {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
     mlst --version >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     mlst !{contig} 2>> $err_file > mlst/!{sample}_mlst.txt
 
@@ -1269,7 +1246,6 @@ seqyclean_perc_kept_results
   .join(seqsero2_contamination_results, remainder: true, by: 0)
   .join(serotypefinder_results_o, remainder: true, by: 0)
   .join(serotypefinder_results_h, remainder: true, by: 0)
-  .join(shigatyper_hits, remainder: true, by: 0)
   .join(shigatyper_predictions, remainder: true, by: 0)
   .join(kleborate_score, remainder: true, by: 0)
   .join(kleborate_mlst, remainder: true, by: 0)
@@ -1278,13 +1254,13 @@ seqyclean_perc_kept_results
   .join(kraken2_top_hit, remainder: true, by: 0)
   .join(kraken2_top_perc, remainder: true, by: 0)
   .join(kraken2_top_reads, remainder: true, by: 0)
+  .join(amr_genes, remainder: true, by: 0)
   .join(mlst_results, remainder: true, by: 0)
   .set { results }
 
 process summary {
   publishDir "${params.outdir}", mode: 'copy', overwrite: true
   tag "${sample}"
-  echo false
   cpus 1
   container 'staphb/parallel-perl:latest'
 
@@ -1313,7 +1289,6 @@ process summary {
     val(seqsero2_contamination_results),
     val(serotypefinder_results_o),
     val(serotypefinder_results_h),
-    val(shigatyper_hits),
     val(shigatyper_predictions),
     val(kleborate_score),
     val(kleborate_mlst),
@@ -1322,6 +1297,7 @@ process summary {
     val(kraken2_top_hit),
     val(kraken2_top_perc),
     val(kraken2_top_reads),
+    val(amr_genes),
     val(mlst_results) from results
 
   output:
@@ -1336,8 +1312,17 @@ process summary {
     err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
-    sample_id=$(echo !{sample} | cut -f 1 -d "-" )
+    sample_id_split=($(echo !{sample} | sed 's/-/ /g' | sed 's/_/ /g' ))
+    if [ "${#sample_id_split[@]}" == "5" ]
+    then
+      sample_id="${sample_id_split[0]}-${sample_id_split[1]}"
+    else
+      sample_id=${sample_id_split[0]}
+    fi
 
     header="sample_id;sample"
     result="$sample_id;!{sample}"
@@ -1363,11 +1348,14 @@ process summary {
     header=$header";serotypefinder_o_group;serotypefinder_h_group"
     result=$result";!{serotypefinder_results_o};!{serotypefinder_results_h}"
 
-    header=$header";shigatyper_hits;shigatyper_predictions"
-    result=$result";!{shigatyper_hits};!{shigatyper_predictions}"
+    header=$header";shigatyper_predictions"
+    result=$result";!{shigatyper_predictions}"
 
     header=$header";kleborate_score;kleborate_mlst"
     result=$result";!{kleborate_score};!{kleborate_mlst}"
+
+    header=$header";amr_genes"
+    result=$result";!{amr_genes}"
 
     header=$header";blobtools_top_species;blobtools_percentage"
     result=$result";!{blobtools_species_results};!{blobtools_perc_results}"
@@ -1403,34 +1391,43 @@ params.multiqc = true
 process multiqc {
   publishDir "${params.outdir}", mode: 'copy'
   tag "multiqc"
-  echo false
   cpus 1
-  container 'staphb/multiqc:latest'
+  container 'ewels/multiqc:latest'
 
   when:
   params.multiqc
 
   input:
-  fastqc_files.collect()
-  quast_files.collect()
-  seqyclean_files.collect()
-  kraken2_files.collect()
-  prokka_files.collect()
+  file(fastqc) from fastqc_files.collect().ifEmpty([])
+  file(quast) from quast_files.collect().ifEmpty([])
+  file(seqyclean) from seqyclean_files.collect().ifEmpty([])
+  file(kraken2) from kraken2_files.collect().ifEmpty([])
+  file(prokka) from prokka_files.collect().ifEmpty([])
 
   output:
-  file("output.txt")
+  file("${task.process}/multiqc_report.html")
+  file("${task.process}/multiqc_data/*")
   file("logs/${task.process}/${task.process}.${workflow.sessionId}.{log,err}")
 
   shell:
   '''
-    export PYTHONNOUSERSITE=1
-    mkdir -p !{task.process} logs/!{task.process}
+    mkdir -p !{task.process} quast fastqc kraken2 prokka seqyclean logs/!{task.process}
     log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
     err_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
     multiqc --version >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
+
+    for quast_file in !{quast}
+    do
+      sample=$(echo $quast_file | sed 's/_quast_report.tsv//g' | head -n 1 )
+      mkdir -p quast/$sample
+      mv $quast_file quast/$sample/report.tsv
+    done
 
     multiqc !{params.multiqc_options} \
       --outdir !{task.process} \
@@ -1442,5 +1439,6 @@ process multiqc {
 
 workflow.onComplete {
     println("Pipeline completed at: $workflow.complete")
+    println("MultiQC report can be found at $params.outdir/multiqc/multiqc_report.html")
     println("Execution status: ${ workflow.success ? 'OK' : 'failed' }")
 }
