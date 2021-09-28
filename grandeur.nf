@@ -3,7 +3,7 @@
 println("Currently using the Grandeur workflow for use with microbial Illumina MiSeq sequencing\n")
 println("Author: Erin Young")
 println("email: eriny@utah.gov")
-println("Version: v.20210830")
+println("Version: v0.1.20211031")
 println("")
 
 // TODO : blobtools
@@ -29,17 +29,24 @@ if ( params.maxcpus < 5 ) {
   params.medcpus = 5
 }
 
-Channel
-  .fromFilePairs(["${params.reads}/*_R{1,2}*.fastq*",
-                  "${params.reads}/*_{1,2}.fastq*"], size: 2 )
-  .map{ reads -> tuple(reads[0].replaceAll(~/_S[0-9]+_L[0-9]+/,""), reads[1]) }
-  .ifEmpty{
-    println("FATAL : No fastq or fastq.gz files were found at ${params.reads}")
-    println("Set 'params.reads' to directory with paired-end reads")
-    exit 1
-  }
-  .view { "Paired-end fastq files : ${it[0]}" }
-  .into { reads_seqyclean ; reads_fastqc }
+params.assemble = true
+if (params.assemble) {
+  Channel
+    .fromFilePairs(["${params.reads}/*_R{1,2}*.fastq*",
+                    "${params.reads}/*_{1,2}.fastq*"], size: 2 )
+    .map{ reads -> tuple(reads[0].replaceAll(~/_S[0-9]+_L[0-9]+/,""), reads[1]) }
+    .ifEmpty{
+      println("FATAL : No fastq or fastq.gz files were found at ${params.reads}")
+      println("Set 'params.reads' to directory with paired-end reads")
+      exit 1
+    }
+    .view { "Paired-end fastq files : ${it[0]}" }
+    .into { reads_seqyclean ; reads_fastqc ; reads }
+} else {
+  Channel
+    .empty
+    .into { reads_seqyclean ; reads_fastqc ; reads }
+}
 
 params.cg_pipeline = 'true'
 params.genome_sizes = workflow.projectDir + "/configs/genome_sizes.json"
@@ -80,6 +87,25 @@ if ( params.kraken2 ) {
 } else {
   kraken2_files = Channel.empty()
   local_kraken2 = Channel.empty()
+}
+
+params.annotation = false
+params.fastas = workflow.launchDir + '/fastas'
+if ( params.annotation ) {
+  Channel
+    .fromPath("${params.fastas}/*{.fa,.fasta.fna}")
+    .ifEmpty{
+      println("FATAL : No fastas were found at ${params.fastas}")
+      println("Set 'params.fastas' to directory with fastas")
+      exit 1
+      }
+    .map { file -> tuple(file.baseName, file) }
+    .view { "Fastas for serotyping and AMR gene annotation : $it" }
+    .into { fastas ; fastas_mash ; fastas_quast ; fastas_prokka ; fastas_seqsero2 ; fastas_amrfinder ; fastas_serotypefinder ; fastas_kleborate ; fastas_mlst }
+} else {
+  Channel
+    .empty()
+    .into { fastas ; fastas_mash ; fastas_quast ; fastas_prokka ; fastas_seqsero2 ; fastas_amrfinder ; fastas_serotypefinder ; fastas_kleborate ; fastas_mlst }
 }
 
 params.seqyclean_minlen = 25
@@ -287,7 +313,7 @@ process mash_dist {
   params.mash
 
   input:
-  set val(sample), file(msh) from mash_sketch_files
+  tuple val(sample), file(msh) from mash_sketch_files.concat(fastas_mash)
 
   output:
   tuple sample, file("mash/${sample}_mashdist.txt")
@@ -378,7 +404,7 @@ process prokka {
   params.prokka
 
   input:
-  set val(sample), file(contigs), val(genus), val(species) from contigs_prokka.join(mash_genus_prokka, remainder: true, by:0).join(mash_species_prokka, remainder: true, by:0)
+  set val(sample), file(contigs), val(genus), val(species) from contigs_prokka.concat(fastas_prokka).join(mash_genus_prokka, remainder: true, by:0).join(mash_species_prokka, remainder: true, by:0)
 
   output:
   file("prokka/${sample}/${sample}.{err,faa,ffn,fna,fsa,gbk,gff,log,sqn,tbl,tsv}")
@@ -427,7 +453,7 @@ process quast {
   params.quast
 
   input:
-  set val(sample), file(contigs) from contigs_quast
+  set val(sample), file(contigs) from contigs_quast.concat(fastas_quast)
 
   output:
   file("quast/${sample}/*")
@@ -599,7 +625,7 @@ process seqsero2 {
   params.seqsero2 && flag =~ 'found'
 
   input:
-  set val(sample), file(fastq), val(flag) from clean_reads_seqsero2.join(salmonella_flag, by:0)
+  set val(sample), file(fastq_or_fasta), val(flag) from clean_reads_seqsero2.concat(fastas_seqsero2).join(salmonella_flag, by:0)
 
   output:
   tuple sample, env(antigenic_profile) into seqsero2_profile_results
@@ -622,9 +648,12 @@ process seqsero2 {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
+    fastq_check=$(echo "!{fastq_or_fasta}" | grep "fastq" | head -n 1 )
+    if [ -n "$fastq_check" ] ; then type=2 ; else type=4 ; fi
+
     SeqSero2_package.py !{params.seqsero_options} \
-      -t 2 \
-      -i !{fastq} \
+      -t $type \
+      -i !{fastq_or_fasta} \
       -p !{task.cpus} \
       -d seqsero2/!{sample} \
       -n !{sample} \
@@ -711,7 +740,7 @@ process kleborate {
   params.kleborate && flag =~ 'found'
 
   input:
-  set val(sample), file(contig), val(flag) from contigs_kleborate.join(klebsiella_flag, by:0)
+  set val(sample), file(contig), val(flag) from contigs_kleborate.concat(fastas_kleborate).join(klebsiella_flag, by:0)
 
   output:
   tuple sample, env(kleborate_score) into kleborate_score
@@ -764,7 +793,7 @@ process serotypefinder {
   params.serotypefinder && flag =~ 'found'
 
   input:
-  set val(sample), file(fasta), val(flag) from contigs_serotypefinder.join(ecoli_flag, by:0)
+  set val(sample), file(fasta), val(flag) from contigs_serotypefinder.concat(fastas_serotypefinder).join(ecoli_flag, by:0)
 
   output:
   file("${task.process}/${sample}/*")
@@ -809,7 +838,7 @@ process amrfinderplus {
   params.amrfinderplus
 
   input:
-  set val(sample), file(contigs), val(genus), val(species) from contigs_amrfinder.join(mash_genus_amrfinder, by: 0).join(mash_species_amrfinder, by: 0)
+  set val(sample), file(contigs), val(genus), val(species) from contigs_amrfinder.concat(fastas_amrfinder).join(mash_genus_amrfinder, by: 0).join(mash_species_amrfinder, by: 0)
 
   output:
   file("ncbi-AMRFinderplus/${sample}_amrfinder_plus.txt") into amrfinder_files
@@ -1190,7 +1219,7 @@ process mlst {
   params.mlst
 
   input:
-  set val(sample), file(contig) from contigs_mlst
+  set val(sample), file(contig) from contigs_mlst.concat(fastas_mlst)
 
   output:
   file("${task.process}/${sample}_mlst.txt") into mlst_files
@@ -1222,7 +1251,9 @@ mlst_files
     sort: true,
     storeDir: "${params.outdir}/mlst")
 
-seqyclean_perc_kept_results
+reads
+  .concat(fastas)
+  .join(seqyclean_perc_kept_results, remainder: true, by: 0)
   .join(seqyclean_pairskept_results, remainder: true, by: 0)
   .join(fastqc_1_results, remainder: true, by: 0)
   .join(fastqc_2_results, remainder: true, by: 0)
@@ -1265,7 +1296,8 @@ process summary {
   container 'staphb/parallel-perl:latest'
 
   input:
-  set val(sample), val(seqyclean_perc_kept_results),
+  set val(sample), file(file),
+    val(seqyclean_perc_kept_results),
     val(seqyclean_pairskept_results),
     val(fastqc_1_results),
     val(fastqc_2_results),
