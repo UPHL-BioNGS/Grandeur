@@ -3,7 +3,7 @@
 println("Currently using the Peaks workflow for use with annotated contig files\n")
 println("Author: Erin Young")
 println("email: eriny@utah.gov")
-println("Version: v.20210830")
+println("Version: v.20211031")
 println("")
 
 // TODO : add ete3 or some tree building software
@@ -97,7 +97,7 @@ prokka_gffs
 params.roary = true
 params.roary_options = ''
 if (params.kraken2) {
-  process roary_qc {
+  process roary_kraken {
     publishDir "${params.outdir}", mode: 'copy'
     tag "Roary with Kraken2 QC"
     cpus params.maxcpus
@@ -176,6 +176,7 @@ if (params.kraken2) {
 
 params.iqtree2 = true
 params.iqtree2_options = '-t RANDOM -m GTR+F+I -bb 1000 -alrt 1000'
+params.outgroup = ''
 process iqtree2 {
   publishDir "${params.outdir}", mode: 'copy'
   tag "Pylogenetic Tree"
@@ -203,11 +204,15 @@ process iqtree2 {
     date | tee -a $log_file $err_file > /dev/null
     iqtree2 -v >> $log_file
 
+    outgroup=''
+    if [ -n "!{params.outgroup}" ] ; then outgroup="-o !{params.outgroup}" ; fi
+
     iqtree2 !{params.iqtree2_options} \
       -s !{msa} \
       -pre !{task.process}/iqtree \
       -nt AUTO \
       -ntmax !{task.cpus} \
+      $outgroup \
       2>> $err_file >> $log_file
   '''
 }
