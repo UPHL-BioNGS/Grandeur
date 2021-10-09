@@ -32,8 +32,7 @@ if ( params.maxcpus < 5 ) {
 params.assemble = true
 if (params.assemble) {
   Channel
-    .fromFilePairs(["${params.reads}/*_R{1,2}*.fastq*",
-                    "${params.reads}/*_{1,2}.fastq*"], size: 2 )
+    .fromFilePairs("${params.reads}/*R{1,2}*.fastq*", size: 2 )
     .map{ reads -> tuple(reads[0].replaceAll(~/_S[0-9]+_L[0-9]+/,""), reads[1]) }
     .ifEmpty{
       println("FATAL : No fastq or fastq.gz files were found at ${params.reads}")
@@ -84,8 +83,9 @@ if ( params.kraken2 ) {
       }
     .view { "Local kraken2 database : $it" }
     .set { local_kraken2 }
+  kraken2_files_empty = Channel.empty()
 } else {
-  kraken2_files = Channel.empty()
+  kraken2_files_empty = Channel.empty()
   local_kraken2 = Channel.empty()
 }
 
@@ -1442,7 +1442,7 @@ process multiqc {
   file(fastqc) from fastqc_files.collect().ifEmpty([])
   file(quast) from quast_files.collect().ifEmpty([])
   file(seqyclean) from seqyclean_files.collect().ifEmpty([])
-  file(kraken2) from kraken2_files.collect().ifEmpty([])
+  file(kraken2) from kraken2_files.concat(kraken2_files_empty).collect().ifEmpty([])
   file(prokka) from prokka_files.collect().ifEmpty([])
 
   output:
