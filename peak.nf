@@ -40,9 +40,8 @@ local_kraken = params.kraken
   : Channel.empty()
 
 params.prokka = true
-params.prokka_options = ''
+params.prokka_options = '--mincontiglen 500 --compliant --locustag locus_tag'
 params.center = 'STAPHB'
-params.mincontiglen = 500
 process prokka {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
@@ -72,11 +71,8 @@ process prokka {
 
     prokka !{params.prokka_options} \
       --cpu !{task.cpus} \
-      --compliant \
       --centre !{params.center} \
-      --mincontiglen !{params.mincontiglen} \
       --outdir prokka/!{sample} \
-      --locustag locus_tag \
       --prefix !{sample} \
       --force !{contigs} \
       2>> $err_file >> $log_file
