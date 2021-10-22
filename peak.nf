@@ -24,7 +24,7 @@ Channel
 params.gff = workflow.launchDir + '/gff'
 Channel.fromPath("${params.gff}/*.gff", type: 'file')
   .view { "gff file : $it" }
-  .set {local_gffs}
+  .set { local_gffs }
 
 params.kraken = false
 params.kraken_db = 'kraken_db'
