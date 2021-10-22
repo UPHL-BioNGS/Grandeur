@@ -1,9 +1,9 @@
 #!/usr/bin/env nextflow
 
-println("Currently using the Peaks workflow for use with annotated contig files\n")
+println("Currently using the Peaks workflow for use with fastas or prokka-annotated contig files\n")
 println("Author: Erin Young")
 println("email: eriny@utah.gov")
-println("Version: v.20210830")
+println("Version: v.20211031")
 println("")
 
 // TODO : add ete3 or some tree building software
@@ -24,25 +24,24 @@ Channel
 params.gff = workflow.launchDir + '/gff'
 Channel.fromPath("${params.gff}/*.gff", type: 'file')
   .view { "gff file : $it" }
-  .set {local_gffs}
+  .set { local_gffs }
 
-params.kraken2 = false
-params.kraken2_db = 'kraken2_db'
-local_kraken2 = params.kraken2
+params.kraken = false
+params.kraken_db = 'kraken_db'
+local_kraken = params.kraken
   ? Channel
-    .fromPath(params.kraken2_db, type:'dir')
-    .view { "Local kraken2 database : $it" }
+    .fromPath(params.kraken_db, type:'dir')
+    .view { "Local kraken database : $it" }
     .ifEmpty{
-      println("No kraken2 database was found at ${params.kraken2_db}")
-      println("Set 'params.kraken2_db' to directory with kraken2 database")
+      println("No kraken database was found at ${params.kraken_db}")
+      println("Set 'params.kraken_db' to directory with kraken database")
       exit 1
     }
   : Channel.empty()
 
 params.prokka = true
-params.prokka_options = ''
+params.prokka_options = '--mincontiglen 500 --compliant --locustag locus_tag'
 params.center = 'STAPHB'
-params.mincontiglen = 500
 process prokka {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
@@ -72,11 +71,8 @@ process prokka {
 
     prokka !{params.prokka_options} \
       --cpu !{task.cpus} \
-      --compliant \
       --centre !{params.center} \
-      --mincontiglen !{params.mincontiglen} \
       --outdir prokka/!{sample} \
-      --locustag locus_tag \
       --prefix !{sample} \
       --force !{contigs} \
       2>> $err_file >> $log_file
@@ -96,10 +92,10 @@ prokka_gffs
 
 params.roary = true
 params.roary_options = ''
-if (params.kraken2) {
-  process roary_qc {
+if (params.kraken) {
+  process roary_kraken {
     publishDir "${params.outdir}", mode: 'copy'
-    tag "Roary with Kraken2 QC"
+    tag "Roary with Kraken QC"
     cpus params.maxcpus
     container 'staphb/roary:latest'
 
@@ -108,7 +104,7 @@ if (params.kraken2) {
 
     input:
     file(contigs) from gffs.collect()
-    path(local_kraken2) from local_kraken2
+    path(local_kraken) from local_kraken
 
     output:
     file("roary/*")
@@ -130,7 +126,7 @@ if (params.kraken2) {
         -p !{task.cpus} \
         -f roary \
         -e -n \
-        -qc -k !{local_kraken2} \
+        -qc -k !{local_kraken} \
         *.gff \
         2>> $err_file >> $log_file
     '''
@@ -176,6 +172,7 @@ if (params.kraken2) {
 
 params.iqtree2 = true
 params.iqtree2_options = '-t RANDOM -m GTR+F+I -bb 1000 -alrt 1000'
+params.outgroup = ''
 process iqtree2 {
   publishDir "${params.outdir}", mode: 'copy'
   tag "Pylogenetic Tree"
@@ -203,11 +200,15 @@ process iqtree2 {
     date | tee -a $log_file $err_file > /dev/null
     iqtree2 -v >> $log_file
 
+    outgroup=''
+    if [ -n "!{params.outgroup}" ] ; then outgroup="-o !{params.outgroup}" ; fi
+
     iqtree2 !{params.iqtree2_options} \
       -s !{msa} \
       -pre !{task.process}/iqtree \
       -nt AUTO \
       -ntmax !{task.cpus} \
+      $outgroup \
       2>> $err_file >> $log_file
   '''
 }

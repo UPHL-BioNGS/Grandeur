@@ -15,7 +15,6 @@ println("")
 // TODO : sistr
 // TODO : plasmidseeker
 
-params.reads = workflow.launchDir + '/reads'
 params.outdir = workflow.launchDir + '/grandeur'
 println("The files and directory for results is " + params.outdir)
 
@@ -29,26 +28,42 @@ if ( params.maxcpus < 5 ) {
   params.medcpus = 5
 }
 
-params.assemble = true
-if (params.assemble) {
-  Channel
-    .fromFilePairs(["${params.reads}/*_R{1,2}*.fastq*",
-                    "${params.reads}/*_{1,2}.fastq*"], size: 2 )
-    .map{ reads -> tuple(reads[0].replaceAll(~/_S[0-9]+_L[0-9]+/,""), reads[1]) }
-    .ifEmpty{
-      println("FATAL : No fastq or fastq.gz files were found at ${params.reads}")
-      println("Set 'params.reads' to directory with paired-end reads")
-      exit 1
-    }
-    .view { "Paired-end fastq files : ${it[0]}" }
-    .into { reads_seqyclean ; reads_fastqc ; reads }
-} else {
-  Channel
-    .empty
-    .into { reads_seqyclean ; reads_fastqc ; reads }
-}
+// Getting the fastq files
+params.reads = workflow.launchDir + '/reads'
+Channel
+  .fromFilePairs(["${params.reads}/*_R{1,2}*.fastq*",
+                  "${params.reads}/*_{1,2}.fastq*"], size: 2 )
+  .map{ reads -> tuple(reads[0].replaceAll(~/_S[0-9]+_L[0-9]+/,""), reads[1]) }
+  .ifEmpty{
+    println("WARNING : No fastq or fastq.gz files were found at ${params.reads}")
+    println("Reminder : set 'params.reads' to directory with paired-end reads")
+  }
+  .view { "Paired-end fastq files : ${it[0]}" }
+  .into { reads_seqyclean ; reads_fastqc ; reads ; reads_check }
 
-params.cg_pipeline = 'true'
+// Getting contig or fasta files
+params.fastas = workflow.launchDir + '/fastas'
+Channel
+  .fromPath("${params.fastas}/*{.fa,.fasta.fna}")
+  .ifEmpty{
+    println("WARNING : No fastas were found at ${params.fastas}")
+    println("Reminder : set 'params.fastas' to directory with fastas")
+  }
+  .map { file -> tuple(file.baseName, file) }
+  .view { "Fastas for serotyping and AMR gene annotation : $it" }
+  .into { fastas ; fastas_mash ; fastas_quast ; fastas_prokka ; fastas_seqsero2 ; fastas_amrfinder ; fastas_serotypefinder ; fastas_kleborate ; fastas_mlst ; fastas_check }
+
+// making sure that SOMETHING is getting inputted correctly
+reads_check
+  .concat(fastas_check)
+  .ifEmpty{
+    println("FATAL : No fastq or fastq.gz files were found at ${params.reads}")
+    println("Set 'params.reads' to directory with paired-end reads")
+    println("FATAL : No fastas were found at ${params.fastas}")
+    println("Set 'params.fastas' to directory with fastas")
+  }
+
+// Getting the file with genome sizes of common organisms
 params.genome_sizes = workflow.projectDir + "/configs/genome_sizes.json"
 Channel
   .fromPath(params.genome_sizes, type:'file')
@@ -59,6 +74,7 @@ Channel
   }
   .set { genome_sizes }
 
+// Getting the database for blobtools
 params.blobtools = false // right now this isn't currently working
 params.blast_db = 'blast_db'
 local_blastdb = params.blobtools
@@ -72,45 +88,22 @@ local_blastdb = params.blobtools
                   .view { "Local Blast Database for Blobtools : $it" }
               : Channel.empty()
 
+// getting the kraken2 database
 params.kraken2 = false
 params.kraken2_db = 'kraken2_db'
-if ( params.kraken2 ) {
-  Channel
-    .fromPath(params.kraken2_db, type:'dir')
-    .ifEmpty{
-      println("No kraken2 database was found at ${params.kraken2_db}")
-      println("Set 'params.kraken2_db' to directory with kraken2 database")
-      exit 1
-      }
-    .view { "Local kraken2 database : $it" }
-    .set { local_kraken2 }
-} else {
-  kraken2_files = Channel.empty()
-  local_kraken2 = Channel.empty()
-}
+local_kraken2 = params.kraken2
+              ? Channel
+                  .fromPath(params.kraken2_db, type:'dir')
+                  .ifEmpty{
+                    println("No kraken2 database was found at ${params.kraken2_db}")
+                    println("Set 'params.kraken2_db' to directory with kraken2 database")
+                    exit 1
+                  }
+                  .view { "Local kraken2 database : $it" }
+              : Channel.empty()
 
-params.annotation = false
-params.fastas = workflow.launchDir + '/fastas'
-if ( params.annotation ) {
-  Channel
-    .fromPath("${params.fastas}/*{.fa,.fasta.fna}")
-    .ifEmpty{
-      println("FATAL : No fastas were found at ${params.fastas}")
-      println("Set 'params.fastas' to directory with fastas")
-      exit 1
-      }
-    .map { file -> tuple(file.baseName, file) }
-    .view { "Fastas for serotyping and AMR gene annotation : $it" }
-    .into { fastas ; fastas_mash ; fastas_quast ; fastas_prokka ; fastas_seqsero2 ; fastas_amrfinder ; fastas_serotypefinder ; fastas_kleborate ; fastas_mlst }
-} else {
-  Channel
-    .empty()
-    .into { fastas ; fastas_mash ; fastas_quast ; fastas_prokka ; fastas_seqsero2 ; fastas_amrfinder ; fastas_serotypefinder ; fastas_kleborate ; fastas_mlst }
-}
-
-params.seqyclean_minlen = 25
 params.seqyclean_contaminant_file = "/Adapters_plus_PhiX_174.fasta"
-params.seqyclean_options = ''
+params.seqyclean_options = '-minlen 25 -qual'
 process seqyclean {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
@@ -118,10 +111,11 @@ process seqyclean {
   container 'staphb/seqyclean:latest'
 
   input:
-  set val(sample), file(reads) from reads_seqyclean
+  tuple val(sample), file(reads) from reads_seqyclean
 
   output:
-  tuple sample, file("seqyclean/${sample}_clean_PE{1,2}.fastq.gz") into clean_reads_shovill, clean_reads_mash, clean_reads_cg, clean_reads_seqsero2, clean_reads_bwa, clean_reads_shigatyper, clean_reads_kraken2
+  tuple sample, file("seqyclean/${sample}_clean_PE{1,2}.fastq.gz") into clean_reads_mash, clean_reads_cg, clean_reads_seqsero2, clean_reads_bwa, clean_reads_shigatyper, clean_reads_kraken2
+  tuple sample, file("seqyclean/${sample}_clean_PE{1,2}.fastq.gz"), env(kept) into clean_reads_shovill
   file("seqyclean/${sample}_clean_SE.fastq.gz")
   file("seqyclean/${sample}_clean_SummaryStatistics.tsv") into seqyclean_files, seqyclean_files_combine
   file("seqyclean/${sample}_clean_SummaryStatistics.txt")
@@ -143,8 +137,6 @@ process seqyclean {
     cat .command.sh >> $log_file
 
     seqyclean !{params.seqyclean_options} \
-      -minlen !{params.seqyclean_minlen} \
-      -qual \
       -c !{params.seqyclean_contaminant_file} \
       -1 !{reads[0]} \
       -2 !{reads[1]} \
@@ -154,7 +146,6 @@ process seqyclean {
 
     kept=$(cut -f 58 seqyclean/!{sample}_clean_SummaryStatistics.tsv | grep -v "Kept" | head -n 1)
     perc_kept=$(cut -f 59 seqyclean/!{sample}_clean_SummaryStatistics.tsv | grep -v "Kept" | head -n 1)
-
     if [ -z "$kept" ] ; then kept="0" ; fi
     if [ -z "$perc_kept" ] ; then perc_kept="0" ; fi
   '''
@@ -166,18 +157,21 @@ seqyclean_files_combine
     sort: true,
     storeDir: "${params.outdir}/seqyclean")
 
+params.minimum_reads = 50000
+params.shovill = true
 params.shovill_options = ''
 process shovill {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
   memory params.maxmem
   cpus params.maxcpus
-  errorStrategy { task.attempt<=3 ? 'retry' : 'ignore' }
   container 'staphb/shovill:latest'
-  time { 2.h * task.attempt }
+
+  when:
+  params.shovill && num_reads.toInteger() > params.minimum_reads
 
   input:
-  set val(sample), file(reads) from clean_reads_shovill
+  tuple val(sample), file(reads), val(num_reads) from clean_reads_shovill
 
   output:
   file("shovill/${sample}/contigs.{fa,gfa}")
@@ -199,7 +193,7 @@ process shovill {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    memory=$(echo !{task.memory} | awk '{ print $1 }' )
+    memory=$(echo "!{task.memory}" | awk '{ print $1 }' )
 
     shovill !{params.shovill_options} \
       --cpu !{task.cpus} \
@@ -207,7 +201,7 @@ process shovill {
       --outdir !{task.process}/!{sample} \
       --R1 !{reads[0]} \
       --R2 !{reads[1]} \
-      2>> $err_file >> tee $log_file
+      2>> $err_file >> $log_file
     cp !{task.process}/!{sample}/contigs.fa contigs/!{sample}_contigs.fa
   '''
 }
@@ -224,7 +218,7 @@ process fastqc {
   params.fastqc
 
   input:
-  set val(sample), file(raw) from reads_fastqc
+  tuple val(sample), file(raw) from reads_fastqc
 
   output:
   file("${task.process}/*.html")
@@ -273,7 +267,7 @@ process mash_sketch {
   params.mash
 
   input:
-  set val(sample), file(reads) from clean_reads_mash
+  tuple val(sample), file(reads) from clean_reads_mash
 
   output:
   tuple sample, file("mash/${sample}.msh") into mash_sketch_files
@@ -344,7 +338,7 @@ process mash_dist {
 
     if [ ! -s "mash/!{sample}_mashdist.txt" ]
     then
-      echo "!{sample} had no mash results with '${params.mash_pvalue}'. Trying again without those parameters."
+      echo "!{sample} had no mash results with '!{params.mash_options}'. Trying again without those parameters." 2>> $log_file
       mash dist -p !{task.cpus} !{params.mash_reference} !{msh} | sort -gk3 > mash/!{sample}_mashdist.txt 2>> $err_file
     fi
 
@@ -358,42 +352,23 @@ process mash_dist {
     if [ -z "$pvalue" ] ; then pvalue='NA' ; fi
     if [ -z "$distance" ] ; then distance='NA' ; fi
 
-    find_salmonella=''
     salmonella_flag=''
-    find_salmonella=$(head mash/!{sample}_mashdist.txt | grep "Salmonella" | head -n 1)
-    if [ -n "$find_salmonella" ]
-    then
-      salmonella_flag="found"
-    else
-      salmonella_flag="not"
-    fi
+    find_salmonella=$(head mash/!{sample}_mashdist.txt | grep "Salmonella" | head -n 1 )
+    if [ -n "$find_salmonella" ] ; then salmonella_flag="found" ; else salmonella_flag="not" ; fi
 
-    find_ecoli=''
     ecoli_flag=''
-    find_ecoli=$(head mash/!{sample}_mashdist.txt | grep -e "Escherichia" -e "Shigella" | head -n 1)
-    if [ -n "$find_ecoli" ]
-    then
-      ecoli_flag="found"
-    else
-      ecoli_flag="not"
-    fi
+    find_ecoli=$(head mash/!{sample}_mashdist.txt | grep -e "Escherichia" -e "Shigella" | head -n 1 )
+    if [ -n "$find_ecoli" ] ; then ecoli_flag="found" ; else ecoli_flag="not" ; fi
 
-    find_klebsiella=''
     klebsiella_flag=''
-    find_klebsiella=$(head mash/!{sample}_mashdist.txt | grep -e "Klebsiella" -e "Enterobacter" -e "Serratia" | head -n 1)
-    if [ -n "$find_klebsiella" ]
-    then
-      klebsiella_flag="found"
-    else
-      klebsiella_flag="not"
-    fi
+    find_klebsiella=$(head mash/!{sample}_mashdist.txt | grep -e "Klebsiella" -e "Enterobacter" -e "Serratia" | head -n 1 )
+    if [ -n "$find_klebsiella" ] ; then klebsiella_flag="found" ; else klebsiella_flag="not" ; fi
   '''
 }
 
 params.prokka = false
-params.prokka_options = ''
+params.prokka_options = '--mincontiglen 500 --compliant --locustag locus_tag'
 params.center = 'STAPHB'
-params.mincontiglen = 500
 process prokka {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
@@ -404,7 +379,7 @@ process prokka {
   params.prokka
 
   input:
-  set val(sample), file(contigs), val(genus), val(species) from contigs_prokka.concat(fastas_prokka).join(mash_genus_prokka, remainder: true, by:0).join(mash_species_prokka, remainder: true, by:0)
+  tuple val(sample), file(contigs), val(genus), val(species) from contigs_prokka.concat(fastas_prokka).join(mash_genus_prokka, remainder: true, by:0).join(mash_species_prokka, remainder: true, by:0)
 
   output:
   file("prokka/${sample}/${sample}.{err,faa,ffn,fna,fsa,gbk,gff,log,sqn,tbl,tsv}")
@@ -427,11 +402,8 @@ process prokka {
 
     prokka !{params.prokka_options} \
       --cpu !{task.cpus} \
-      --compliant \
       --centre !{params.center} \
-      --mincontiglen !{params.mincontiglen} \
       --outdir prokka/!{sample} \
-      --locustag locus_tag \
       --prefix !{sample} \
       --genus !{genus} \
       --species !{species} \
@@ -453,7 +425,7 @@ process quast {
   params.quast
 
   input:
-  set val(sample), file(contigs) from contigs_quast.concat(fastas_quast)
+  tuple val(sample), file(contigs) from contigs_quast.concat(fastas_quast)
 
   output:
   file("quast/${sample}/*")
@@ -514,7 +486,7 @@ process shuffle {
   params.cg_pipeline
 
   input:
-  set val(sample), file(reads) from clean_reads_cg
+  tuple val(sample), file(reads) from clean_reads_cg
 
   output:
   tuple sample, file("shuffled/${sample}_shuffled.fastq.gz") into shuffled_files
@@ -544,9 +516,8 @@ shuffled_files
   .combine(genome_sizes)
   .set { for_gc }
 
-params.cg_pipeline_qual_offset = 33
-params.cg_pipeline_minlength = 1
-params.cg_pipeline_options = ''
+params.cg_pipeline = 'true'
+params.cg_pipeline_options = '--qual_offset 33 --minLength 1'
 process cg_pipeline {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
@@ -557,7 +528,7 @@ process cg_pipeline {
   params.cg_pipeline
 
   input:
-  set val(sample), file(fastq), val(quast), val(mash), val(genus), val(species), file(genome_file) from for_gc
+  tuple val(sample), file(fastq), val(quast), val(mash), val(genus), val(species), file(genome_file) from for_gc
 
   output:
   file("cg_pipeline/${sample}_cg_pipeline_report.txt") into cg_pipeline_files
@@ -580,30 +551,34 @@ process cg_pipeline {
     cat .command.sh >> $log_file
 
     genome_length=''
-    if [ "!{genus}" != "null" ] && [ "!{species}" != "null" ]
-    then
-      genome_length=$(grep !{genus} !{genome_file} | grep !{species} | grep -v "#" | head -n 1 | cut -f 2 -d ":" | cut -f 1 -d "," | awk '{ print $0 "e+06" }')
-      reference_genome_length=$genome_length
-    fi
-
+    if [ "!{genus}" != "null" ] && [ "!{species}" != "null" ] ; then genome_length=$(grep !{genus} !{genome_file} | grep !{species} | grep -v "#" | head -n 1 | cut -f 2 -d ":" | cut -f 1 -d "," | awk '{ print $0 "e+06" }') ; fi
     if [ -z "$genome_length" ] && [ "!{mash}" != "null" ] ; then genome_length=$(echo !{mash} | xargs printf "%.0f" ) ; fi
     if [ -z "$genome_length" ] && [ "!{quast}" != "null" ] ; then genome_length=!{quast} ; fi
 
-    run_assembly_readMetrics.pl !{fastq} \
-      !{params.cg_pipeline_options} \
-      --fast \
-      --numcpus !{task.cpus} \
-      -e $genome_length \
-      --qual_offset !{params.cg_pipeline_qual_offset} \
-      --minLength !{params.cg_pipeline_minlength} \
-      2>> $err_file > cg_pipeline/!{sample}_cg_pipeline_report.txt
+    if [ -n "$genome_length" ]
+    then
+      run_assembly_readMetrics.pl !{fastq} \
+        !{params.cg_pipeline_options} \
+        --fast \
+        --numcpus !{task.cpus} \
+        -e $genome_length \
+        2>> $err_file > cg_pipeline/!{sample}_cg_pipeline_report.txt
 
-    read_length=$(cut -f 2 cg_pipeline/!{sample}_cg_pipeline_report.txt | tail -n 1 )
-    quality=$(cut -f 6 cg_pipeline/!{sample}_cg_pipeline_report.txt | tail -n 1 )
-    coverage=$(cut -f 9 cg_pipeline/!{sample}_cg_pipeline_report.txt | tail -n 1 )
+        read_length=$(cut -f 2 cg_pipeline/!{sample}_cg_pipeline_report.txt | tail -n 1 )
+        quality=$(cut -f 6 cg_pipeline/!{sample}_cg_pipeline_report.txt | tail -n 1 )
+        coverage=$(cut -f 9 cg_pipeline/!{sample}_cg_pipeline_report.txt | tail -n 1 )
+    else
+      genome_length='0'
+      read_length='NA'
+      quality='NA'
+      coverage='NA'
+      echo "Could not determine genome length of isolate, so could not run GC pipeline" | tee $log_file
+    fi
+
     if [ -z "$read_length" ] ; then read_length='NA' ; fi
     if [ -z "$quality" ] ; then quality='NA' ; fi
     if [ -z "$coverage" ] ; then coverage='NA' ; fi
+    reference_genome_length=$genome_length
   '''
 }
 
@@ -625,7 +600,7 @@ process seqsero2 {
   params.seqsero2 && flag =~ 'found'
 
   input:
-  set val(sample), file(fastq_or_fasta), val(flag) from clean_reads_seqsero2.concat(fastas_seqsero2).join(salmonella_flag, by:0)
+  tuple val(sample), file(fastq_or_fasta), val(flag) from clean_reads_seqsero2.concat(fastas_seqsero2).join(salmonella_flag, by:0)
 
   output:
   tuple sample, env(antigenic_profile) into seqsero2_profile_results
@@ -697,11 +672,12 @@ process shigatyper {
   params.shigatyper && flag =~ 'found'
 
   input:
-  set val(sample), file(fastq), val(flag) from clean_reads_shigatyper.join(shigella_flag, by:0)
+  tuple val(sample), file(fastq), val(flag) from clean_reads_shigatyper.join(shigella_flag, by:0)
 
   output:
   file("${task.process}/${sample}_shigatyper.tsv")
   tuple sample, env(predictions) into shigatyper_predictions
+  tuple sample, env(lacy_cada) into shigatyper_cadA
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
   shell:
@@ -723,8 +699,10 @@ process shigatyper {
       2>> $err_file \
       > !{task.process}/!{sample}_shigatyper.tsv
 
-    predictions=$(grep -v prediction !{task.process}/!{sample}_shigatyper.tsv | cut -f 2 | tr '\\n' ',' | sed 's/,$//g' )
+    predictions=$(grep -v "prediction" !{task.process}/!{sample}_shigatyper.tsv | cut -f 2 | tr '\\n' ',' | sed 's/,$//g' )
+    lacy_cada="$(grep -ie "lac" -ie "cad" $err_file | head -n 1)"
     if [ -z "$predictions" ] ; then predictions='none' ; fi
+    if [ -z "$lacy_cada" ] ; then lacy_cada='none' ; fi
   '''
 }
 
@@ -740,7 +718,7 @@ process kleborate {
   params.kleborate && flag =~ 'found'
 
   input:
-  set val(sample), file(contig), val(flag) from contigs_kleborate.concat(fastas_kleborate).join(klebsiella_flag, by:0)
+  tuple val(sample), file(contig), val(flag) from contigs_kleborate.concat(fastas_kleborate).join(klebsiella_flag, by:0)
 
   output:
   tuple sample, env(kleborate_score) into kleborate_score
@@ -793,7 +771,7 @@ process serotypefinder {
   params.serotypefinder && flag =~ 'found'
 
   input:
-  set val(sample), file(fasta), val(flag) from contigs_serotypefinder.concat(fastas_serotypefinder).join(ecoli_flag, by:0)
+  tuple val(sample), file(fasta), val(flag) from contigs_serotypefinder.concat(fastas_serotypefinder).join(ecoli_flag, by:0)
 
   output:
   file("${task.process}/${sample}/*")
@@ -838,7 +816,7 @@ process amrfinderplus {
   params.amrfinderplus
 
   input:
-  set val(sample), file(contigs), val(genus), val(species) from contigs_amrfinder.concat(fastas_amrfinder).join(mash_genus_amrfinder, by: 0).join(mash_species_amrfinder, by: 0)
+  tuple val(sample), file(contigs), val(genus), val(species) from contigs_amrfinder.concat(fastas_amrfinder).join(mash_genus_amrfinder, by: 0).join(mash_species_amrfinder, by: 0)
 
   output:
   file("ncbi-AMRFinderplus/${sample}_amrfinder_plus.txt") into amrfinder_files
@@ -913,7 +891,7 @@ process kraken2 {
   params.kraken2
 
   input:
-  set val(sample), file(clean), path(kraken2_db) from clean_reads_kraken2.combine(local_kraken2)
+  tuple val(sample), file(clean), path(kraken2_db) from clean_reads_kraken2.combine(local_kraken2)
 
   output:
   file("${task.process}/${sample}_kraken2_report.txt") into kraken2_files
@@ -963,7 +941,7 @@ process blastn {
   params.blobtools
 
   input:
-  set val(sample), file(contig), path(blastdb) from contigs_blastn.combine(local_blastdb)
+  tuple val(sample), file(contig), path(blastdb) from contigs_blastn.combine(local_blastdb)
 
   output:
   tuple sample, file("blastn/${sample}.tsv") into blastn_files
@@ -1005,7 +983,7 @@ process bwa {
   params.blobtools
 
   input:
-  set val(sample), file(reads), file(contig) from clean_reads_bwa.join(contigs_bwa, by:0)
+  tuple val(sample), file(reads), file(contig) from clean_reads_bwa.join(contigs_bwa, by:0)
 
   output:
   tuple sample, file("${task.process}/${sample}.sam") into sam_files
@@ -1046,7 +1024,7 @@ process sort {
   params.blobtools
 
   input:
-  set val(sample), file(sam) from sam_files
+  tuple val(sample), file(sam) from sam_files
 
   output:
   tuple sample, file("aligned/${sample}.sorted.bam*") into bam_files
@@ -1084,7 +1062,7 @@ process create {
   params.blobtools
 
   input:
-  set val(sample), file(contig), file(blastn), file(bam) from contigs_create.join(blastn_files, by:0).join(bam_files, by:0)
+  tuple val(sample), file(contig), file(blastn), file(bam) from contigs_create.join(blastn_files, by:0).join(bam_files, by:0)
 
   output:
   tuple sample, file("blobtools/${sample}.blobDB.json") into create_files_view, create_files_plot
@@ -1123,7 +1101,7 @@ process view {
   params.blobtools
 
   input:
-  set val(sample), file(json) from create_files_view
+  tuple val(sample), file(json) from create_files_view
 
   output:
   tuple sample, file("blobtools/${sample}.blobDB.table.txt") into view_files
@@ -1149,9 +1127,7 @@ process view {
   '''
 }
 
-params.blobtools_plot_options = ''
-params.blobtools_resolution = 'species'
-params.blobtools_format = 'png'
+params.blobtools_plot_options = '--format png -r species'
 process blobtools {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
@@ -1162,7 +1138,7 @@ process blobtools {
   params.blobtools
 
   input:
-  set val(sample), file(json) from create_files_plot
+  tuple val(sample), file(json) from create_files_plot
 
   output:
   file("blobtools/${sample}.*.blobplot.bam0.png")
@@ -1188,8 +1164,6 @@ process blobtools {
     blobtools plot !{params.blobtools_plot_options} \
       -i !{json} \
       -o blobtools/ \
-      -r !{params.blobtools_resolution} \
-      --format !{params.blobtools_format} \
       2>> $err_file 2>> $log_file
 
     perc='0.0'
@@ -1219,7 +1193,7 @@ process mlst {
   params.mlst
 
   input:
-  set val(sample), file(contig) from contigs_mlst.concat(fastas_mlst)
+  tuple val(sample), file(contig) from contigs_mlst.concat(fastas_mlst)
 
   output:
   file("${task.process}/${sample}_mlst.txt") into mlst_files
@@ -1278,6 +1252,7 @@ reads
   .join(serotypefinder_results_o, remainder: true, by: 0)
   .join(serotypefinder_results_h, remainder: true, by: 0)
   .join(shigatyper_predictions, remainder: true, by: 0)
+  .join(shigatyper_cadA, remainder: true, by: 0)
   .join(kleborate_score, remainder: true, by: 0)
   .join(kleborate_mlst, remainder: true, by: 0)
   .join(blobtools_species_results, remainder: true, by: 0)
@@ -1289,6 +1264,7 @@ reads
   .join(mlst_results, remainder: true, by: 0)
   .set { results }
 
+params.run = ''
 process summary {
   publishDir "${params.outdir}", mode: 'copy', overwrite: true
   tag "${sample}"
@@ -1322,6 +1298,7 @@ process summary {
     val(serotypefinder_results_o),
     val(serotypefinder_results_h),
     val(shigatyper_predictions),
+    val(shigatyper_cadA),
     val(kleborate_score),
     val(kleborate_mlst),
     val(blobtools_species_results),
@@ -1348,12 +1325,20 @@ process summary {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    sample_id_split=($(echo !{sample} | sed 's/-/ /g' | sed 's/_/ /g' ))
-    if [ "${#sample_id_split[@]}" == "5" ]
+    if [ -n "!{params.run}" ]
     then
-      sample_id="${sample_id_split[0]}-${sample_id_split[1]}"
+      sample_id=$(echo !{sample} | sed 's/!{params.run}//g' )
     else
-      sample_id=${sample_id_split[0]}
+      sample_id_split=($(echo !{sample} | sed 's/-/ /g' | sed 's/_/ /g' ))
+      if [ "${#sample_id_split[@]}" -ge "5" ]
+      then
+        sample_id="${sample_id_split[0]}-${sample_id_split[1]}"
+      elif [ "${#sample_id_split[@]}" -eq "4" ]
+      then
+        sample_id=${sample_id_split[0]}
+      else
+        sample_id=!{sample}
+      fi
     fi
 
     header="sample_id;sample"
@@ -1380,8 +1365,8 @@ process summary {
     header=$header";serotypefinder_o_group;serotypefinder_h_group"
     result=$result";!{serotypefinder_results_o};!{serotypefinder_results_h}"
 
-    header=$header";shigatyper_predictions"
-    result=$result";!{shigatyper_predictions}"
+    header=$header";shigatyper_predictions;shigatyper_cadA"
+    result=$result";!{shigatyper_predictions};!{shigatyper_cadA}"
 
     header=$header";kleborate_score;kleborate_mlst"
     result=$result";!{kleborate_score};!{kleborate_mlst}"
@@ -1472,5 +1457,6 @@ process multiqc {
 workflow.onComplete {
     println("Pipeline completed at: $workflow.complete")
     println("MultiQC report can be found at $params.outdir/multiqc/multiqc_report.html")
+    println("Summary can be found at $params.outdir/grandeur_results.tsv")
     println("Execution status: ${ workflow.success ? 'OK' : 'failed' }")
 }
