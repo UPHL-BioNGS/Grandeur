@@ -531,7 +531,7 @@ process cg_pipeline {
   tuple val(sample), file(fastq), val(quast), val(mash), val(genus), val(species), file(genome_file) from for_gc
 
   output:
-  file("cg_pipeline/${sample}_cg_pipeline_report.txt") into cg_pipeline_files
+  file("cg_pipeline/${sample}_cg_pipeline_report.txt") optional true into cg_pipeline_files
   tuple sample, env(read_length) into cg_avrl_results
   tuple sample, env(quality) into cg_quality_results
   tuple sample, env(coverage) into cg_cov_results
