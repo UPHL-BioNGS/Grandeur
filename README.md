@@ -4,7 +4,7 @@
 
 ### (We're working on it.)
 
-<img src="https://www.roadtripryan.com/go/resources/content/utah/wasatch/grandeur-peak/user-submitted/ryancornia-1505057017043.jpg" width="250" align="left" />
+<img src="https://www.roadtripryan.com/go/resources/content/utah/wasatch/grandeur-peak/user-submitted/ryancornia-1505057017043.jpg" width="500" align="left" />
 
 Named after the beautiful [Grandeur Peak](https://www.alltrails.com/trail/us/utah/grandeur-peak-east-trail-from-church-fork)
 
@@ -16,11 +16,11 @@ More information about the trail leading up to this landmark can be found at [ht
 
 Grandeur Peak is a two part [Nextflow](https://www.nextflow.io/) workflow developed by [@erinyoung](https://github.com/erinyoung) at the [Utah Public Health Laborotory](https://uphl.utah.gov/) for sequencing of microbial isolates. Built to work on linux-based operating systems. Additional config options are needed for cloud batch usage.
 
-The "Grandeur" portion of this workflow is intended to be a species agnostic sequencing approach to paired-end Illumina sequencing QC and serotyping in a local public health laboratory. "Grandeur" takes paired-end Illumina reads, removes adaptors and PHIX with [seqyclean](https://github.com/ibest/seqyclean), and creates contigs through _de novo_ alignment of the reads with [shovill](https://github.com/tseemann/shovill). Then a variety of QC and serotyping tools are employed. This workflow is similar to [Cutshaw](https://staph-b.github.io/staphb_toolkit/workflow_docs/cutshaw/), [Dryad](https://staph-b.github.io/staphb_toolkit/workflow_docs/dryad/), [Foushee](https://staph-b.github.io/staphb_toolkit/workflow_docs/foushee/), and [Tredegar](https://staph-b.github.io/staphb_toolkit/workflow_docs/tredegar/) in the [staphB toolkit](https://github.com/StaPH-B/staphb_toolkit) or [Bactopia](https://github.com/bactopia/bactopia), and the authors or maintainers of this workflow will not be offended if an alternative is used.
+The "Grandeur" portion of this workflow is intended to be a species agnostic sequencing approach to paired-end Illumina sequencing quality control and assurance (QC) and serotyping in a local public health laboratory. "Grandeur" takes paired-end Illumina reads, removes adaptors and PHIX with [seqyclean](https://github.com/ibest/seqyclean), and creates contigs through _de novo_ alignment of the reads with [shovill](https://github.com/tseemann/shovill). Then a variety of QC and serotyping tools are employed. This workflow is similar to [Cutshaw](https://staph-b.github.io/staphb_toolkit/workflow_docs/cutshaw/), [Dryad](https://staph-b.github.io/staphb_toolkit/workflow_docs/dryad/), [Foushee](https://staph-b.github.io/staphb_toolkit/workflow_docs/foushee/), and [Tredegar](https://staph-b.github.io/staphb_toolkit/workflow_docs/tredegar/) in the [staphB toolkit](https://github.com/StaPH-B/staphb_toolkit) or [Bactopia](https://github.com/bactopia/bactopia), and the authors or maintainers of this workflow will not be offended if an alternative is used.
 
 The "Peak" portion of this workflow uses the resulting contigs in fasta files (or in gff files created by [prokka](https://github.com/tseemann/prokka)) from the "Grandeur" portion through to a phylogenetic tree. The workflow, however, can be used with any fasta - including genomes downloaded from NCBI, or contigs generated from another workflow. In other words, the end user doesn't need to run "Grandeur" to run "Peak". The gff files created via [prokka](https://github.com/tseemann/prokka), are used by [roary](https://sanger-pathogens.github.io/Roary/) to define and align a core genome (a core genome is the genes that all the provided isolates share, also known as a [pan-genome](https://en.wikipedia.org/wiki/Pan-genome)). This multiple sequence alignment is used to create a tree with [iqtree2](http://www.iqtree.org/) and SNP matrix with [snp-dists](https://github.com/tseemann/snp-dists). As this workflow is dependent on the core genome, all of the fasta files put into this portion of the workflow must be the _same species_ (or predicted to have some sort of similar origin, so related plasmids will work as well). [@erinyoung](https://github.com/erinyoung) strongy recommends that the end user checks 'peak/roary/summary_statistics.txt' to ensure that the number of genes in the core genome makes sense. 
 
-Grandeur Peak will also probably be a workflow of the [staphb-toolkit](https://github.com/StaPH-B/staphb_toolkit) once [@erinyoung](https://github.com/erinyoung) gets around to it and all the containers are ready.
+"Grandeur Peak" will also probably be a workflow of the [staphb-toolkit](https://github.com/StaPH-B/staphb_toolkit) once [@erinyoung](https://github.com/erinyoung) gets around to it and all the containers are ready.
 
 # Getting started
 
@@ -56,7 +56,7 @@ nextflow run grandeur.nf -c configs/singularity.config --reads <directory of rea
 ```
 A directory will produce files at `workflow.launchDir + '/grandeur'`, but this can also be adjusted with `params.outdir` the same way.
 
-"Grandeur" can also take fastas. Thus, a fasta can be created by a different workflow, like [Donut Falls](https://github.com/UPHL-BioNGS/Donut_Falls), and then go through this workflow for relevant serotyping and QC information. Some tools only accept fastq files, such as [shigatyper](https://github.com/CFSAN-Biostatistics/shigatyper).
+"Grandeur" can also take fastas. Thus, a fasta can be created by a different workflow, like [Donut Falls](https://github.com/UPHL-BioNGS/Donut_Falls), and then go through this workflow for relevant serotyping and QC information. Not all tools will work on these files, such as [shigatyper](https://github.com/CFSAN-Biostatistics/shigatyper).
 ```
 nextflow run grandeur.nf -c configs/singularity.config --fastas <directory of fastas>
 ```
@@ -239,7 +239,7 @@ nextflow run peak.nf -c configs/singularity.config --fastas <directory of fasta 
 ```
 
 ## Although not required, [@erinyoung](https://github.com/erinyoung) suggests changing some of the default parameters. 
-- Changing the prokka parameters to include the genus and species of your organism.  
+- Changing the prokka parameters to include the genus and species of your organism as well as your 'centre'.  
   - `params.prokka_options` = `'--genus <genus> --species <species>'`
   - `params.center` = `'<center>'` 
 - Changing the iqtree2 parameters to designate which file should be used as an outgroup
@@ -339,12 +339,12 @@ It'd be nice if a tree was automatically generated from this. Really nice. It ha
 Be sure to include the command used, what config file was used, and what the **nextflow** error was. 
 
 ## Where is an example config file?
-There is a template file with all the variables [here](.configs/grandeur_template.config) that the **End User** can copy and edit. All of the parameters are included in that file.
+There is a template file with all the variables in this repo at [configs/grandeur_template.config](./configs/grandeur_template.config) that the **End User** can copy and edit. All of the parameters are included in that file.
 
-There's also a config file what we use here at UPHL [here](./configs/UPHL.config).
+There's also a config file what we use here at UPHL, [UPHL.config](./configs/UPHL.config).
 
 ## Do you have test data?
-Yes. Actually. It's the reason this repo is so large. There are some sample fastq files stolen from the [SRA](https://www.ncbi.nlm.nih.gov/sra) and some fasta files stolen from [NCBI genome](https://www.ncbi.nlm.nih.gov/genome/). I ran these files through the default workflow ([grandeur_results.tsv](./data/grandeur_results.tsv)) as well as with UPHL's config file ([UPHL_grandeur_results.tsv](./data/UPHL_grandeur_results.tsv)). The directory `data/fastq` contains `fastq.gz` files for a _Salmonella enterica_ (SRR7889058), _Escherichia coli_ (SRR11725329), _Shigella sonnei_ (SRR7738178), _Klebsiella pneumoniae_ (SRR14634837), and _Acinetobacter baumannii_ (SRR13643280). The directory `data/fasta` contains fasta files for _Stenotrophomonas maltophilia_ (GCF_900475405.1_44087_C01_genomic), _Acinetobacter baumannii_ (GCF_008632635.1_ASM863263v1_genomic), _Klebsiella pneumoniae_ (GCF_000240185.1_ASM24018v2_genomic), _Shigella flexneri_ (GCF_000006925.2_ASM692v2_genomic), _Salmonella enterica_ (GCF_000006945.2_ASM694v2_genomic), _Escherichia coli_ (GCF_000005845.2_ASM584v2_genomic). The directory `data/peak_test` contains one gff file and 6 fasta files of _Stenotrophomonas maltophilia_ that can be used to test "Peak". A resulting treefile ([iqtree.treefile](./data/peak_test/iqtree.treefile)), snp_matrix([snp_matrix.txt](./data/peak_test/snp_matrix.txt)), and roary summary file ([summary_statistics.txt](./data/peak_test/summary_statistics.txt)) are included for comparison. 
+Yes. Actually. It's the reason this repo is so large. There are some sample fastq files stolen from the [SRA](https://www.ncbi.nlm.nih.gov/sra) and some fasta files stolen from [NCBI genome](https://www.ncbi.nlm.nih.gov/genome/). Summary files from running these through the default workflow ([grandeur_results.tsv](./data/grandeur_results.tsv)) as well as with UPHL's config file ([UPHL_grandeur_results.tsv](./data/UPHL_grandeur_results.tsv)) are also available. The directory `data/fastq` contains `fastq.gz` files for a _Salmonella enterica_ (SRR7889058), _Escherichia coli_ (SRR11725329), _Shigella sonnei_ (SRR7738178), _Klebsiella pneumoniae_ (SRR14634837), and _Acinetobacter baumannii_ (SRR13643280). The directory `data/fasta` contains fasta files for _Stenotrophomonas maltophilia_ (GCF_900475405.1_44087_C01_genomic), _Acinetobacter baumannii_ (GCF_008632635.1_ASM863263v1_genomic), _Klebsiella pneumoniae_ (GCF_000240185.1_ASM24018v2_genomic), _Shigella flexneri_ (GCF_000006925.2_ASM692v2_genomic), _Salmonella enterica_ (GCF_000006945.2_ASM694v2_genomic), _Escherichia coli_ (GCF_000005845.2_ASM584v2_genomic). The directory `data/peak_test` contains one gff file and 6 fasta files of _Stenotrophomonas maltophilia_ that can be used to test "Peak". A resulting treefile ([iqtree.treefile](./data/peak_test/iqtree.treefile)), snp_matrix ([snp_matrix.txt](./data/peak_test/snp_matrix.txt)), and roary summary file ([summary_statistics.txt](./data/peak_test/summary_statistics.txt)) are included for comparison. 
 
 The basics of testing out "Grandeur":
 ```
