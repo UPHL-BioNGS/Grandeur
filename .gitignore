@@ -1,0 +1,6 @@
+# ignore testing stuff from nextflow
+work
+.nextflow
+.nextflow*
+grandeur
+peak
