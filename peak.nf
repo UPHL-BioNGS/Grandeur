@@ -92,82 +92,43 @@ prokka_gffs
 
 params.roary = true
 params.roary_options = ''
-if (params.kraken) {
-  process roary_kraken {
-    publishDir "${params.outdir}", mode: 'copy'
-    tag "Roary with Kraken QC"
-    cpus params.maxcpus
-    container 'staphb/roary:latest'
+process roary {
+  publishDir "${params.outdir}", mode: 'copy'
+  tag "Core Genome Alignment"
+  cpus params.maxcpus
+  container 'staphb/roary:latest'
 
-    when:
-    params.roary
+  when:
+  params.roary
 
-    input:
-    file(contigs) from gffs.collect()
-    path(local_kraken) from local_kraken
+  input:
+  file(contigs) from gffs.collect()
+  path(local_kraken) from local_kraken.ifEmpty([])
 
-    output:
-    file("roary/*")
-    file("roary/fixed_input_files/*")
-    file("roary/core_gene_alignment.aln") into roary_core_genome_iqtree, roary_core_genome_snp_dists
-    file("logs/${task.process}/${task.process}.${workflow.sessionId}.{log,err}")
+  output:
+  file("roary/*")
+  file("roary/fixed_input_files/*")
+  file("roary/core_gene_alignment.aln") into roary_core_genome_iqtree, roary_core_genome_snp_dists
+  file("logs/${task.process}/${task.process}.${workflow.sessionId}.{log,err}")
 
-    shell:
-    '''
-      mkdir -p logs/!{task.process}
-      log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
-      err_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.err
+  shell:
+  '''
+    mkdir -p logs/!{task.process}
+    log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
+    err_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.err
 
-      # time stamp + capturing tool versions
-      date | tee -a $log_file $err_file > /dev/null
-      roary -a >> $log_file
+    # time stamp + capturing tool versions
+    date | tee -a $log_file $err_file > /dev/null
+    roary -a >> $log_file
 
-      roary !{params.roary_options} \
-        -p !{task.cpus} \
-        -f roary \
-        -e -n \
-        -qc -k !{local_kraken} \
-        *.gff \
-        2>> $err_file >> $log_file
-    '''
-  }
-} else {
-  process roary {
-    publishDir "${params.outdir}", mode: 'copy'
-    tag "Roary"
-    cpus params.maxcpus
-    container 'staphb/roary:latest'
-
-    when:
-    params.roary
-
-    input:
-    file(contigs) from gffs.collect()
-
-    output:
-    file("${task.process}/*")
-    file("${task.process}/fixed_input_files/*")
-    file("${task.process}/core_gene_alignment.aln") into roary_core_genome_iqtree, roary_core_genome_snp_dists
-    file("logs/${task.process}/${task.process}.${workflow.sessionId}.{log,err}")
-
-    shell:
-    '''
-      mkdir -p logs/!{task.process}
-      log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
-      err_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.err
-
-      # time stamp + capturing tool versions
-      date | tee -a $log_file $err_file > /dev/null
-      roary -a >> $log_file
-
-      roary !{params.roary_options} \
-        -p !{task.cpus} \
-        -f !{task.process} \
-        -e -n \
-        *.gff \
-        2>> $err_file >> $log_file
-    '''
-  }
+    roary !{params.roary_options} \
+      -p !{task.cpus} \
+      -f roary \
+      -e -n \
+      -qc -k !{local_kraken} \
+      *.gff \
+      2>> $err_file >> $log_file
+  '''
 }
 
 params.iqtree2 = true

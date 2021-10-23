@@ -33,34 +33,26 @@ params.reads = workflow.launchDir + '/reads'
 Channel
   .fromFilePairs(["${params.reads}/*_R{1,2}*.fastq*",
                   "${params.reads}/*_{1,2}.fastq*"], size: 2 )
-  .map{ reads -> tuple(reads[0].replaceAll(~/_S[0-9]+_L[0-9]+/,""), reads[1]) }
-  .ifEmpty{
-    println("WARNING : No fastq or fastq.gz files were found at ${params.reads}")
-    println("Reminder : set 'params.reads' to directory with paired-end reads")
-  }
-  .view { "Paired-end fastq files : ${it[0]}" }
-  .into { reads_seqyclean ; reads_fastqc ; reads ; reads_check }
+  .map { reads -> tuple(reads[0].replaceAll(~/_S[0-9]+_L[0-9]+/,""), reads[1]) }
+  .view { "Paired-end fastq files found : ${it[0]}" }
+  .into { reads_check ; reads_seqyclean ; reads_fastqc ; reads }
 
 // Getting contig or fasta files
 params.fastas = workflow.launchDir + '/fastas'
 Channel
-  .fromPath("${params.fastas}/*{.fa,.fasta.fna}")
-  .ifEmpty{
-    println("WARNING : No fastas were found at ${params.fastas}")
-    println("Reminder : set 'params.fastas' to directory with fastas")
-  }
+  .fromPath("${params.fastas}/*{.fa,.fasta,.fna}")
   .map { file -> tuple(file.baseName, file) }
-  .view { "Fastas for serotyping and AMR gene annotation : $it" }
-  .into { fastas ; fastas_mash ; fastas_quast ; fastas_prokka ; fastas_seqsero2 ; fastas_amrfinder ; fastas_serotypefinder ; fastas_kleborate ; fastas_mlst ; fastas_check }
+  .view { "Fasta file found : ${it[0]}" }
+  .into { fastas_check ; fastas ; fastas_mash ; fastas_quast ; fastas_prokka ; fastas_seqsero2 ; fastas_amrfinder ; fastas_serotypefinder ; fastas_kleborate ; fastas_mlst ; fastas_kraken2 }
 
-// making sure that SOMETHING is getting inputted correctly
 reads_check
   .concat(fastas_check)
   .ifEmpty{
     println("FATAL : No fastq or fastq.gz files were found at ${params.reads}")
-    println("Set 'params.reads' to directory with paired-end reads")
     println("FATAL : No fastas were found at ${params.fastas}")
-    println("Set 'params.fastas' to directory with fastas")
+    println("Set 'params.reads' to directory with paired-end reads" )
+    println("Set 'params.fastas' to directory with fastas" )
+    exit 1
   }
 
 // Getting the file with genome sizes of common organisms
@@ -589,7 +581,8 @@ cg_pipeline_files
     storeDir: "${params.outdir}/cg_pipeline")
 
 params.seqsero2 = true
-params.seqsero_options = '-m a -b mem'
+params.seqsero2_options_fasta = '-t 4 -m k'
+params.seqsero2_options_fastq = '-t 2 -m a -b mem'
 process seqsero2 {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
@@ -624,10 +617,9 @@ process seqsero2 {
     cat .command.sh >> $log_file
 
     fastq_check=$(echo "!{fastq_or_fasta}" | grep "fastq" | head -n 1 )
-    if [ -n "$fastq_check" ] ; then type=2 ; else type=4 ; fi
+    if [ -n "$fastq_check" ] ; then seqsero_options="!{params.seqsero2_options_fastq}" ; else seqsero_options="!{params.seqsero2_options_fasta}" ; fi
 
-    SeqSero2_package.py !{params.seqsero_options} \
-      -t $type \
+    SeqSero2_package.py $seqsero_options \
       -i !{fastq_or_fasta} \
       -p !{task.cpus} \
       -d seqsero2/!{sample} \
@@ -891,7 +883,7 @@ process kraken2 {
   params.kraken2
 
   input:
-  tuple val(sample), file(clean), path(kraken2_db) from clean_reads_kraken2.combine(local_kraken2)
+  tuple val(sample), file(clean), path(kraken2_db) from clean_reads_kraken2.concat(fastas_kraken2).combine(local_kraken2)
 
   output:
   file("${task.process}/${sample}_kraken2_report.txt") into kraken2_files
@@ -912,9 +904,11 @@ process kraken2 {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
+    fastq_check=$(echo "!{clean}" | grep "fastq" | head -n 1 )
+    if [ -n "$fastq_check" ] ; then kraken2_parameter="--paired --classified-out cseqs#.fq" ; else kraken2_parameter="" ; fi
+
     kraken2 !{params.kraken2_options} \
-      --paired \
-      --classified-out cseqs#.fq \
+      $kraken2_parameter \
       --threads !{task.cpus} \
       --db !{kraken2_db} \
       !{clean} \
@@ -1058,6 +1052,7 @@ process create {
   tag "${sample}"
   cpus 1
   container 'chrishah/blobtools:v1.1.1'
+
   when:
   params.blobtools
 
@@ -1097,6 +1092,7 @@ process view {
   tag "${sample}"
   cpus 1
   container 'chrishah/blobtools:v1.1.1'
+
   when:
   params.blobtools
 
@@ -1401,7 +1397,6 @@ summary_files_tsv
     keepHeader: true,
     sort: true,
     storeDir: "${params.outdir}")
-  .subscribe { println("Summary can be found at $it") }
 
 params.multiqc_options = ''
 params.multiqc = true
