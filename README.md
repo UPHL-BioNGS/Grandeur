@@ -544,7 +544,7 @@ There is a template file with all the variables in this repo at [configs/grandeu
 There's also a config file what we use here at UPHL, [UPHL.config](./configs/UPHL.config).
 
 ## Do you have test data?
-Yes. Actually. But also not quite. Fastq files can be rather large and github isn't the best place to store them. Instead, some sample fastq files from the [SRA](https://www.ncbi.nlm.nih.gov/sra) and included the results in this repo for your comparison. 
+Yes, actually, but also not quite. Fastq files can be rather large and github isn't the best place to store them. Instead, some sample fastq files from the [SRA](https://www.ncbi.nlm.nih.gov/sra) recommended. These have gone through the "Grandeur" workflow and the results are included in this repo for your comparison. 
 - [SRR7889058](https://www.ncbi.nlm.nih.gov/sra/?term=SRR7889058) : _Salmonella enterica_
 - [SRR11725329](https://www.ncbi.nlm.nih.gov/sra/?term=SRR11725329) : _Escherichia coli_
 - [SRR7738178](https://www.ncbi.nlm.nih.gov/sra/?term=SRR7738178) : _Shigella sonnei_ 
