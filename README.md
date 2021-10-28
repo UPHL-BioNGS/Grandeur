@@ -1,14 +1,10 @@
 # Grandeur Peak
 
-# Warning : What you currently see is under development. It is likely incomplete and incorrect. 
-
-### (We're working on it.)
-
 <img src="https://www.roadtripryan.com/go/resources/content/utah/wasatch/grandeur-peak/user-submitted/ryancornia-1505057017043.jpg" width="500" align="left" />
 
 Named after the beautiful [Grandeur Peak](https://www.alltrails.com/trail/us/utah/grandeur-peak-east-trail-from-church-fork)
 
-Image stolen from [ryancornia](https://www.roadtripryan.com/go/resources/content/utah/wasatch/grandeur-peak/user-submitted/ryancornia-1505057017043.jpg)
+Image Credit: [ryancornia](https://www.roadtripryan.com/go/resources/content/utah/wasatch/grandeur-peak/user-submitted/ryancornia-1505057017043.jpg)
 
 Location:  40.707, -111.76, 8,299 ft (2,421 m) summit
 
@@ -16,9 +12,9 @@ More information about the trail leading up to this landmark can be found at [ht
 
 Grandeur Peak is a two part [Nextflow](https://www.nextflow.io/) workflow developed by [@erinyoung](https://github.com/erinyoung) at the [Utah Public Health Laborotory](https://uphl.utah.gov/) for sequencing of microbial isolates. Built to work on linux-based operating systems. Additional config options are needed for cloud batch usage.
 
-The "Grandeur" portion of this workflow is intended to be a species agnostic sequencing approach to paired-end Illumina sequencing quality control and assurance (QC) and serotyping in a local public health laboratory. "Grandeur" takes paired-end Illumina reads, removes adaptors and PHIX with [seqyclean](https://github.com/ibest/seqyclean), and creates contigs through _de novo_ alignment of the reads with [shovill](https://github.com/tseemann/shovill). Then a variety of QC and serotyping tools are employed. This workflow is similar to [Cutshaw](https://staph-b.github.io/staphb_toolkit/workflow_docs/cutshaw/), [Dryad](https://staph-b.github.io/staphb_toolkit/workflow_docs/dryad/), [Foushee](https://staph-b.github.io/staphb_toolkit/workflow_docs/foushee/), and [Tredegar](https://staph-b.github.io/staphb_toolkit/workflow_docs/tredegar/) in the [staphB toolkit](https://github.com/StaPH-B/staphb_toolkit) or [Bactopia](https://github.com/bactopia/bactopia), and the authors or maintainers of this workflow will not be offended if an alternative is used.
+The "Grandeur" portion of this workflow is intended to be a species agnostic sequencing approach to paired-end Illumina sequencing quality control and assurance (QC) and serotyping in a local public health laboratory. "Grandeur" takes paired-end Illumina reads, removes adaptors and PHIX with [seqyclean](https://github.com/ibest/seqyclean), and creates contigs through _de novo_ alignment of the reads with [spades](https://cab.spbu.ru/software/spades/). Then a variety of QC and serotyping tools are employed. This workflow is similar to [Cutshaw](https://staph-b.github.io/staphb_toolkit/workflow_docs/cutshaw/), [Dryad](https://staph-b.github.io/staphb_toolkit/workflow_docs/dryad/), [Foushee](https://staph-b.github.io/staphb_toolkit/workflow_docs/foushee/), and [Tredegar](https://staph-b.github.io/staphb_toolkit/workflow_docs/tredegar/) in the [staphB toolkit](https://github.com/StaPH-B/staphb_toolkit) or [Bactopia](https://github.com/bactopia/bactopia), and the authors or maintainers of this workflow will not be offended if an alternative is used.
 
-The "Peak" portion of this workflow uses the resulting contigs in fasta files (or in gff files created by [prokka](https://github.com/tseemann/prokka)) from the "Grandeur" portion through to a phylogenetic tree. The workflow, however, can be used with any fasta - including genomes downloaded from NCBI, or contigs generated from another workflow. In other words, the end user doesn't need to run "Grandeur" to run "Peak". The gff files created via [prokka](https://github.com/tseemann/prokka), are used by [roary](https://sanger-pathogens.github.io/Roary/) to define and align a core genome (a core genome is the genes that all the provided isolates share, also known as a [pan-genome](https://en.wikipedia.org/wiki/Pan-genome)). This multiple sequence alignment is used to create a tree with [iqtree2](http://www.iqtree.org/) and SNP matrix with [snp-dists](https://github.com/tseemann/snp-dists). As this workflow is dependent on the core genome, all of the fasta files put into this portion of the workflow must be the _same species_ (or predicted to have some sort of similar origin, so related plasmids will work as well). [@erinyoung](https://github.com/erinyoung) strongy recommends that the end user checks 'peak/roary/summary_statistics.txt' to ensure that the number of genes in the core genome makes sense. 
+The "Peak" portion of this workflow uses the resulting contigs in fasta files (or in gff files created by [prokka](https://github.com/tseemann/prokka)) from the "Grandeur" portion through to a phylogenetic tree. The workflow, however, can be used with any fasta - including genomes downloaded from NCBI, or contigs generated from another workflow. In other words, the end user doesn't need to run "Grandeur" to run "Peak". The gff files created via [prokka](https://github.com/tseemann/prokka), are used by [roary](https://sanger-pathogens.github.io/Roary/) to define and align a core genome (a core genome is the genes that all the provided isolates share, also known as a [pan-genome](https://en.wikipedia.org/wiki/Pan-genome)). This multiple sequence alignment is used to create a tree with [iqtree2](http://www.iqtree.org/) and SNP matrix with [snp-dists](https://github.com/tseemann/snp-dists). As this workflow is dependent on the core genome, all of the fasta files put into this portion of the workflow must be the _same species_ (or predicted to have some sort of similar origin, so related plasmids will work as well). [@erinyoung](https://github.com/erinyoung) strongy recommends that the end user checks 'peak/roary/summary_statistics.txt' after running to ensure that the number of genes in the core genome makes sense. 
 
 "Grandeur Peak" will also probably be a workflow of the [staphb-toolkit](https://github.com/StaPH-B/staphb_toolkit) once [@erinyoung](https://github.com/erinyoung) gets around to it and all the containers are ready.
 
@@ -46,6 +42,8 @@ so that `git pull` can be used for updates.
 
 # Running Grandeur
 
+![alt text](./configs/grandeur.png)
+
 ```
 nextflow run grandeur.nf -c configs/singularity.config
 ```
@@ -56,10 +54,12 @@ nextflow run grandeur.nf -c configs/singularity.config --reads <directory of rea
 ```
 A directory will produce files at `workflow.launchDir + '/grandeur'`, but this can also be adjusted with `params.outdir` the same way.
 
-"Grandeur" can also take fastas. Thus, a fasta can be created by a different workflow, like [Donut Falls](https://github.com/UPHL-BioNGS/Donut_Falls), and then go through this workflow for relevant serotyping and QC information. Not all tools will work on these files, such as [shigatyper](https://github.com/CFSAN-Biostatistics/shigatyper).
+"Grandeur" can also take fastas. Thus, a fasta can be created by a different workflow, like [Donut Falls](https://github.com/UPHL-BioNGS/Donut_Falls), and then go through this workflow for relevant serotyping and QC information. [Shigatyper](https://github.com/CFSAN-Biostatistics/shigatyper) and [blobtools](https://blobtools.readme.io/docs) require fastq files, so these tools will not run on incoming fasta files. [Mash](https://github.com/marbl/Mash), [seqsero2](https://github.com/denglab/SeqSero2), [quast](http://quast.sourceforge.net/quast), [prokka](https://github.com/tseemann/prokka), [AMRfinderPlus](https://www.ncbi.nlm.nih.gov/pathogens/antimicrobial-resistance/AMRFinder/), [serotypefinder](https://cge.cbs.dtu.dk/services/SerotypeFinder/), [kleboarte](https://github.com/katholt/Kleborate), [kraken2](https://ccb.jhu.edu/software/kraken2/), and [mlst](https://github.com/tseemann/mlst) will work on fastas. The only parameters that may need to be configured by the **End User** is to specify the directory where the fasta files are with `'params.fasta'` (the default is `workflow.launchDir + '/fastas'`).
 ```
 nextflow run grandeur.nf -c configs/singularity.config --fastas <directory of fastas>
 ```
+
+This workflow will automatically grab any fastq files in `workflow.launchDir + '/reads'` and and fasta files in `workflow.launchDir + '/fastas'`. This is a feature of the workflow.
 
 Additionally, "Grandeur" can use two optional tools to find contamination : [kraken2](https://ccb.jhu.edu/software/kraken2/) or [blobtools](https://blobtools.readme.io/docs) (or both!). These both use large databases that should be downloaded separately. 
 
@@ -75,6 +75,7 @@ tar -zxvf minikraken2_v2_8GB_201904.tgz
 ```
 This downloads and expands the directory to 'kraken2_db/minikraken2_v2_8GB_201904_UPDATE'.
 
+Then the corresponding params need to be updated.
 - `params.kraken2` needs to be set to `true`
   - `params.kraken2 = 'true'`
 - `params.kraken2_db` must be set to the directory with the kraken2 database
@@ -204,16 +205,213 @@ grandeur/
 │           └── out_O_type.xml
 ├── shigatyper
 │   └── sample.csv                                                               # Shigatyper serotypes
-├── shovill
-│   └── sample
-│       ├── sample_contigs.fa
-│       ├── contigs.fa
-│       ├── contigs.gfa
-│       ├── shovill.corrections
-│       ├── shovill.log
-│       └── spades.fasta                                                        # contigs of genome in fasta file
 ├── shuffled
 │   └── sample_shuffled.fastq.gz
+├── spades
+│   └── sample
+│       ├── assembly_graph_after_simplification.gfa
+│       ├── assembly_graph.fastg
+│       ├── assembly_graph_with_scaffolds.gfa
+│       ├── before_rr.fasta
+│       ├── contigs.fasta
+│       ├── contigs.paths
+│       ├── dataset.info
+│       ├── input_dataset.yaml
+│       ├── K127
+│       │   ├── assembly_graph_after_simplification.gfa
+│       │   ├── assembly_graph.fastg
+│       │   ├── assembly_graph_with_scaffolds.gfa
+│       │   ├── before_rr.fasta
+│       │   ├── configs
+│       │   │   ├── careful_mda_mode.info
+│       │   │   ├── careful_mode.info
+│       │   │   ├── config.info
+│       │   │   ├── construction.info
+│       │   │   ├── detail_info_printer.info
+│       │   │   ├── distance_estimation.info
+│       │   │   ├── hmm_mode.info
+│       │   │   ├── isolate_mode.info
+│       │   │   ├── large_genome_mode.info
+│       │   │   ├── mda_mode.info
+│       │   │   ├── meta_mode.info
+│       │   │   ├── metaplasmid_mode.info
+│       │   │   ├── metaviral_mode.info
+│       │   │   ├── moleculo_mode.info
+│       │   │   ├── pe_params.info
+│       │   │   ├── plasmid_mode.info
+│       │   │   ├── rna_mode.info
+│       │   │   ├── rnaviral_mode.info
+│       │   │   ├── simplification.info
+│       │   │   ├── toy.info
+│       │   │   └── tsa.info
+│       │   ├── final_contigs.fasta
+│       │   ├── final_contigs.paths
+│       │   ├── final.lib_data
+│       │   ├── path_extend
+│       │   ├── scaffolds.fasta
+│       │   └── scaffolds.paths
+│       ├── K21
+│       │   ├── configs
+│       │   │   ├── careful_mda_mode.info
+│       │   │   ├── careful_mode.info
+│       │   │   ├── config.info
+│       │   │   ├── construction.info
+│       │   │   ├── detail_info_printer.info
+│       │   │   ├── distance_estimation.info
+│       │   │   ├── hmm_mode.info
+│       │   │   ├── isolate_mode.info
+│       │   │   ├── large_genome_mode.info
+│       │   │   ├── mda_mode.info
+│       │   │   ├── meta_mode.info
+│       │   │   ├── metaplasmid_mode.info
+│       │   │   ├── metaviral_mode.info
+│       │   │   ├── moleculo_mode.info
+│       │   │   ├── pe_params.info
+│       │   │   ├── plasmid_mode.info
+│       │   │   ├── rna_mode.info
+│       │   │   ├── rnaviral_mode.info
+│       │   │   ├── simplification.info
+│       │   │   ├── toy.info
+│       │   │   └── tsa.info
+│       │   ├── final.lib_data
+│       │   └── simplified_contigs
+│       │       ├── contigs_info
+│       │       ├── contigs.off
+│       │       └── contigs.seq
+│       ├── K33
+│       │   ├── configs
+│       │   │   ├── careful_mda_mode.info
+│       │   │   ├── careful_mode.info
+│       │   │   ├── config.info
+│       │   │   ├── construction.info
+│       │   │   ├── detail_info_printer.info
+│       │   │   ├── distance_estimation.info
+│       │   │   ├── hmm_mode.info
+│       │   │   ├── isolate_mode.info
+│       │   │   ├── large_genome_mode.info
+│       │   │   ├── mda_mode.info
+│       │   │   ├── meta_mode.info
+│       │   │   ├── metaplasmid_mode.info
+│       │   │   ├── metaviral_mode.info
+│       │   │   ├── moleculo_mode.info
+│       │   │   ├── pe_params.info
+│       │   │   ├── plasmid_mode.info
+│       │   │   ├── rna_mode.info
+│       │   │   ├── rnaviral_mode.info
+│       │   │   ├── simplification.info
+│       │   │   ├── toy.info
+│       │   │   └── tsa.info
+│       │   ├── final.lib_data
+│       │   └── simplified_contigs
+│       │       ├── contigs_info
+│       │       ├── contigs.off
+│       │       └── contigs.seq
+│       ├── K55
+│       │   ├── configs
+│       │   │   ├── careful_mda_mode.info
+│       │   │   ├── careful_mode.info
+│       │   │   ├── config.info
+│       │   │   ├── construction.info
+│       │   │   ├── detail_info_printer.info
+│       │   │   ├── distance_estimation.info
+│       │   │   ├── hmm_mode.info
+│       │   │   ├── isolate_mode.info
+│       │   │   ├── large_genome_mode.info
+│       │   │   ├── mda_mode.info
+│       │   │   ├── meta_mode.info
+│       │   │   ├── metaplasmid_mode.info
+│       │   │   ├── metaviral_mode.info
+│       │   │   ├── moleculo_mode.info
+│       │   │   ├── pe_params.info
+│       │   │   ├── plasmid_mode.info
+│       │   │   ├── rna_mode.info
+│       │   │   ├── rnaviral_mode.info
+│       │   │   ├── simplification.info
+│       │   │   ├── toy.info
+│       │   │   └── tsa.info
+│       │   ├── final.lib_data
+│       │   └── simplified_contigs
+│       │       ├── contigs_info
+│       │       ├── contigs.off
+│       │       └── contigs.seq
+│       ├── K77
+│       │   ├── configs
+│       │   │   ├── careful_mda_mode.info
+│       │   │   ├── careful_mode.info
+│       │   │   ├── config.info
+│       │   │   ├── construction.info
+│       │   │   ├── detail_info_printer.info
+│       │   │   ├── distance_estimation.info
+│       │   │   ├── hmm_mode.info
+│       │   │   ├── isolate_mode.info
+│       │   │   ├── large_genome_mode.info
+│       │   │   ├── mda_mode.info
+│       │   │   ├── meta_mode.info
+│       │   │   ├── metaplasmid_mode.info
+│       │   │   ├── metaviral_mode.info
+│       │   │   ├── moleculo_mode.info
+│       │   │   ├── pe_params.info
+│       │   │   ├── plasmid_mode.info
+│       │   │   ├── rna_mode.info
+│       │   │   ├── rnaviral_mode.info
+│       │   │   ├── simplification.info
+│       │   │   ├── toy.info
+│       │   │   └── tsa.info
+│       │   ├── final.lib_data
+│       │   └── simplified_contigs
+│       │       ├── contigs_info
+│       │       ├── contigs.off
+│       │       └── contigs.seq
+│       ├── K99
+│       │   ├── configs
+│       │   │   ├── careful_mda_mode.info
+│       │   │   ├── careful_mode.info
+│       │   │   ├── config.info
+│       │   │   ├── construction.info
+│       │   │   ├── detail_info_printer.info
+│       │   │   ├── distance_estimation.info
+│       │   │   ├── hmm_mode.info
+│       │   │   ├── isolate_mode.info
+│       │   │   ├── large_genome_mode.info
+│       │   │   ├── mda_mode.info
+│       │   │   ├── meta_mode.info
+│       │   │   ├── metaplasmid_mode.info
+│       │   │   ├── metaviral_mode.info
+│       │   │   ├── moleculo_mode.info
+│       │   │   ├── pe_params.info
+│       │   │   ├── plasmid_mode.info
+│       │   │   ├── rna_mode.info
+│       │   │   ├── rnaviral_mode.info
+│       │   │   ├── simplification.info
+│       │   │   ├── toy.info
+│       │   │   └── tsa.info
+│       │   ├── final.lib_data
+│       │   └── simplified_contigs
+│       │       ├── contigs_info
+│       │       ├── contigs.off
+│       │       └── contigs.seq
+│       ├── misc
+│       │   └── broken_scaffolds.fasta
+│       ├── params.txt
+│       ├── pipeline_state
+│       │   ├── stage_0_before_start
+│       │   ├── stage_10_bs
+│       │   ├── stage_11_terminate
+│       │   ├── stage_1_as_start
+│       │   ├── stage_2_k21
+│       │   ├── stage_3_k33
+│       │   ├── stage_4_k55
+│       │   ├── stage_5_k77
+│       │   ├── stage_6_k99
+│       │   ├── stage_7_k127
+│       │   ├── stage_8_copy_files
+│       │   └── stage_9_as_finish
+│       ├── run_spades.sh
+│       ├── run_spades.yaml
+│       ├── scaffolds.fasta
+│       ├── scaffolds.paths
+│       ├── spades.log
+│       └── tmp
 └── summary
     ├── sample.summary.tsv
     ├── sample.summary.txt
@@ -223,6 +421,8 @@ grandeur/
 </details>
 
 # Running Peak
+
+![alt text](./configs/Peak.png)
 
 ```
 nextflow run peak.nf -c configs/singularity.config
@@ -306,7 +506,7 @@ It'd be nice if a tree was automatically generated from this. Really nice. It ha
 # Grandeur Peak wouldn't be possible without:
 
 - [seqyclean](https://github.com/ibest/seqyclean) - cleaning reads
-- [shovill](https://github.com/tseemann/shovill) - _de novo_ alignment
+- [spades](https://cab.spbu.ru/software/spades/) - _de novo_ alignment
 - [prokka](https://github.com/tseemann/prokka) - gene annotation - used in peak, optionally in grandeur
 - [roary](https://sanger-pathogens.github.io/Roary/) - core genome alignment - only used in peak
 - [iqtree2](http://www.iqtree.org/) - phylogenetic tree creation - only used in peak
@@ -344,12 +544,40 @@ There is a template file with all the variables in this repo at [configs/grandeu
 There's also a config file what we use here at UPHL, [UPHL.config](./configs/UPHL.config).
 
 ## Do you have test data?
-Yes. Actually. It's the reason this repo is so large. There are some sample fastq files stolen from the [SRA](https://www.ncbi.nlm.nih.gov/sra) and some fasta files stolen from [NCBI genome](https://www.ncbi.nlm.nih.gov/genome/). Summary files from running these through the default workflow ([grandeur_results.tsv](./data/grandeur_results.tsv)) as well as with UPHL's config file ([UPHL_grandeur_results.tsv](./data/UPHL_grandeur_results.tsv)) are also available. The directory `data/fastq` contains `fastq.gz` files for a _Salmonella enterica_ (SRR7889058), _Escherichia coli_ (SRR11725329), _Shigella sonnei_ (SRR7738178), _Klebsiella pneumoniae_ (SRR14634837), and _Acinetobacter baumannii_ (SRR13643280). The directory `data/fasta` contains fasta files for _Stenotrophomonas maltophilia_ (GCF_900475405.1_44087_C01_genomic), _Acinetobacter baumannii_ (GCF_008632635.1_ASM863263v1_genomic), _Klebsiella pneumoniae_ (GCF_000240185.1_ASM24018v2_genomic), _Shigella flexneri_ (GCF_000006925.2_ASM692v2_genomic), _Salmonella enterica_ (GCF_000006945.2_ASM694v2_genomic), _Escherichia coli_ (GCF_000005845.2_ASM584v2_genomic). The directory `data/peak_test` contains one gff file and 6 fasta files of _Stenotrophomonas maltophilia_ that can be used to test "Peak". A resulting treefile ([iqtree.treefile](./data/peak_test/iqtree.treefile)), snp_matrix ([snp_matrix.txt](./data/peak_test/snp_matrix.txt)), and roary summary file ([summary_statistics.txt](./data/peak_test/summary_statistics.txt)) are included for comparison. 
+Yes. Actually. But also not quite. Fastq files can be rather large and github isn't the best place to store them. Instead, some sample fastq files from the [SRA](https://www.ncbi.nlm.nih.gov/sra) and included the results in this repo for your comparison. 
+- [SRR7889058](https://www.ncbi.nlm.nih.gov/sra/?term=SRR7889058) : _Salmonella enterica_
+- [SRR11725329](https://www.ncbi.nlm.nih.gov/sra/?term=SRR11725329) : _Escherichia coli_
+- [SRR7738178](https://www.ncbi.nlm.nih.gov/sra/?term=SRR7738178) : _Shigella sonnei_ 
+- [SRR14634837](https://www.ncbi.nlm.nih.gov/sra/?term=SRR14634837) : _Klebsiella pneumoniae_
+- [SRR13643280](https://www.ncbi.nlm.nih.gov/sra/?term=SRR13643280) : _Acinetobacter baumannii_
 
-The basics of testing out "Grandeur":
+These can be downloaded using [fasterq-dump](https://github.com/ncbi/sra-tools/wiki/HowTo:-fasterq-dump) (part of the [SRA](https://github.com/ncbi/sra-tools) toolkit) as follows:
 ```
-nextflow grandeur.nf -c configs/singularity.config --reads data/fastq --fastas data/fasta
+fasterq-dump -A SRR7889058 --split-files --outdir reads
 ```
+
+Followed by
+```
+nextflow grandeur.nf -c configs/singularity.config
+```
+
+The directory `data/fasta` contains fasta files for 
+- _Stenotrophomonas maltophilia_ (GCF_900475405.1_44087_C01_genomic)
+- _Acinetobacter baumannii_ (GCF_008632635.1_ASM863263v1_genomic)
+- _Klebsiella pneumoniae_ (GCF_000240185.1_ASM24018v2_genomic)
+- _Shigella flexneri_ (GCF_000006925.2_ASM692v2_genomic)
+- _Salmonella enterica_ (GCF_000006945.2_ASM694v2_genomic)
+- _Escherichia coli_ (GCF_000005845.2_ASM584v2_genomic)
+
+The workflow can be tested on these fastas files using the following command.
+
+```
+nextflow grandeur.nf -c configs/singularity.config --fastas data/fasta
+```
+Summary files from running these through the default workflow ([grandeur_results.tsv](./data/grandeur_results.tsv)) as well as with UPHL's config file ([UPHL_grandeur_results.tsv](./data/UPHL_grandeur_results.tsv)) are also available.
+
+
+The directory `data/peak_test` contains one gff file and 6 fasta files of _Stenotrophomonas maltophilia_ that can be used to test "Peak". A resulting treefile ([iqtree.treefile](./data/peak_test/iqtree.treefile)), snp_matrix ([snp_matrix.txt](./data/peak_test/snp_matrix.txt)), and roary summary file ([summary_statistics.txt](./data/peak_test/summary_statistics.txt)) are included for comparison. 
 
 The basics of testing out "Peak":
 ```
@@ -357,7 +585,7 @@ nextflow peak.nf -c configs/singularity.config --fastas data/peak_test --gff dat
 ```
 
 ## What about CLIA validation?
-At UPHL, we use this workflow to determine the serotype of Salmonella and E. coli under CLIA. Therefore, if you look at [our config file](./configs/UPHL.config), we explicitly specify the containers used for Salmonella serotyping with [seqsero2](https://github.com/denglab/SeqSero2), as well as E. coli serotyping with [serotypefinder](https://cge.cbs.dtu.dk/services/SerotypeFinder/) and [shigatyper](https://github.com/CFSAN-Biostatistics/shigatyper). We also specify the containers used prior to these processes in the workflow : [seqyclean](https://github.com/ibest/seqyclean) and [shovill](https://github.com/tseemann/shovill) (which isn't used for [seqsero2](https://github.com/denglab/SeqSero2) or [shigatyper](https://github.com/CFSAN-Biostatistics/shigatyper), but it is used for [serotypefinder](https://cge.cbs.dtu.dk/services/SerotypeFinder/)). 
+At UPHL, we use this workflow to determine the serotype of Salmonella and E. coli under CLIA. Therefore, if you look at [our config file](./configs/UPHL.config), we explicitly specify the containers used for Salmonella serotyping with [seqsero2](https://github.com/denglab/SeqSero2), as well as E. coli serotyping with [serotypefinder](https://cge.cbs.dtu.dk/services/SerotypeFinder/) and [shigatyper](https://github.com/CFSAN-Biostatistics/shigatyper). We also specify the containers used prior to these processes in the workflow : [seqyclean](https://github.com/ibest/seqyclean) and [spades](https://cab.spbu.ru/software/spades/) (which isn't used for [seqsero2](https://github.com/denglab/SeqSero2) or [shigatyper](https://github.com/CFSAN-Biostatistics/shigatyper), but it is used for [serotypefinder](https://cge.cbs.dtu.dk/services/SerotypeFinder/)). 
 
 The CLIA officer of the **End User** may request additional locks be put in place, like having all of the containers specified. If additional help is needed, please [submit an issue](https://github.com/UPHL-BioNGS/Grandeur/issues) or [Email me](eriny@utah.gov).
 
@@ -377,7 +605,7 @@ Many of these additional tools are added by need locally or from the **End User*
 **Warning** : If there's not a relaible container of the suggested tool, [@erinyoung](https://github.com/erinyoung) will request that the **End User** create a container for that tool and contribute to [StaPH-B's docker repositories](https://github.com/StaPH-B/docker-builds).
 
 ## What about organisms with large genomes?
-Organisms with large genomes can still contribute to disease, but this is not the workflow for those. "Grandeur" uses [shovill](https://github.com/tseemann/shovill), which is a wrapper for [spades](https://cab.spbu.ru/software/spades/). Large genomes may be too much for these tools. 
+Organisms with large genomes can still contribute to disease, but this is not the workflow for those. "Grandeur" uses [spades](https://cab.spbu.ru/software/spades/). Large genomes may be too much for [spades](https://cab.spbu.ru/software/spades/). 
 
 ## What about SARS-CoV-2?
 As of the time of writing this README, reference-based alignment of SARS-CoV-2 is still the norm. "Grandeur" is for _de novo_ assembly of things with small genome. [Cecret](https://github.com/UPHL-BioNGS/Cecret) would be a better workflow for SARS-CoV-2 sequencing. 
@@ -387,11 +615,15 @@ As of the time of writing this README, reference-based alignment of SARS-CoV-2 i
 
 ## How do I cite this workflow?
 
-This workflow stands on the shoulders of giants. As such, please cite the individual tools that were useful for your manuscript so that those developers can continue to get funding. They are listed above. Mentioning this workflow in the text as "The Grandeur workflow v.<version> (www.github.com/UPHL-BioNGS/Grandeur)" is good enough for [@erinyoung](https://github.com/erinyoung)'s ego.
+This workflow stands on the shoulders of giants. As such, please cite the individual tools that were useful for your manuscript so that those developers can continue to get funding. They are listed above. Mentioning this workflow in the text as "The Grandeur workflow v.VERSION (www.github.com/UPHL-BioNGS/Grandeur)" is good enough for [@erinyoung](https://github.com/erinyoung)'s ego.
 
-# Directed Acyclic Diagrams (DAG)
-## Full workflow
-![alt text](images/grandeur_workflow.png)
+## Why doesn't the default [shigatyper](https://hub.docker.com/r/andrewlangvt/shigatyper) container work with nextflow's `-with-tower` option?
+
+There is actually hope that this will eventually be remedied, but for now the default shigatyper container does not contain 'ps', so it will not work with nextflow tower. 
+
+## Can I use roary's QC options with kraken?
+
+Yes. There are params that can be adjusted to use a kraken database for roary's qc options. Adjust `params.kraken = true` and `params.kraken_db = 'kraken_db'`. This does not work with staphb's current [roary](https://hub.docker.com/r/staphb/roary) container.
 
 ![alt text](https://uphl.utah.gov/wp-content/uploads/New-UPHL-Logo.png)
 
