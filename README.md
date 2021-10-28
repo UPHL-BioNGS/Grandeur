@@ -584,7 +584,52 @@ The basics of testing out "Peak":
 nextflow peak.nf -c configs/singularity.config --fastas data/peak_test --gff data/peak_test
 ```
 
+## How do I turn processes off?
+
+Most of the processes in this workflow can be turned off. To turn a process off, change it's associated parameter to false (i.e. `'params.shigatyper = false'`).
+
+The following toggles are available and their default values are listed here:
+
+For "Grandeur":
+```
+params.amrfinderplus = true
+// right now blobtools at the blastn process is not working
+params.blobtools = false 
+params.cg_pipeline = true
+params.fastqc = true
+// will only run on Klebsiella
+params.kleborate = true
+// WARNING : if kraken2 is toggled to true, the end user must specify the location of the kraken2 database
+params.kraken2 = false
+// WARNING : mash is used to guess which organism is being sequenced. Thus seqsero2, kleborate, serotypefinder, and shigatyper are connected to mash.
+params.mash = true
+params.mlst = true
+params.multiqc = true
+// default is set to false because it likely is not needed unless the expectation is running though peak
+params.prokka = false
+params.quast = true
+params.roary = true
+// will only run on Salmonella
+params.seqsero2 = true
+// will only run on E. coli and Shigella
+params.serotypefinder = true
+// will only run on E. coli and Shigella
+params.shigatyper = true
+// WARNING : spades is required to generate fasta files of resulting contigs and will turn off all downstream processes
+params.spades = true 
+```
+For "Peak":
+```
+params.prokka = true
+params.roary = true
+// for getting a kraken database into roary for qc. If set to 'true' the end user must specify the location of the kraken database
+params.kraken = false
+params.iqtree2 = true
+params.snp_dists = true
+```
+
 ## What about CLIA validation?
+
 At UPHL, we use this workflow to determine the serotype of Salmonella and E. coli under CLIA. Therefore, if you look at [our config file](./configs/UPHL.config), we explicitly specify the containers used for Salmonella serotyping with [seqsero2](https://github.com/denglab/SeqSero2), as well as E. coli serotyping with [serotypefinder](https://cge.cbs.dtu.dk/services/SerotypeFinder/) and [shigatyper](https://github.com/CFSAN-Biostatistics/shigatyper). We also specify the containers used prior to these processes in the workflow : [seqyclean](https://github.com/ibest/seqyclean) and [spades](https://cab.spbu.ru/software/spades/) (which isn't used for [seqsero2](https://github.com/denglab/SeqSero2) or [shigatyper](https://github.com/CFSAN-Biostatistics/shigatyper), but it is used for [serotypefinder](https://cge.cbs.dtu.dk/services/SerotypeFinder/)). 
 
 The CLIA officer of the **End User** may request additional locks be put in place, like having all of the containers specified. If additional help is needed, please [submit an issue](https://github.com/UPHL-BioNGS/Grandeur/issues) or [Email me](eriny@utah.gov).
@@ -617,7 +662,7 @@ As of the time of writing this README, reference-based alignment of SARS-CoV-2 i
 
 This workflow stands on the shoulders of giants. As such, please cite the individual tools that were useful for your manuscript so that those developers can continue to get funding. They are listed above. Mentioning this workflow in the text as "The Grandeur workflow v.VERSION (www.github.com/UPHL-BioNGS/Grandeur)" is good enough for [@erinyoung](https://github.com/erinyoung)'s ego.
 
-## Why doesn't the default [shigatyper](https://hub.docker.com/r/andrewlangvt/shigatyper) container work with nextflow's `-with-tower` option?
+## Why does the default [shigatyper](https://hub.docker.com/r/andrewlangvt/shigatyper) container not work with nextflow's `-with-tower` option?
 
 There is actually hope that this will eventually be remedied, but for now the default shigatyper container does not contain 'ps', so it will not work with nextflow tower. 
 
