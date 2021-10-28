@@ -106,7 +106,7 @@ process seqyclean {
   tuple val(sample), file(reads) from reads_seqyclean
 
   output:
-  tuple sample, file("seqyclean/${sample}_clean_PE{1,2}.fastq.gz") into clean_reads_mash, clean_reads_cg, clean_reads_seqsero2, clean_reads_bwa, clean_reads_shigatyper, clean_reads_kraken2
+  tuple sample, file("seqyclean/${sample}_clean_PE{1,2}.fastq.gz") into clean_reads_mash, clean_reads_cg, clean_reads_seqsero2, clean_reads_bwa, clean_reads_shigatyper, clean_reads_kraken2, clean_reads_spades
   tuple sample, file("seqyclean/${sample}_clean_PE{1,2}.fastq.gz"), env(kept) into clean_reads_shovill
   file("seqyclean/${sample}_clean_SE.fastq.gz")
   file("seqyclean/${sample}_clean_SummaryStatistics.tsv") into seqyclean_files, seqyclean_files_combine
@@ -149,26 +149,22 @@ seqyclean_files_combine
     sort: true,
     storeDir: "${params.outdir}/seqyclean")
 
-params.minimum_reads = 50000
-params.shovill = true
-params.shovill_options = ''
-process shovill {
+params.spades = true
+params.spades_options = '--isolate'
+process spades {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
-  memory params.maxmem
   cpus params.maxcpus
-  container 'staphb/shovill:latest'
+  container 'staphb/spades:latest'
 
   when:
-  params.shovill && num_reads.toInteger() > params.minimum_reads
+  params.spades
 
   input:
-  tuple val(sample), file(reads), val(num_reads) from clean_reads_shovill
+  tuple val(sample), file(reads) from clean_reads_spades
 
   output:
-  file("shovill/${sample}/contigs.{fa,gfa}")
-  file("shovill/${sample}/shovill.{corrections,log}")
-  file("shovill/${sample}/spades.fasta")
+  path("${task.process}/${sample}")
   tuple sample, file("contigs/${sample}_contigs.fa") into contigs_prokka, contigs_quast, contigs_blastn, contigs_mlst, contigs_bwa, contigs_create, contigs_kleborate, contigs_amrfinder, contigs_serotypefinder
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
@@ -181,20 +177,18 @@ process shovill {
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
     echo "container : !{task.container}" >> $log_file
-    shovill --version >> $log_file
+    spades.py --version >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    memory=$(echo "!{task.memory}" | awk '{ print $1 }' )
-
-    shovill !{params.shovill_options} \
-      --cpu !{task.cpus} \
-      --ram $memory \
-      --outdir !{task.process}/!{sample} \
-      --R1 !{reads[0]} \
-      --R2 !{reads[1]} \
+    spades.py !{params.spades_options} \
+      -1 !{reads[0]} \
+      -2 !{reads[1]} \
+      --threads !{task.cpus} \
+      -o !{task.process}/!{sample} \
       2>> $err_file >> $log_file
-    cp !{task.process}/!{sample}/contigs.fa contigs/!{sample}_contigs.fa
+
+    cp !{task.process}/!{sample}/contigs.fasta contigs/!{sample}_contigs.fa
   '''
 }
 
@@ -420,9 +414,8 @@ process quast {
   tuple val(sample), file(contigs) from contigs_quast.concat(fastas_quast)
 
   output:
-  file("quast/${sample}/*")
+  path("quast/${sample}")
   file("quast/${sample}_quast_report.tsv") into quast_files
-  file("quast/${sample}/{basic_stats,icarus_viewers}/*{pdf,html}")
   file("quast/${sample}/transposed_report.tsv") into quast_files_combine
   tuple sample, env(gc) into quast_gc_results
   tuple sample, env(num_contigs) into quast_contigs_results
