@@ -7,6 +7,7 @@ println("Version: v0.1.20211031")
 println("")
 
 // TODO : blobtools
+// TODO : fix or expand shigella serotyping
 // TODO : mycosnp
 // TODO : something for plasmids
 // TODO : frp_plasmid
@@ -18,8 +19,6 @@ println("")
 params.outdir = workflow.launchDir + '/grandeur'
 println("The files and directory for results is " + params.outdir)
 
-params.maxmem = Math.round(Runtime.runtime.totalMemory() / 10241024).GB
-println("The maximum amount of memory used in this workflow is ${params.maxmem}")
 params.maxcpus = Runtime.runtime.availableProcessors()
 println("The maximum number of CPUS used in this workflow is ${params.maxcpus}")
 if ( params.maxcpus < 5 ) {
@@ -107,7 +106,6 @@ process seqyclean {
 
   output:
   tuple sample, file("seqyclean/${sample}_clean_PE{1,2}.fastq.gz") into clean_reads_mash, clean_reads_cg, clean_reads_seqsero2, clean_reads_bwa, clean_reads_shigatyper, clean_reads_kraken2, clean_reads_spades
-  tuple sample, file("seqyclean/${sample}_clean_PE{1,2}.fastq.gz"), env(kept) into clean_reads_shovill
   file("seqyclean/${sample}_clean_SE.fastq.gz")
   file("seqyclean/${sample}_clean_SummaryStatistics.tsv") into seqyclean_files, seqyclean_files_combine
   file("seqyclean/${sample}_clean_SummaryStatistics.txt")
@@ -461,6 +459,7 @@ quast_files_combine
     sort: true,
     storeDir: "${params.outdir}/quast")
 
+params.cg_pipeline = true
 process shuffle {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
@@ -501,7 +500,6 @@ shuffled_files
   .combine(genome_sizes)
   .set { for_gc }
 
-params.cg_pipeline = 'true'
 params.cg_pipeline_options = '--qual_offset 33 --minLength 1'
 process cg_pipeline {
   publishDir "${params.outdir}", mode: 'copy'
