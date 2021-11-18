@@ -1,9 +1,9 @@
 #!/usr/bin/env nextflow
 
-println("Currently using the Grandeur workflow for use with microbial Illumina MiSeq sequencing\n")
+println("Currently using the Grandeur workflow for use with microbial sequencing. The view is great from up here.\n")
 println("Author: Erin Young")
 println("email: eriny@utah.gov")
-println("Version: v0.1.20211031")
+println("Version: v1.0.20211130")
 println("")
 
 // TODO : blobtools
@@ -30,8 +30,8 @@ if ( params.maxcpus < 5 ) {
 // Getting the fastq files
 params.reads = workflow.launchDir + '/reads'
 Channel
-  .fromFilePairs(["${params.reads}/*_R{1,2}*.fastq*",
-                  "${params.reads}/*_{1,2}.fastq*"], size: 2 )
+  .fromFilePairs(["${params.reads}/*_R{1,2}*.{fastq,fastq.gz,fq,fq.gz}",
+                  "${params.reads}/*_{1,2}*.{fastq,fastq.gz,fq,fq.gz}"], size: 2 )
   .map { reads -> tuple(reads[0].replaceAll(~/_S[0-9]+_L[0-9]+/,""), reads[1]) }
   .view { "Paired-end fastq files found : ${it[0]}" }
   .into { reads_check ; reads_seqyclean ; reads_fastqc ; reads }
@@ -44,13 +44,22 @@ Channel
   .view { "Fasta file found : ${it[0]}" }
   .into { fastas_check ; fastas ; fastas_mash ; fastas_quast ; fastas_prokka ; fastas_seqsero2 ; fastas_amrfinder ; fastas_serotypefinder ; fastas_kleborate ; fastas_mlst ; fastas_kraken2 }
 
+// Getting fasta files that have been annotated with prokka
+params.gff = workflow.launchDir + '/gff'
+Channel.fromPath("${params.gff}/*.gff", type: 'file')
+  .view { "gff file : $it" }
+  .into { gffs_check ; local_gffs }
+
 reads_check
   .concat(fastas_check)
+  .concat(gffs_check)
   .ifEmpty{
     println("FATAL : No fastq or fastq.gz files were found at ${params.reads}")
-    println("FATAL : No fastas were found at ${params.fastas}")
     println("Set 'params.reads' to directory with paired-end reads" )
+    println("FATAL : No fastas were found at ${params.fastas}")
     println("Set 'params.fastas' to directory with fastas" )
+    println("FATAL : No gff files were found at ${params.gff}")
+    println("Set 'params.gff' to directory with gff files" )
     exit 1
   }
 
@@ -61,6 +70,7 @@ Channel
   .view { "Genome Sizes File : $it" }
   .ifEmpty{
     println("WARNING : No file with genome sizes was found at ${params.genome_sizes}")
+    println("If you have your own file, set with 'params.genomes_sizes'")
     println("This file is required for cg-pipeline.")
   }
   .set { genome_sizes }
@@ -351,50 +361,54 @@ process mash_dist {
 }
 
 params.prokka = false
-params.prokka_options = '--mincontiglen 500 --compliant --locustag locus_tag'
-params.center = 'STAPHB'
-process prokka {
-  publishDir "${params.outdir}", mode: 'copy'
-  tag "${sample}"
-  cpus params.maxcpus
-  container 'staphb/prokka:latest'
+if (params.prokka) {
+  params.prokka_options = '--mincontiglen 500 --compliant --locustag locus_tag'
+  params.center = 'STAPHB'
+  process prokka {
+    publishDir "${params.outdir}", mode: 'copy'
+    tag "${sample}"
+    cpus params.maxcpus
+    container 'staphb/prokka:latest'
 
-  when:
-  params.prokka
+    when:
+    params.prokka
 
-  input:
-  tuple val(sample), file(contigs), val(genus), val(species) from contigs_prokka.concat(fastas_prokka).join(mash_genus_prokka, remainder: true, by:0).join(mash_species_prokka, remainder: true, by:0)
+    input:
+    tuple val(sample), file(contigs), val(genus), val(species) from contigs_prokka.concat(fastas_prokka).join(mash_genus_prokka, remainder: true, by:0).join(mash_species_prokka, remainder: true, by:0)
 
-  output:
-  file("prokka/${sample}/${sample}.{err,faa,ffn,fna,fsa,gbk,gff,log,sqn,tbl,tsv}")
-  file("prokka/${sample}/${sample}.txt") into prokka_files
-  file("gff/${sample}.gff")
-  file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
+    output:
+    file("prokka/${sample}/${sample}.{err,faa,ffn,fna,fsa,gbk,gff,log,sqn,tbl,tsv}")
+    file("prokka/${sample}/${sample}.txt") into prokka_files
+    file("gff/${sample}.gff")
+    file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
-  shell:
-  '''
-    mkdir -p prokka gff logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
+    shell:
+    '''
+      mkdir -p prokka gff logs/!{task.process}
+      log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+      err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
-    # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
-    echo "container : !{task.container}" >> $log_file
-    prokka -v >> $log_file
-    echo "Nextflow command : " >> $log_file
-    cat .command.sh >> $log_file
+      # time stamp + capturing tool versions
+      date | tee -a $log_file $err_file > /dev/null
+      echo "container : !{task.container}" >> $log_file
+      prokka -v >> $log_file
+      echo "Nextflow command : " >> $log_file
+      cat .command.sh >> $log_file
 
-    prokka !{params.prokka_options} \
-      --cpu !{task.cpus} \
-      --centre !{params.center} \
-      --outdir prokka/!{sample} \
-      --prefix !{sample} \
-      --genus !{genus} \
-      --species !{species} \
-      --force !{contigs} 2>> $err_file | tee -a $log_file
+      prokka !{params.prokka_options} \
+        --cpu !{task.cpus} \
+        --centre !{params.center} \
+        --outdir prokka/!{sample} \
+        --prefix !{sample} \
+        --genus !{genus} \
+        --species !{species} \
+        --force !{contigs} 2>> $err_file | tee -a $log_file
 
-    cp prokka/!{sample}/!{sample}.gff gff/!{sample}.gff
-  '''
+      cp prokka/!{sample}/!{sample}.gff gff/!{sample}.gff
+    '''
+  }
+} else {
+  prokka_files=Channel.empty()
 }
 
 params.quast = true
@@ -863,310 +877,300 @@ amrfinder_files
     sort: true,
     storeDir: "${params.outdir}/ncbi-AMRFinderplus")
 
-params.kraken2_options = ''
-process kraken2 {
-  publishDir "${params.outdir}", mode: 'copy'
-  tag "${sample}"
-  cpus params.maxcpus
-  container 'staphb/kraken2:latest'
+if (params.kraken2) {
+  params.kraken2_options = ''
+  process kraken2 {
+    publishDir "${params.outdir}", mode: 'copy'
+    tag "${sample}"
+    cpus params.maxcpus
+    container 'staphb/kraken2:latest'
 
-  when:
-  params.kraken2
+    input:
+    tuple val(sample), file(clean), path(kraken2_db) from clean_reads_kraken2.concat(fastas_kraken2).combine(local_kraken2)
 
-  input:
-  tuple val(sample), file(clean), path(kraken2_db) from clean_reads_kraken2.concat(fastas_kraken2).combine(local_kraken2)
+    output:
+    file("${task.process}/${sample}_kraken2_report.txt") into kraken2_files
+    file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
+    tuple sample, env(top_hit) into kraken2_top_hit
+    tuple sample, env(top_perc) into kraken2_top_perc
+    tuple sample, env(top_reads) into kraken2_top_reads
 
-  output:
-  file("${task.process}/${sample}_kraken2_report.txt") into kraken2_files
-  file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
-  tuple sample, env(top_hit) into kraken2_top_hit
-  tuple sample, env(top_perc) into kraken2_top_perc
-  tuple sample, env(top_reads) into kraken2_top_reads
+    shell:
+    '''
+      mkdir -p !{task.process} logs/!{task.process}
+      log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+      err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
-  shell:
-  '''
-    mkdir -p !{task.process} logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
+      date | tee -a $log_file $err_file > /dev/null
+      echo "container : !{task.container}" >> $log_file
+      kraken2 --version >> $log_file
+      echo "Nextflow command : " >> $log_file
+      cat .command.sh >> $log_file
 
-    date | tee -a $log_file $err_file > /dev/null
-    echo "container : !{task.container}" >> $log_file
-    kraken2 --version >> $log_file
-    echo "Nextflow command : " >> $log_file
-    cat .command.sh >> $log_file
+      fastq_check=$(echo "!{clean}" | grep "fastq" | head -n 1 )
+      if [ -n "$fastq_check" ] ; then kraken2_parameter="--paired --classified-out cseqs#.fq" ; else kraken2_parameter="" ; fi
 
-    fastq_check=$(echo "!{clean}" | grep "fastq" | head -n 1 )
-    if [ -n "$fastq_check" ] ; then kraken2_parameter="--paired --classified-out cseqs#.fq" ; else kraken2_parameter="" ; fi
+      kraken2 !{params.kraken2_options} \
+        $kraken2_parameter \
+        --threads !{task.cpus} \
+        --db !{kraken2_db} \
+        !{clean} \
+        --report !{task.process}/!{sample}_kraken2_report.txt \
+        2>> $err_file >> $log_file
 
-    kraken2 !{params.kraken2_options} \
-      $kraken2_parameter \
-      --threads !{task.cpus} \
-      --db !{kraken2_db} \
-      !{clean} \
-      --report !{task.process}/!{sample}_kraken2_report.txt \
-      2>> $err_file >> $log_file
-
-    top_hit=$(cat !{task.process}/!{sample}_kraken2_report.txt   | grep -w S | sort | tail -n 1 | awk '{print $6 " " $7}')
-    top_perc=$(cat !{task.process}/!{sample}_kraken2_report.txt  | grep -w S | sort | tail -n 1 | awk '{print $1}')
-    top_reads=$(cat !{task.process}/!{sample}_kraken2_report.txt | grep -w S | sort | tail -n 1 | awk '{print $3}')
-    if [ -z "$top_hit" ] ; then top_hit="NA" ; fi
-    if [ -z "$top_perc" ] ; then top_perc="0" ; fi
-    if [ -z "$top_reads" ] ; then top_reads="0" ; fi
-  '''
+      top_hit=$(cat !{task.process}/!{sample}_kraken2_report.txt   | grep -w S | sort | tail -n 1 | awk '{print $6 " " $7}')
+      top_perc=$(cat !{task.process}/!{sample}_kraken2_report.txt  | grep -w S | sort | tail -n 1 | awk '{print $1}')
+      top_reads=$(cat !{task.process}/!{sample}_kraken2_report.txt | grep -w S | sort | tail -n 1 | awk '{print $3}')
+      if [ -z "$top_hit" ] ; then top_hit="NA" ; fi
+      if [ -z "$top_perc" ] ; then top_perc="0" ; fi
+      if [ -z "$top_reads" ] ; then top_reads="0" ; fi
+    '''
+  }
+} else {
+  kraken2_top_hit=Channel.empty()
+  kraken2_top_perc=Channel.empty()
+  kraken2_top_reads=Channel.empty()
 }
 
-params.local_db_type = 'nt'
-process blastn {
-  publishDir "${params.outdir}", mode: 'copy'
-  tag "${sample}"
-  cpus params.medcpus
-  container 'ncbi/blast:latest'
+if (params.blobtools) {
+  params.local_db_type = 'nt'
+  process blastn {
+    publishDir "${params.outdir}", mode: 'copy'
+    tag "${sample}"
+    cpus params.medcpus
+    container 'ncbi/blast:latest'
 
-  when:
-  params.blobtools
+    input:
+    tuple val(sample), file(contig), path(blastdb) from contigs_blastn.combine(local_blastdb)
 
-  input:
-  tuple val(sample), file(contig), path(blastdb) from contigs_blastn.combine(local_blastdb)
+    output:
+    tuple sample, file("blastn/${sample}.tsv") into blastn_files
+    file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
-  output:
-  tuple sample, file("blastn/${sample}.tsv") into blastn_files
-  file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
+    shell:
+    '''
+      mkdir -p !{task.process} logs/!{task.process}
+      log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+      err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
-  shell:
-  '''
-    mkdir -p !{task.process} logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
+      # time stamp + capturing tool versions
+      date | tee -a $log_file $err_file > /dev/null
+      echo "container : !{task.container}" >> $log_file
+      blastn -version >> $log_file
+      echo "Nextflow command : " >> $log_file
+      cat .command.sh >> $log_file
 
-    # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
-    echo "container : !{task.container}" >> $log_file
-    blastn -version >> $log_file
-    echo "Nextflow command : " >> $log_file
-    cat .command.sh >> $log_file
+      blastn -query !{contig} \
+        -out blastn/!{sample}.tsv \
+        -num_threads !{task.cpus} \
+        -db !{blastdb}/!{params.local_db_type} \
+        -outfmt '6 qseqid staxids bitscore std' \
+        -max_target_seqs 10 \
+        -max_hsps 1 \
+        -evalue 1e-25 \
+        2>> $err_file >> $log_file
+    '''
+  }
 
-    blastn -query !{contig} \
-      -out blastn/!{sample}.tsv \
-      -num_threads !{task.cpus} \
-      -db !{blastdb}/!{params.local_db_type} \
-      -outfmt '6 qseqid staxids bitscore std' \
-      -max_target_seqs 10 \
-      -max_hsps 1 \
-      -evalue 1e-25 \
-      2>> $err_file >> $log_file
-  '''
-}
+  params.bwa_options = ''
+  process bwa {
+    publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}/*.{log,err}"
+    tag "${sample}"
+    cpus params.medcpus
+    container 'staphb/bwa:latest'
 
-params.bwa_options = ''
-process bwa {
-  publishDir "${params.outdir}", mode: 'copy', pattern: "logs/${task.process}/*.{log,err}"
-  tag "${sample}"
-  cpus params.medcpus
-  container 'staphb/bwa:latest'
+    input:
+    tuple val(sample), file(reads), file(contig) from clean_reads_bwa.join(contigs_bwa, by:0)
 
-  when:
-  params.blobtools
+    output:
+    tuple sample, file("${task.process}/${sample}.sam") into sam_files
+    file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
-  input:
-  tuple val(sample), file(reads), file(contig) from clean_reads_bwa.join(contigs_bwa, by:0)
+    shell:
+    '''
+      mkdir -p !{task.process} logs/!{task.process}
+      log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+      err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
-  output:
-  tuple sample, file("${task.process}/${sample}.sam") into sam_files
-  file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
+      # time stamp + capturing tool versions
+      date | tee -a $log_file $err_file > /dev/null
+      echo "container : !{task.container}" >> $log_file
+      echo "bwa $(bwa 2>&1 | grep Version )" >> $log_file
+      echo "Nextflow command : " >> $log_file
+      cat .command.sh >> $log_file
 
-  shell:
-  '''
-    mkdir -p !{task.process} logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
+      bwa index !{contig} 2>> $err_file >> $log_file
 
-    # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
-    echo "container : !{task.container}" >> $log_file
-    echo "bwa $(bwa 2>&1 | grep Version )" >> $log_file
-    echo "Nextflow command : " >> $log_file
-    cat .command.sh >> $log_file
+      bwa mem !{params.bwa_options} \
+        -t !{task.cpus} \
+        !{contig} \
+        !{reads} \
+        2>> $err_file \
+        > !{task.process}/!{sample}.sam
+    '''
+  }
 
-    bwa index !{contig} 2>> $err_file >> $log_file
+  params.samtools_sort_options=''
+  process sort {
+    publishDir "${params.outdir}", mode: 'copy'
+    tag "${sample}"
+    cpus params.medcpus
+    container 'staphb/samtools:latest'
 
-    bwa mem !{params.bwa_options} \
-      -t !{task.cpus} \
-      !{contig} \
-      !{reads} \
-      2>> $err_file \
-      > !{task.process}/!{sample}.sam
-  '''
-}
+    input:
+    tuple val(sample), file(sam) from sam_files
 
-params.samtools_sort_options=''
-process sort {
-  publishDir "${params.outdir}", mode: 'copy'
-  tag "${sample}"
-  cpus params.medcpus
-  container 'staphb/samtools:latest'
+    output:
+    tuple sample, file("aligned/${sample}.sorted.bam*") into bam_files
+    file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
-  when:
-  params.blobtools
+    shell:
+    '''
+      mkdir -p aligned logs/!{task.process}
+      log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+      err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
-  input:
-  tuple val(sample), file(sam) from sam_files
+      # time stamp + capturing tool versions
+      date | tee -a $log_file $err_file > /dev/null
+      echo "container : !{task.container}" >> $log_file
+      samtools --version >> $log_file
+      echo "Nextflow command : " >> $log_file
+      cat .command.sh >> $log_file
 
-  output:
-  tuple sample, file("aligned/${sample}.sorted.bam*") into bam_files
-  file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
+      samtools sort !{params.samtools_sort_options} \
+        --threads !{task.cpus} \
+        !{sam} \
+        -o aligned/!{sample}.sorted.bam \
+        --write-index \
+        2>> $err_file >> $log_file
+    '''
+  }
 
-  shell:
-  '''
-    mkdir -p aligned logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
+  params.blobtools_create_options=''
+  process create {
+    publishDir "${params.outdir}", mode: 'copy'
+    tag "${sample}"
+    cpus 1
+    container 'chrishah/blobtools:v1.1.1'
 
-    # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
-    echo "container : !{task.container}" >> $log_file
-    samtools --version >> $log_file
-    echo "Nextflow command : " >> $log_file
-    cat .command.sh >> $log_file
+    input:
+    tuple val(sample), file(contig), file(blastn), file(bam) from contigs_create.join(blastn_files, by:0).join(bam_files, by:0)
 
-    samtools sort !{params.samtools_sort_options} \
-      --threads !{task.cpus} \
-      !{sam} \
-      -o aligned/!{sample}.sorted.bam \
-      --write-index \
-      2>> $err_file >> $log_file
-  '''
-}
+    output:
+    tuple sample, file("blobtools/${sample}.blobDB.json") into create_files_view, create_files_plot
+    file("blobtools/${sample}.${sample}.sorted.bam.cov")
+    file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
-params.blobtools_create_options=''
-process create {
-  publishDir "${params.outdir}", mode: 'copy'
-  tag "${sample}"
-  cpus 1
-  container 'chrishah/blobtools:v1.1.1'
+    shell:
+    '''
+      mkdir -p blobtools logs/!{task.process}
+      log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+      err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
-  when:
-  params.blobtools
+      # time stamp + capturing tool versions
+      date | tee -a $log_file $err_file > /dev/null
+      echo "container : !{task.container}" >> $log_file
+      echo "blobtools version $(blobtools -v)" >> $log_file
+      echo "Nextflow command : " >> $log_file
+      cat .command.sh >> $log_file
 
-  input:
-  tuple val(sample), file(contig), file(blastn), file(bam) from contigs_create.join(blastn_files, by:0).join(bam_files, by:0)
+      blobtools create !{params.blobtools_create_options} \
+        -o blobtools/!{sample} \
+        -i !{contig} \
+        -b !{sample}.sorted.bam \
+        -t !{blastn} \
+        2>> $err_file >> $log_file
+    '''
+  }
 
-  output:
-  tuple sample, file("blobtools/${sample}.blobDB.json") into create_files_view, create_files_plot
-  file("blobtools/${sample}.${sample}.sorted.bam.cov")
-  file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
+  params.blobtools_view_options=''
+  process view {
+    publishDir "${params.outdir}", mode: 'copy'
+    tag "${sample}"
+    cpus 1
+    container 'chrishah/blobtools:v1.1.1'
 
-  shell:
-  '''
-    mkdir -p blobtools logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
+    input:
+    tuple val(sample), file(json) from create_files_view
 
-    # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
-    echo "container : !{task.container}" >> $log_file
-    echo "blobtools version $(blobtools -v)" >> $log_file
-    echo "Nextflow command : " >> $log_file
-    cat .command.sh >> $log_file
+    output:
+    tuple sample, file("blobtools/${sample}.blobDB.table.txt") into view_files
+    file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
-    blobtools create !{params.blobtools_create_options} \
-      -o blobtools/!{sample} \
-      -i !{contig} \
-      -b !{sample}.sorted.bam \
-      -t !{blastn} \
-      2>> $err_file >> $log_file
-  '''
-}
+    shell:
+    '''
+      mkdir -p blobtools logs/!{task.process}
+      log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+      err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
-params.blobtools_view_options=''
-process view {
-  publishDir "${params.outdir}", mode: 'copy'
-  tag "${sample}"
-  cpus 1
-  container 'chrishah/blobtools:v1.1.1'
+      # time stamp + capturing tool versions
+      date | tee -a $log_file $err_file > /dev/null
+      echo "container : !{task.container}" >> $log_file
+      echo "blobtools version $(blobtools -v)" >> $log_file
+      echo "Nextflow command : " >> $log_file
+      cat .command.sh >> $log_file
 
-  when:
-  params.blobtools
+      blobtools view !{params.blobtools_view_options} \
+        -i !{json} \
+        -o blobtools/ \
+        2>> $err_file >> $log_file
+    '''
+  }
 
-  input:
-  tuple val(sample), file(json) from create_files_view
+  params.blobtools_plot_options = '--format png -r species'
+  process blobtools {
+    publishDir "${params.outdir}", mode: 'copy'
+    tag "${sample}"
+    cpus 1
+    container 'chrishah/blobtools:v1.1.1'
 
-  output:
-  tuple sample, file("blobtools/${sample}.blobDB.table.txt") into view_files
-  file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
+    input:
+    tuple val(sample), file(json) from create_files_plot
 
-  shell:
-  '''
-    mkdir -p blobtools logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
+    output:
+    file("blobtools/${sample}.*.blobplot.bam0.png")
+    file("blobtools/${sample}.*.blobplot.read_cov.bam0.png")
+    file("blobtools/${sample}.*.blobplot.stats.txt")
+    tuple sample, env(blobtools_species) into blobtools_species_results
+    tuple sample, env(blobtools_perc) into blobtools_perc_results
+    file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
-    # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
-    echo "container : !{task.container}" >> $log_file
-    echo "blobtools version $(blobtools -v)" >> $log_file
-    echo "Nextflow command : " >> $log_file
-    cat .command.sh >> $log_file
+    shell:
+    '''
+      mkdir -p blobtools logs/!{task.process}
+      log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+      err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
-    blobtools view !{params.blobtools_view_options} \
-      -i !{json} \
-      -o blobtools/ \
-      2>> $err_file >> $log_file
-  '''
-}
+      # time stamp + capturing tool versions
+      date | tee -a $log_file $err_file > /dev/null
+      echo "container : !{task.container}" >> $log_file
+      echo "blobtools version $(blobtools -v)" >> $log_file
+      echo "Nextflow command : " >> $log_file
+      cat .command.sh >> $log_file
 
-params.blobtools_plot_options = '--format png -r species'
-process blobtools {
-  publishDir "${params.outdir}", mode: 'copy'
-  tag "${sample}"
-  cpus 1
-  container 'chrishah/blobtools:v1.1.1'
+      blobtools plot !{params.blobtools_plot_options} \
+        -i !{json} \
+        -o blobtools/ \
+        2>> $err_file 2>> $log_file
 
-  when:
-  params.blobtools
-
-  input:
-  tuple val(sample), file(json) from create_files_plot
-
-  output:
-  file("blobtools/${sample}.*.blobplot.bam0.png")
-  file("blobtools/${sample}.*.blobplot.read_cov.bam0.png")
-  file("blobtools/${sample}.*.blobplot.stats.txt")
-  tuple sample, env(blobtools_species) into blobtools_species_results
-  tuple sample, env(blobtools_perc) into blobtools_perc_results
-  file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
-
-  shell:
-  '''
-    mkdir -p blobtools logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
-
-    # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
-    echo "container : !{task.container}" >> $log_file
-    echo "blobtools version $(blobtools -v)" >> $log_file
-    echo "Nextflow command : " >> $log_file
-    cat .command.sh >> $log_file
-
-    blobtools plot !{params.blobtools_plot_options} \
-      -i !{json} \
-      -o blobtools/ \
-      2>> $err_file 2>> $log_file
-
-    perc='0.0'
-    blobtools_species='missing'
-    while read line
-    do
-      new_perc=$(echo $line | cut -f 13 -d " " | sed 's/%//g')
-      min=$(echo $perc $new_perc | awk '{if ($1 > $2) print $1; else print $2}')
-      if [ "$min" != "$perc" ]
-      then
-        perc=$new_perc
-        blobtools_species=$(echo $line | cut -f 1 -d " " )
-        blobtools_perc=$(echo $line | cut -f 13 -d " " )
-      fi
-    done < <(grep -vw all blobtools/!{sample}*.stats.txt | grep -v "# name" | tr ' ' '_' | grep '%')
-  '''
+      perc='0.0'
+      blobtools_species='missing'
+      while read line
+      do
+        new_perc=$(echo $line | cut -f 13 -d " " | sed 's/%//g')
+        min=$(echo $perc $new_perc | awk '{if ($1 > $2) print $1; else print $2}')
+        if [ "$min" != "$perc" ]
+        then
+          perc=$new_perc
+          blobtools_species=$(echo $line | cut -f 1 -d " " )
+          blobtools_perc=$(echo $line | cut -f 13 -d " " )
+        fi
+      done < <(grep -vw all blobtools/!{sample}*.stats.txt | grep -v "# name" | tr ' ' '_' | grep '%')
+    '''
+  }
+} else {
+  blobtools_species_results=Channel.empty()
+  blobtools_perc_results=Channel.empty()
 }
 
 params.mlst = true
@@ -1251,12 +1255,15 @@ reads
   .join(mlst_results, remainder: true, by: 0)
   .set { results }
 
-params.run = ''
+params.summary = true
 process summary {
   publishDir "${params.outdir}", mode: 'copy', overwrite: true
   tag "${sample}"
   cpus 1
   container 'staphb/parallel-perl:latest'
+
+  when:
+  params.summary
 
   input:
   set val(sample), file(file),
@@ -1312,20 +1319,15 @@ process summary {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    if [ -n "!{params.run}" ]
+    sample_id_split=($(echo !{sample} | sed 's/-/ /g' | sed 's/_/ /g' ))
+    if [ "${#sample_id_split[@]}" -ge "5" ]
     then
-      sample_id=$(echo !{sample} | sed 's/!{params.run}//g' )
+      sample_id="${sample_id_split[0]}-${sample_id_split[1]}"
+    elif [ "${#sample_id_split[@]}" -eq "4" ]
+    then
+      sample_id=${sample_id_split[0]}
     else
-      sample_id_split=($(echo !{sample} | sed 's/-/ /g' | sed 's/_/ /g' ))
-      if [ "${#sample_id_split[@]}" -ge "5" ]
-      then
-        sample_id="${sample_id_split[0]}-${sample_id_split[1]}"
-      elif [ "${#sample_id_split[@]}" -eq "4" ]
-      then
-        sample_id=${sample_id_split[0]}
-      else
-        sample_id=!{sample}
-      fi
+      sample_id=!{sample}
     fi
 
     header="sample_id;sample"
@@ -1438,6 +1440,123 @@ process multiqc {
       . \
       2>> $err_file >> $log_file
   '''
+}
+
+params.roary = false
+if (params.roary) {
+  params.roary_options = ''
+  process roary {
+    publishDir "${params.outdir}", mode: 'copy'
+    tag "Core Genome Alignment"
+    cpus params.maxcpus
+    container 'staphb/roary:latest'
+
+    input:
+    file(contigs) from gffs.collect()
+    path(local_kraken) from local_kraken.ifEmpty([])
+
+    output:
+    file("roary/*")
+    file("roary/fixed_input_files/*")
+    file("roary/core_gene_alignment.aln") into roary_core_genome_iqtree, roary_core_genome_snp_dists
+    file("logs/${task.process}/${task.process}.${workflow.sessionId}.{log,err}")
+
+    shell:
+    '''
+      mkdir -p logs/!{task.process}
+      log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
+      err_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.err
+
+      # time stamp + capturing tool versions
+      date | tee -a $log_file $err_file > /dev/null
+      roary -a >> $log_file
+
+      roary !{params.roary_options} \
+        -p !{task.cpus} \
+        -f roary \
+        -e -n \
+        -qc -k !{local_kraken} \
+        *.gff \
+        2>> $err_file >> $log_file
+    '''
+  }
+
+  params.iqtree2 = true
+  params.iqtree2_options = '-t RANDOM -m GTR+F+I -bb 1000 -alrt 1000'
+  params.outgroup = ''
+  process iqtree2 {
+    publishDir "${params.outdir}", mode: 'copy'
+    tag "Pylogenetic Tree"
+    cpus params.maxcpus
+    container 'staphb/iqtree2:latest'
+
+    when:
+    params.iqtree2
+
+    input:
+    file(msa) from roary_core_genome_iqtree
+
+    output:
+    file("${task.process}/iqtree{.ckp.gz,.treefile,.iqtree,.log,.splits.nex}")
+    file("${task.process}/iqtree.contree") into treefile
+    file("logs/${task.process}/${task.process}.${workflow.sessionId}.{log,err}")
+
+    shell:
+    '''
+      mkdir -p !{task.process} logs/!{task.process}
+      log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
+      err_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.err
+
+      # time stamp + capturing tool versions
+      date | tee -a $log_file $err_file > /dev/null
+      iqtree2 -v >> $log_file
+
+      outgroup=''
+      if [ -n "!{params.outgroup}" ] ; then outgroup="-o !{params.outgroup}" ; fi
+
+      iqtree2 !{params.iqtree2_options} \
+        -s !{msa} \
+        -pre !{task.process}/iqtree \
+        -nt AUTO \
+        -ntmax !{task.cpus} \
+        $outgroup \
+        2>> $err_file >> $log_file
+    '''
+  }
+  params.snp_dists = true
+  params.snp_dists_options = ''
+  process snp_dists {
+    publishDir "${params.outdir}", mode: 'copy'
+    tag "SNP matrix"
+    cpus 1
+    container 'staphb/snp-dists:latest'
+
+    when:
+    params.snp_dists
+
+    input:
+    file(contigs) from roary_core_genome_snp_dists
+
+    output:
+    file("${task.process}/snp_matrix.txt")
+    file("logs/${task.process}/${task.process}.${workflow.sessionId}.{log,err}")
+
+    shell:
+    '''
+      mkdir -p !{task.process} logs/!{task.process}
+      log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
+      err_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.err
+
+      # time stamp + capturing tool versions
+      date | tee -a $log_file $err_file > /dev/null
+      snp-dists -v >> $log_file
+
+      snp-dists !{params.snp_dists_options} \
+        !{contigs} \
+        2>> $err_file \
+        > !{task.process}/snp_matrix.txt
+    '''
+  }
 }
 
 workflow.onComplete {
