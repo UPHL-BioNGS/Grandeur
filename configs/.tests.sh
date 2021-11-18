@@ -30,7 +30,7 @@ nextflow /home/eriny/sandbox/Grandeur/grandeur.nf -profile singularity,uphl \
   --outdir default_uphl \
   -with-tower --shigatyper false
 
-# just doing a multiple sequence alignment with gff, fastqs, and fastas
+# doing a multiple sequence alignment with gff, fastqs, and fastas
 nextflow /home/eriny/sandbox/Grandeur/grandeur.nf \
   -profile singularity \
   --gff /home/eriny/sandbox/test_files/grandeur/msa \
