@@ -927,6 +927,7 @@ if (params.kraken2) {
     '''
   }
 } else {
+  kraken2_files=Channel.empty()
   kraken2_top_hit=Channel.empty()
   kraken2_top_perc=Channel.empty()
   kraken2_top_reads=Channel.empty()
