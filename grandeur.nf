@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 
-println("Currently using the Grandeur workflow for use with microbial sequencing. The view is great from up here.\n")
+println("Currently using the Grandeur workflow for use with microbial sequencing. The view is great from 8299 feet (2530 meters) above sea level.\n")
 println("Author: Erin Young")
 println("email: eriny@utah.gov")
 println("Version: v1.0.20211130")
@@ -111,6 +111,9 @@ process seqyclean {
   cpus 1
   container 'staphb/seqyclean:latest'
 
+  when:
+  sample != null
+
   input:
   tuple val(sample), file(reads) from reads_seqyclean
 
@@ -209,7 +212,7 @@ process fastqc {
   container 'staphb/fastqc:latest'
 
   when:
-  params.fastqc
+  params.fastqc && sample != null
 
   input:
   tuple val(sample), file(raw) from reads_fastqc
@@ -1338,41 +1341,77 @@ process summary {
     header=$header";seqyclean_pairs_kept;seqyclean_percent_kept"
     result=$result";!{seqyclean_pairskept_results};!{seqyclean_perc_kept_results}"
 
-    header=$header";fastqc_1_reads;fastqc_2_reads"
-    result=$result";!{fastqc_1_results};!{fastqc_2_results}"
+    if [ "!{params.fastqc}" != "false" ]
+    then
+      header=$header";fastqc_1_reads;fastqc_2_reads"
+      result=$result";!{fastqc_1_results};!{fastqc_2_results}"
+    fi
 
-    header=$header";mash_genome_size;mash_coverage;mash_genus;mash_species;mash_full;mash_pvalue;mash_distance"
-    result=$result";!{mash_genome_size_results};!{mash_coverage_results};!{mash_genus_results};!{mash_species_results};!{mash_full_results};!{mash_pvalue_results};!{mash_distance_results}"
+    if [ "!{params.mash}" != "false" ]
+    then
+      header=$header";mash_genome_size;mash_coverage;mash_genus;mash_species;mash_full;mash_pvalue;mash_distance"
+      result=$result";!{mash_genome_size_results};!{mash_coverage_results};!{mash_genus_results};!{mash_species_results};!{mash_full_results};!{mash_pvalue_results};!{mash_distance_results}"
+    fi
 
-    header=$header";quast_gc_%;quast_contigs;quast_N50;quast_length"
-    result=$result";!{quast_gc_results};!{quast_contigs_results};!{quast_N50_contigs_results};!{quast_length_results}"
+    if [ "!{params.quast}" != "false" ]
+    then
+      header=$header";quast_gc_%;quast_contigs;quast_N50;quast_length"
+      result=$result";!{quast_gc_results};!{quast_contigs_results};!{quast_N50_contigs_results};!{quast_length_results}"
+    fi
 
-    header=$header";cg_average_read_length;cg_average_quality;cg_coverage;ref_genome_length"
-    result=$result";!{cg_avrl_results};!{cg_quality_results};!{cg_cov_results};!{ref_genome_length}"
+    if [ "!{params.cg_pipeline}" != "false" ]
+    then
+      header=$header";cg_average_read_length;cg_average_quality;cg_coverage;ref_genome_length"
+      result=$result";!{cg_avrl_results};!{cg_quality_results};!{cg_cov_results};!{ref_genome_length}"
+    fi
 
-    header=$header";seqsero2_profile;seqsero2_serotype;seqsero2_contamination"
-    result=$result";!{seqsero2_profile_results};!{seqsero2_serotype_results};!{seqsero2_contamination_results}"
+    if [ "!{params.seqsero2}" != "false" ]
+    then
+      header=$header";seqsero2_profile;seqsero2_serotype;seqsero2_contamination"
+      result=$result";!{seqsero2_profile_results};!{seqsero2_serotype_results};!{seqsero2_contamination_results}"
+    fi
 
-    header=$header";serotypefinder_o_group;serotypefinder_h_group"
-    result=$result";!{serotypefinder_results_o};!{serotypefinder_results_h}"
+    if [ "!{params.serotypefinder}" != "false" ]
+    then
+      header=$header";serotypefinder_o_group;serotypefinder_h_group"
+      result=$result";!{serotypefinder_results_o};!{serotypefinder_results_h}"
+    fi
 
-    header=$header";shigatyper_predictions;shigatyper_cadA"
-    result=$result";!{shigatyper_predictions};!{shigatyper_cadA}"
+    if [ "!{params.shigatyper}" != "false" ]
+    then
+      header=$header";shigatyper_predictions;shigatyper_cadA"
+      result=$result";!{shigatyper_predictions};!{shigatyper_cadA}"
+    fi
 
-    header=$header";kleborate_score;kleborate_mlst"
-    result=$result";!{kleborate_score};!{kleborate_mlst}"
+    if [ "!{params.kleborate}" != "false" ]
+    then
+      header=$header";kleborate_score;kleborate_mlst"
+      result=$result";!{kleborate_score};!{kleborate_mlst}"
+    fi
 
-    header=$header";amr_genes"
-    result=$result";!{amr_genes}"
+    if [ "!{params.amrfinderplus}" != "false" ]
+    then
+      header=$header";amr_genes"
+      result=$result";!{amr_genes}"
+    fi
 
-    header=$header";blobtools_top_species;blobtools_percentage"
-    result=$result";!{blobtools_species_results};!{blobtools_perc_results}"
+    if [ "!{params.blobtools}" != "false" ]
+    then
+      header=$header";blobtools_top_species;blobtools_percentage"
+      result=$result";!{blobtools_species_results};!{blobtools_perc_results}"
+    fi
 
-    header=$header";kraken2_top_species;kraken2_num_reads;kraken2_percentage"
-    result=$result";!{kraken2_top_hit};!{kraken2_top_reads};!{kraken2_top_perc}"
+    if [ "!{params.kraken2}" != "false" ]
+    then
+      header=$header";kraken2_top_species;kraken2_num_reads;kraken2_percentage"
+      result=$result";!{kraken2_top_hit};!{kraken2_top_reads};!{kraken2_top_perc}"
+    fi
 
-    header=$header";mlst"
-    result=$result";!{mlst_results}"
+    if [ "!{params.mlst}" != "false" ]
+    then
+      header=$header";mlst"
+      result=$result";!{mlst_results}"
+    fi
 
     echo $header > summary/!{sample}.summary.txt
     echo $result >> summary/!{sample}.summary.txt
