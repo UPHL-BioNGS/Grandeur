@@ -379,7 +379,7 @@ if (params.prokka) {
     output:
     file("prokka/${sample}/${sample}.{err,faa,ffn,fna,fsa,gbk,gff,log,sqn,tbl,tsv}")
     file("prokka/${sample}/${sample}.txt") into prokka_files
-    file("gff/${sample}.gff")
+    file("gff/${sample}.gff") into gffs
     file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
     shell:
@@ -409,6 +409,7 @@ if (params.prokka) {
   }
 } else {
   prokka_files=Channel.empty()
+  gffs=Channel.empty()
 }
 
 params.quast = true
@@ -1453,8 +1454,7 @@ if (params.roary) {
     container 'staphb/roary:latest'
 
     input:
-    file(contigs) from gffs.collect()
-    path(local_kraken) from local_kraken.ifEmpty([])
+    file(contigs) from gffs.concat(local_gffs).collect()
 
     output:
     file("roary/*")
@@ -1476,7 +1476,6 @@ if (params.roary) {
         -p !{task.cpus} \
         -f roary \
         -e -n \
-        -qc -k !{local_kraken} \
         *.gff \
         2>> $err_file >> $log_file
     '''
