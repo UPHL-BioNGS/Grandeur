@@ -37,6 +37,7 @@ nextflow /home/eriny/sandbox/Grandeur/grandeur.nf \
   --fastas /home/eriny/sandbox/test_files/grandeur/msa \
   --reads /home/eriny/sandbox/test_files/grandeur/msa \
   --outdir everything \
+  --prokka true \
   --roary true \
   -resume \
   -with-tower
