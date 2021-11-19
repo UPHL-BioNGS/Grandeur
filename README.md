@@ -53,7 +53,7 @@ nextflow run Grandeur.nf -c configs/docker.config
 
 # Running Grandeur
 
-![alt text](./configs/grandeur.png)
+![alt text](./configs/grandeur_lucidchart.png)
 
 ## Default file structure
 (can be adjusted with 'params.reads', 'params.fastas', and 'params.gff')
@@ -77,15 +77,6 @@ directory
 directory
 └── gff
      └── *gff
-```
-
-### The directory where the results will be located
-A directory will produce files at `'grandeur'` in where the command was inputted, but this can also be adjusted with 'params.outdir' or '--outdir'.
-
-## Example Usage
-```
-# using singularity
-nextflow run UPHL-BioNGS/Grandeur -profile singularity --reads paired --fastas ncbi --gff prior_run --outdir second_attempt
 ```
 
 This workflow will automatically grab any fastq files in `workflow.launchDir + '/reads'`, fasta files in `workflow.launchDir + '/fastas'`, and gff files in `workflow.launchDir + '/gff'`. This is a feature of the workflow.
@@ -130,6 +121,15 @@ WARNING: The download and decompressing takes a long time.
 - `params.blast_db` must be set to the directory with the blast nt database
   - `params.blast_db = '<blast nt database directory'`
   - `params.blast_db = 'blast_db'` in the example
+
+### The directory where the results will be located
+A directory will produce files at `'grandeur'` in where the command was inputted, but this can also be adjusted with 'params.outdir' or '--outdir'.
+
+## Example Usage
+```
+# using singularity
+nextflow run UPHL-BioNGS/Grandeur -profile singularity --reads paired --fastas ncbi --gff prior_run --outdir second_attempt
+```
 
 # Suggested inputs
 
