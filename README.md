@@ -497,10 +497,10 @@ It'd be nice if a tree was automatically generated from this. Really nice. It ha
 
 - [seqyclean](https://github.com/ibest/seqyclean) - cleaning reads
 - [spades](https://cab.spbu.ru/software/spades/) - _de novo_ alignment
-- [prokka](https://github.com/tseemann/prokka) - gene annotation - used in peak, optionally in grandeur
-- [roary](https://sanger-pathogens.github.io/Roary/) - core genome alignment - only used in peak
-- [iqtree2](http://www.iqtree.org/) - phylogenetic tree creation - only used in peak
-- [snp-dists](https://github.com/tseemann/snp-dists) - SNP matrix - only used in peak
+- [prokka](https://github.com/tseemann/prokka) - gene annotation - used for core genome alignment
+- [roary](https://sanger-pathogens.github.io/Roary/) - core genome alignment - optional
+- [iqtree2](http://www.iqtree.org/) - phylogenetic tree creation - used after core genome alignment
+- [snp-dists](https://github.com/tseemann/snp-dists) - SNP matrix - used after core genome aligment
 - [mash](https://github.com/marbl/Mash) - species identifier
 - [fastqc](https://github.com/s-andrews/FastQC) - fastq file QC
 - [quast](http://quast.sourceforge.net/quast) - contig QC
