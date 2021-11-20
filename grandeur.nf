@@ -17,6 +17,9 @@ println("")
 // TODO : plasmidseeker
 
 //# wget "ftp://ftp.ncbi.nlm.nih.gov/blast/db/nt.??.tar.gz"
+//# wget "ref_prok_rep_genomes.06.tar.gz"
+//# wget "ref_viroids_rep_genomes.tar.gz"
+//# wget "ref_viruses_rep_genomes.tar.gz"
 
 params.outdir = workflow.launchDir + '/grandeur'
 println("The files and directory for results is " + params.outdir)
