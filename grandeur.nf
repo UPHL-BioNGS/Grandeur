@@ -16,6 +16,8 @@ println("")
 // TODO : sistr
 // TODO : plasmidseeker
 
+//# wget "ftp://ftp.ncbi.nlm.nih.gov/blast/db/nt.??.tar.gz"
+
 params.outdir = workflow.launchDir + '/grandeur'
 println("The files and directory for results is " + params.outdir)
 
