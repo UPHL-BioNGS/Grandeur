@@ -3,10 +3,9 @@
 println("Currently using the Grandeur workflow for use with microbial sequencing. The view is great from 8299 feet (2530 meters) above sea level.\n")
 println("Author: Erin Young")
 println("email: eriny@utah.gov")
-println("Version: v1.0.20211220")
+println("Version: v1.0.20211217")
 println("")
 
-// TODO : blobtools
 // TODO : fix or expand shigella serotyping
 // TODO : mycosnp
 // TODO : something for plasmids
@@ -1133,9 +1132,7 @@ if (params.blobtools) {
     tuple val(sample), file(json) from create_files_plot
 
     output:
-    file("blobtools/${sample}.*.blobplot.bam0.png")
-    file("blobtools/${sample}.*.blobplot.read_cov.bam0.png")
-    file("blobtools/${sample}.*.blobplot.stats.txt")
+    file("blobtools/${sample}.*")
     tuple sample, env(blobtools_species) into blobtools_species_results
     tuple sample, env(blobtools_perc) into blobtools_perc_results
     file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
