@@ -30,9 +30,9 @@ nextflow run UPHL-BioNGS/Grandeur -profile docker
 If just determining relatedness between isolates, there is a 'msa' profile that can be used. This profile suppresses all serotyping on input fasta files.
 ```
 # using singularity
-nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa
+nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa -r main
 # using docker
-nextflow run UPHL-BioNGS/Grandeur -profile docker,msa
+nextflow run UPHL-BioNGS/Grandeur -profile docker,msa -r main
 ```
 ## Option 2. Downloading this repository with git and specifying a config file
 
