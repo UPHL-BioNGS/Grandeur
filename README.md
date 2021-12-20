@@ -103,14 +103,19 @@ Then the corresponding params need to be updated.
   - `params.kraken2_db = '<kraken2 database directory>'`
   - `params.kraken2_db = 'kraken2_db/minikraken2_v2_8GB_201904_UPDATE'` in the example
 
-## UNDER DEVELOPMENT : If the End User would like to use [blobtools](https://blobtools.readme.io/docs) to identify contamination:
+## If the End User would like to use [blobtools](https://blobtools.readme.io/docs) to identify contamination:
 
 [Blobtools](https://blobtools.readme.io/docs) uses a blast database, so there needs to be a blast database:
 
 ```
 mkdir blast_db
 cd blast_db
+
+# get the taxdump file
+curl -L ftp://ftp.ncbi.nih.gov/pub/taxonomy/new_taxdump/new_taxdump.tar.gz | tar xzf -
+# get the nt files
 wget "ftp://ftp.ncbi.nlm.nih.gov/blast/db/nt.??.tar.gz"
+# decompress the nt files
 for file in *tar.gz ; do tar -zxvf $file ; done
 ```
 This downloads NCBI's NT database into 'blast_db'. 
@@ -118,9 +123,13 @@ WARNING: The download and decompressing takes a long time.
 
 - `params.blobtools` needs to be set to `true`
   - `params.blobtools = 'true'`
-- `params.blast_db` must be set to the directory with the blast nt database
+- `params.blast_db` must be set to the directory with the blast database
   - `params.blast_db = '<blast nt database directory'`
   - `params.blast_db = 'blast_db'` in the example
+- `params.local_db_type` must be set to the type of blast database that is being used
+  - `params.local_db_type = 'nt'` in the example
+
+* at UPHL, we use the 'ref_prok_rep_genomes' blast database instead of 'nt'
 
 ### The directory where the results will be located
 A directory will produce files at `'grandeur'` in where the command was inputted, but this can also be adjusted with 'params.outdir' or '--outdir'.
@@ -169,7 +178,7 @@ grandeur/
 ├── grandeur_results.tsv                                                           # summary file
 ├── iqtree2
 │   ├── iqtree.ckp.gz
-│   ├── iqtree.contree                       # treefile without node values
+│   ├── iqtree.contree                                                             # treefile without node values
 │   ├── iqtree.iqtree
 │   ├── iqtree.log
 │   ├── iqtree.splits.nex
@@ -231,7 +240,7 @@ grandeur/
 │   ├── core_accessory.header.embl
 │   ├── core_accessory.tab
 │   ├── core_alignment_header.embl
-│   ├── core_gene_alignment.aln              # core genome alignment
+│   ├── core_gene_alignment.aln                                                 # core genome alignment
 │   ├── fixed_input_files
 │   │   └── sample.gff
 │   ├── gene_presence_absence.csv
@@ -241,7 +250,7 @@ grandeur/
 │   ├── number_of_new_genes.Rtab
 │   ├── number_of_unique_genes.Rtab
 │   ├── pan_genome_reference.fa
-│   └── summary_statistics.txt              # important file with the number of genes involved in core genome
+│   └── summary_statistics.txt                                                 # important file with the number of genes involved in core genome
 ├── seqsero2
 │   ├── sample
 │   │   ├── sample_H_and_O_and_specific_genes.fasta_mem.fasta
