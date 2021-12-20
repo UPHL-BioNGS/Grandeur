@@ -23,9 +23,9 @@ The gff files created via [prokka](https://github.com/tseemann/prokka), are used
 ## Option 1. Running from this github repository
 ```
 # using singularity
-nextflow run UPHL-BioNGS/Grandeur -profile singularity
+nextflow run UPHL-BioNGS/Grandeur -profile singularity -r main
 # using docker
-nextflow run UPHL-BioNGS/Grandeur -profile docker
+nextflow run UPHL-BioNGS/Grandeur -profile docker -r main
 ```
 If just determining relatedness between isolates, there is a 'msa' profile that can be used. This profile suppresses all serotyping on input fasta files.
 ```
@@ -137,7 +137,7 @@ A directory will produce files at `'grandeur'` in where the command was inputted
 ## Example Usage
 ```
 # using singularity
-nextflow run UPHL-BioNGS/Grandeur -profile singularity --reads paired --fastas ncbi --gff prior_run --outdir second_attempt
+nextflow run UPHL-BioNGS/Grandeur -profile singularity --reads paired --fastas ncbi --gff prior_run --outdir second_attempt -r main
 ```
 
 # Suggested inputs
@@ -570,7 +570,7 @@ There are also 6 genomes from NCBI genome that are in this repository under data
 
 And then run with
 ```
-nextflow run UPHL-BioNGS/Grandeur -profile singularity --reads reads --fastas data/fasta
+nextflow run UPHL-BioNGS/Grandeur -profile singularity --reads reads --fastas data/fasta -r main
 ```
 
 Summary files from running these through the default workflow ([grandeur_results.tsv](./data/grandeur_results.tsv)) as well as with UPHL's config file ([UPHL_grandeur_results.tsv](./data/UPHL_grandeur_results.tsv)) are also available.
@@ -579,9 +579,9 @@ The directory `data/msa` contains one gff file and 6 fasta files of _Stenotropho
 
 Testing creating a phylogenetic tree from a core gene comparison:
 ```
-nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa --fastas data/msa --gff data/msa 
+nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa --fastas data/msa --gff data/msa -r main
 # or
-nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa --fastas data/msa --gff data/msa --outgroup GCF_900475405.1_44087_C01_genomic
+nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa --fastas data/msa --gff data/msa --outgroup GCF_900475405.1_44087_C01_genomic -r main
 ```
 
 ## How do I turn processes off?
