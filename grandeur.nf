@@ -821,6 +821,7 @@ process amrfinderplus {
   output:
   file("ncbi-AMRFinderplus/${sample}_amrfinder_plus.txt") into amrfinder_files
   tuple sample, env(amr_genes) into amr_genes
+  tuple sample, env(virulence_genes) into virulence_genes
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
   shell:
@@ -869,8 +870,10 @@ process amrfinderplus {
       --plus \
       2>> $err_file >> $log_file
 
-    amr_genes=$(cut -f 7 ncbi-AMRFinderplus/!{sample}_amrfinder_plus.txt | tail +2 | tr '\\n' ',' | sed 's/,$//g' )
+    amr_genes=$(cut -f 7 ncbi-AMRFinderplus/!{sample}_amrfinder_plus.txt | tail +2 | sort | uniq | tr '\\n' ',' | sed 's/,$//g' )
+    virulence_genes=$(grep "VIRULENCE" ncbi-AMRFinderplus/!{sample}_amrfinder_plus.txt | cut -f 7 | sort | uniq | tr '\\n' ',' | sed 's/,$//g' )
     if [ -z "$amr_genes" ] ; then amr_genes="none" ; fi
+    if [ -z "$virulence_genes" ] ; then virulence_genes="none" ; fi
   '''
 }
 
@@ -1254,6 +1257,7 @@ reads
   .join(kraken2_top_perc, remainder: true, by: 0)
   .join(kraken2_top_reads, remainder: true, by: 0)
   .join(amr_genes, remainder: true, by: 0)
+  .join(virulence_genes, remainder: true, by:0)
   .join(mlst_results, remainder: true, by: 0)
   .set { results }
 
@@ -1303,6 +1307,7 @@ process summary {
     val(kraken2_top_perc),
     val(kraken2_top_reads),
     val(amr_genes),
+    val(virulence_genes),
     val(mlst_results) from results
 
   output:
@@ -1388,8 +1393,8 @@ process summary {
 
     if [ "!{params.amrfinderplus}" != "false" ]
     then
-      header=$header";amr_genes"
-      result=$result";!{amr_genes}"
+      header=$header";amr_genes,virulence_genes"
+      result=$result";!{amr_genes},!{virulence_genes}"
     fi
 
     if [ "!{params.blobtools}" != "false" ]
