@@ -3,7 +3,7 @@
 println("Currently using the Grandeur workflow for use with microbial sequencing. The view is great from 8299 feet (2530 meters) above sea level.\n")
 println("Author: Erin Young")
 println("email: eriny@utah.gov")
-println("Version: v1.0.20220103")
+println("Version: v1.0.20220106")
 println("")
 
 // TODO : fix or expand shigella serotyping
@@ -1387,8 +1387,8 @@ process summary {
 
     if [ "!{params.amrfinderplus}" != "false" ]
     then
-      header=$header";amr_genes,virulence_genes"
-      result=$result";!{amr_genes},!{virulence_genes}"
+      header=$header";amr_genes;virulence_genes"
+      result=$result";!{amr_genes};!{virulence_genes}"
     fi
 
     if [ "!{params.blobtools}" != "false" ]
