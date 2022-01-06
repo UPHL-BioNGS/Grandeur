@@ -1379,12 +1379,6 @@ process summary {
       result=$result";!{serotypefinder_results_o};!{serotypefinder_results_h}"
     fi
 
-    if [ "!{params.shigatyper}" != "false" ]
-    then
-      header=$header";shigatyper_predictions;shigatyper_cadA"
-      result=$result";!{shigatyper_predictions};!{shigatyper_cadA}"
-    fi
-
     if [ "!{params.kleborate}" != "false" ]
     then
       header=$header";kleborate_score;kleborate_mlst"
@@ -1413,6 +1407,12 @@ process summary {
     then
       header=$header";mlst"
       result=$result";!{mlst_results}"
+    fi
+
+    if [ "!{params.shigatyper}" != "false" ]
+    then
+      header=$header";shigatyper_predictions;shigatyper_cadA"
+      result=$result";!{shigatyper_predictions};!{shigatyper_cadA}"
     fi
 
     echo $header > summary/!{sample}.summary.txt
