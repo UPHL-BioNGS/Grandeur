@@ -33,14 +33,14 @@ A profile is not required, but will hopefully makes things easier. The workflow 
 
 There are also profiles for some common use cases.
 
-- fastq_to_consensus is the default. This is for the case when the END USER starts with fastq files, and the desired end product is a consensus fasta, serotyping information, and qc metrics.
+- fastq_to_consensus is the default. This is for generating a consensus fasta, serotyping information, and qc metrics. The fastq files do not need to be related organisms.
 
 ```
-nextflow run UPHL-BioNGS/Grandeur -profile singularity,gff_to_msa -r main
+nextflow run UPHL-BioNGS/Grandeur -profile singularity,fastq_to_consensus -r main
 ```
 - fastq_to_consensus can also include fasta files and produce limited serotyping and qc metrics
 ```
-nextflow run UPHL-BioNGS/Grandeur -profile singularity,fastq_to_msa -r main --reads reads --fastas fastas
+nextflow run UPHL-BioNGS/Grandeur -profile singularity,fastq_to_consensus -r main --reads reads --fastas fastas
 ```
 - fastq_to_msa is for starting with a collection of fastq files, with the desired output of a *M*ultiple *S*equence *A*lignment (MSA) of the consensus files. Will also generate consensus fastas, serotyping information, and qc metrics.
 ```
@@ -60,7 +60,7 @@ nextflow run UPHL-BioNGS/Grandeur -profile singularity,fastq_to_msa -r main --re
 nextflow run UPHL-BioNGS/Grandeur -profile singularity,fasta_to_msa -r main
 ```
 
-- gff_to_msa is for starting with fastas that have already been annotated with prokka (not the gff files from NCBI) and the the desired output is a MSA. This case will most likely occur when Grandeur has been used for a collection of samples, and there is another one to add.
+- gff_to_msa is for starting with fastas that have already been annotated with prokka (not the gff files from NCBI) and the the desired output is a MSA. This case will most likely occur when Grandeur has been used for a collection of samples and one needs to be dropped.
 
 ```
 nextflow run UPHL-BioNGS/Grandeur -profile singularity,gff_to_msa -r main
