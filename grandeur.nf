@@ -3,7 +3,7 @@
 println("Currently using the Grandeur workflow for use with microbial sequencing. The view is great from 8299 feet (2530 meters) above sea level.\n")
 println("Author: Erin Young")
 println("email: eriny@utah.gov")
-println("Version: v1.0.20220106")
+println("Version: v1.0.20220204")
 println("")
 
 // TODO : fix or expand shigella serotyping
@@ -62,17 +62,9 @@ reads_check
     exit 1
   }
 
-// Getting the file with genome sizes of common organisms
+// Getting the file with genome sizes of common organisms for cg-pipeline. The End User can use their own file and set with a param
 params.genome_sizes = workflow.projectDir + "/configs/genome_sizes.json"
-Channel
-  .fromPath(params.genome_sizes, type:'file')
-  .view { "Genome Sizes File : $it" }
-  .ifEmpty{
-    println("WARNING : No file with genome sizes was found at ${params.genome_sizes}")
-    println("If you have your own file, set with 'params.genomes_sizes'")
-    println("This file is required for cg-pipeline.")
-  }
-  .set { genome_sizes }
+genome_sizes = Channel.fromPath(params.genome_sizes, type:'file')
 
 // Getting the database for blobtools
 params.blobtools = false // right now this isn't currently working
@@ -435,7 +427,7 @@ process quast {
   tuple sample, env(gc) into quast_gc_results
   tuple sample, env(num_contigs) into quast_contigs_results
   tuple sample, env(n50) into quast_N50_contigs_results
-  tuple sample, env(length) into quast_length_results, quast_length_gc
+  tuple sample, env(length) into quast_length_results
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
   shell:
@@ -510,10 +502,9 @@ process shuffle {
 }
 
 shuffled_files
-  .join(quast_length_gc, remainder: true, by:0)
-  .join(mash_genome_size_gc, remainder: true, by:0)
-  .join(mash_genus_gc, remainder: true, by:0)
-  .join(mash_species_gc, remainder: true, by:0)
+  .join(mash_genome_size_gc, by: 0)
+  .join(mash_genus_gc, by: 0)
+  .join(mash_species_gc, by: 0)
   .combine(genome_sizes)
   .set { for_gc }
 
@@ -528,7 +519,7 @@ process cg_pipeline {
   params.cg_pipeline
 
   input:
-  tuple val(sample), file(fastq), val(quast), val(mash), val(genus), val(species), file(genome_file) from for_gc
+  tuple val(sample), file(fastq), val(mash), val(genus), val(species), file(genome_file) from for_gc
 
   output:
   file("cg_pipeline/${sample}_cg_pipeline_report.txt") optional true into cg_pipeline_files
@@ -553,7 +544,6 @@ process cg_pipeline {
     genome_length=''
     if [ "!{genus}" != "null" ] && [ "!{species}" != "null" ] ; then genome_length=$(grep !{genus} !{genome_file} | grep !{species} | grep -v "#" | head -n 1 | cut -f 2 -d ":" | cut -f 1 -d "," | awk '{ print $0 "e+06" }') ; fi
     if [ -z "$genome_length" ] && [ "!{mash}" != "null" ] ; then genome_length=$(echo !{mash} | xargs printf "%.0f" ) ; fi
-    if [ -z "$genome_length" ] && [ "!{quast}" != "null" ] ; then genome_length=!{quast} ; fi
 
     if [ -n "$genome_length" ]
     then
@@ -1472,9 +1462,12 @@ process multiqc {
 
     for quast_file in !{quast}
     do
-      sample=$(echo $quast_file | sed 's/_quast_report.tsv//g' | head -n 1 )
-      mkdir -p quast/$sample
-      mv $quast_file quast/$sample/report.tsv
+      if [ -f "$quast_file" ]
+      then
+        sample=$(echo $quast_file | sed 's/_quast_report.tsv//g' | head -n 1 )
+        mkdir -p quast/$sample
+        mv $quast_file quast/$sample/report.tsv
+      fi
     done
 
     multiqc !{params.multiqc_options} \
@@ -1512,6 +1505,8 @@ if (params.roary) {
       # time stamp + capturing tool versions
       date | tee -a $log_file $err_file > /dev/null
       roary -a >> $log_file
+
+      echo "There are $(ls *gff | wc -l) files for alignment" >> $log_file
 
       roary !{params.roary_options} \
         -p !{task.cpus} \
