@@ -258,7 +258,7 @@ process mash_sketch {
   tuple val(sample), file(reads) from clean_reads_mash
 
   output:
-  tuple sample, file("mash/${sample}.msh") into mash_sketch_files
+  tuple sample, file("mash/${sample}.msh") into mash_sketch_files optional true
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
   tuple sample, env(genome_size) into mash_genome_size_results, mash_genome_size_gc
   tuple sample, env(coverage) into mash_coverage_results
@@ -298,7 +298,7 @@ process mash_dist {
   tuple val(sample), file(msh) from mash_sketch_files.concat(fastas_mash)
 
   output:
-  tuple sample, file("mash/${sample}_mashdist.txt")
+  tuple sample, file("mash/${sample}_mashdist.txt") optional true
   tuple sample, env(genus) into mash_genus_results, mash_genus_prokka, mash_genus_gc, mash_genus_amrfinder
   tuple sample, env(species) into mash_species_results, mash_species_prokka, mash_species_gc, mash_species_amrfinder
   tuple sample, env(full_mash) into mash_full_results
@@ -422,8 +422,8 @@ process quast {
 
   output:
   path("quast/${sample}")
-  file("quast/${sample}_quast_report.tsv") into quast_files
-  file("quast/${sample}/transposed_report.tsv") into quast_files_combine
+  file("quast/${sample}_quast_report.tsv") into quast_files optional true
+  file("quast/${sample}/transposed_report.tsv") into quast_files_combine optional true
   tuple sample, env(gc) into quast_gc_results
   tuple sample, env(num_contigs) into quast_contigs_results
   tuple sample, env(n50) into quast_N50_contigs_results
@@ -1443,8 +1443,8 @@ process multiqc {
   file(prokka) from prokka_files.collect().ifEmpty([])
 
   output:
-  file("${task.process}/multiqc_report.html")
-  file("${task.process}/multiqc_data/*")
+  file("${task.process}/multiqc_report.html") optional true
+  file("${task.process}/multiqc_data/*") optional true
   file("logs/${task.process}/${task.process}.${workflow.sessionId}.{log,err}")
 
   shell:
