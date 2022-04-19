@@ -3,11 +3,10 @@
 println("Currently using the Grandeur workflow for use with microbial sequencing. The view is great from 8299 feet (2530 meters) above sea level.\n")
 println("Author: Erin Young")
 println("email: eriny@utah.gov")
-println("Version: v1.0.20220204")
+println("Version: v1.1.20220425")
 println("")
 
 // TODO : fix or expand shigella serotyping
-// TODO : mycosnp
 // TODO : something for plasmids
 // TODO : frp_plasmid
 // TODO : pointfinder
@@ -41,7 +40,7 @@ Channel
   .fromPath("${params.fastas}/*{.fa,.fasta,.fna}")
   .map { file -> tuple(file.baseName, file) }
   .view { "Fasta file found : ${it[0]}" }
-  .into { fastas_check ; fastas ; fastas_mash ; fastas_quast ; fastas_prokka ; fastas_seqsero2 ; fastas_amrfinder ; fastas_serotypefinder ; fastas_kleborate ; fastas_mlst ; fastas_kraken2 }
+  .into { fastas_check ; fastas ; fastas_mash ; fastas_quast ; fastas_prokka ; fastas_seqsero2 ; fastas_amrfinder ; fastas_serotypefinder ; fastas_kleborate ; fastas_mlst ; fastas_kraken2 ; fastas_fastani }
 
 // Getting fasta files that have been annotated with prokka
 params.gff = workflow.launchDir + '/gff'
@@ -65,6 +64,10 @@ reads_check
 // Getting the file with genome sizes of common organisms for cg-pipeline. The End User can use their own file and set with a param
 params.genome_sizes = workflow.projectDir + "/configs/genome_sizes.json"
 genome_sizes = Channel.fromPath(params.genome_sizes, type:'file')
+
+// Getting the reference genomes for fastANI
+params.fastani_refs = workflow.projectDir + "/configs"
+fastani_genomes = Channel.fromPath("${params.fastani_refs}/*tar.gz", type:'file')
 
 // Getting the database for blobtools
 params.blobtools = false // right now this isn't currently working
@@ -167,7 +170,7 @@ process spades {
 
   output:
   path("${task.process}/${sample}")
-  tuple sample, file("contigs/${sample}_contigs.fa") into contigs_prokka, contigs_quast, contigs_blastn, contigs_mlst, contigs_bwa, contigs_create, contigs_kleborate, contigs_amrfinder, contigs_serotypefinder
+  tuple sample, file("contigs/${sample}_contigs.fa") into contigs_prokka, contigs_quast, contigs_blastn, contigs_mlst, contigs_bwa, contigs_create, contigs_kleborate, contigs_amrfinder, contigs_serotypefinder, contigs_fastani
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
 
   shell:
@@ -353,6 +356,69 @@ process mash_dist {
     if [ -n "$find_klebsiella" ] ; then klebsiella_flag="found" ; else klebsiella_flag="not" ; fi
   '''
 }
+
+params.fastani = true
+params.fastani_options = ''
+process fastani {
+  publishDir "${params.outdir}", mode: 'copy'
+  tag "${sample}"
+  cpus params.medcpus
+  container 'staphb/fastani:latest'
+
+  when:
+  params.fastani
+
+  input:
+  tuple val(sample), file(contigs) from contigs_fastani.concat(fastas_fastani)
+  file(genomes) from fastani_genomes.collect()
+
+  output:
+  file("${task.process}/${sample}.out") into fastani_files
+  file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
+  tuple sample, env(top_ref) into fastani_ref_results
+  tuple sample, env(ani_score) into fastani_ani_results
+  tuple sample, env(fragment_over_total) into fastani_perc_results
+
+  shell:
+  '''
+    mkdir -p !{task.process} logs/!{task.process}
+    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
+
+    # time stamp + capturing tool versions
+    date | tee -a $log_file $err_file > /dev/null
+    echo "container : !{task.container}" >> $log_file
+    echo "fastANI version: " >> $log_file
+    fastANI --version 2>> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
+
+    tar -xvf !{genomes}
+    ls genomes/*fna > reference_list.txt
+
+    # columns are "query genome\treference genome\tANI value\tcount of bidirectional fragment mappings\ttotal query fragments" > !{task.process}/!{sample}.out
+
+    fastANI !{params.fastani_options} \
+      --threads !{task.cpus} \
+      -q !{contigs} \
+      --rl reference_list.txt \
+      -o !{task.process}/!{sample}.out \
+      2>> $err_file | tee -a $log_file
+
+    top_ref=$(sort -k3,3n -k 4,4n !{task.process}/!{sample}.out | tail -n 1 | cut -f 2 )
+    if [ -z "$top_ref" ] ; then top_ref='not identified' ; fi
+    ani_score=$(sort -k3,3n -k 4,4n !{task.process}/!{sample}.out | tail -n 1 | cut -f 3 )
+    if [ -z "$ani_score" ] ; then ani_score='0' ; fi
+    fragment_over_total=$(sort -k3,3n -k 4,4n !{task.process}/!{sample}.out | tail -n 1 | awk '{print $4/$5}' | awk '{print $1 * 100}' )
+    if [ -z "$fragment_over_total" ] ; then fragment_over_total='0' ; fi
+  '''
+}
+
+fastani_files
+  .collectFile(name: "fastani.out",
+    keepHeader: true,
+    sort: true,
+    storeDir: "${params.outdir}/fastani")
 
 params.prokka = false
 if (params.prokka) {
@@ -656,7 +722,7 @@ process shigatyper {
   publishDir "${params.outdir}", mode: 'copy'
   tag "${sample}"
   cpus params.medcpus
-  container 'andrewlangvt/shigatyper:1'
+  container 'staphb/shigatyper:latest'
 
   when:
   params.shigatyper && flag =~ 'found'
@@ -1248,6 +1314,9 @@ reads
   .join(kraken2_top_reads, remainder: true, by: 0)
   .join(amr_genes, remainder: true, by: 0)
   .join(virulence_genes, remainder: true, by:0)
+  .join(fastani_ref_results, remainder: true, by:0)
+  .join(fastani_ani_results, remainder: true, by:0)
+  .join(fastani_perc_results, remainder: true, by:0)
   .join(mlst_results, remainder: true, by: 0)
   .set { results }
 
@@ -1298,6 +1367,9 @@ process summary {
     val(kraken2_top_reads),
     val(amr_genes),
     val(virulence_genes),
+    val(fastani_ref_results),
+    val(fastani_ani_results),
+    val(fastani_perc_results),
     val(mlst_results) from results
 
   output:
@@ -1343,6 +1415,12 @@ process summary {
     then
       header=$header";mash_genome_size;mash_coverage;mash_genus;mash_species;mash_full;mash_pvalue;mash_distance"
       result=$result";!{mash_genome_size_results};!{mash_coverage_results};!{mash_genus_results};!{mash_species_results};!{mash_full_results};!{mash_pvalue_results};!{mash_distance_results}"
+    fi
+
+    if [ "!{params.fastani}" != "false" ]
+    then
+      header=$header";fastani_ref_top_hit;fastani_ani_score;fastani_per_aligned_seq_matches"
+      result=$result";!{fastani_ref_results};!{fastani_ani_results};!{fastani_perc_results}"
     fi
 
     if [ "!{params.quast}" != "false" ]
