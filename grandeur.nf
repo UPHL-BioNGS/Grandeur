@@ -13,6 +13,7 @@ println("")
 // TODO : mubsuite
 // TODO : sistr
 // TODO : plasmidseeker
+// TODO : socru?
 
 params.outdir = workflow.launchDir + '/grandeur'
 println("The files and directory for results is " + params.outdir)
@@ -161,6 +162,7 @@ process spades {
   tag "${sample}"
   cpus params.maxcpus
   container 'staphb/spades:latest'
+  errorStrategy { task.exitStatus == 21 ? 'ignore' : 'terminate' }
 
   when:
   params.spades
@@ -373,7 +375,7 @@ process fastani {
   file(genomes) from fastani_genomes.collect()
 
   output:
-  file("${task.process}/${sample}.out") into fastani_files
+  file("${task.process}/${sample}.out") optional true into fastani_files
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
   tuple sample, env(top_ref) into fastani_ref_results
   tuple sample, env(ani_score) into fastani_ani_results
@@ -732,6 +734,7 @@ process shigatyper {
 
   output:
   file("${task.process}/${sample}_shigatyper.tsv")
+  file("${task.process}/${sample}-hits.tsv") optional true
   tuple sample, env(predictions) into shigatyper_predictions
   tuple sample, env(lacy_cada) into shigatyper_cadA
   file("logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}")
@@ -750,10 +753,12 @@ process shigatyper {
     cat .command.sh >> $log_file
 
     shigatyper !{params.shigatyper_options} \
-      --name !{sample} \
-      !{fastq} \
+      --R1 !{fastq[0]} \
+      --R2 !{fastq[1]} \
       2>> $err_file \
       > !{task.process}/!{sample}_shigatyper.tsv
+
+    if [ -f "!{sample}-hits.tsv" ]; then mv !{sample}-hits.tsv !{task.process}/. ; fi
 
     predictions=$(grep -v "prediction" !{task.process}/!{sample}_shigatyper.tsv | cut -f 2 | tr '\\n' ',' | sed 's/,$//g' )
     lacy_cada="$(grep -ie "lac" -ie "cad" $err_file | head -n 1)"
