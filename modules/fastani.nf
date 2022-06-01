@@ -9,7 +9,7 @@ process fastani {
   tuple val(sample), file(contigs), file(genomes)
 
   output:
-  path "${task.process}/${sample}.out", optional: true                  , emit: collect
+  path "fastani/${sample}.txt", optional: true                          , emit: collect
   path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}" , emit: log
   tuple val(sample), env(top_ref)                                       , emit: ref
   tuple val(sample), env(ani_score)                                     , emit: ani
@@ -37,16 +37,17 @@ process fastani {
       --threads !{task.cpus} \
       -q !{contigs} \
       --rl reference_list.txt \
-      -o fastani/!{sample}.out \
+      -o fastani/!{sample}.txt \
       2>> $err_file | tee -a $log_file
 
-    top_ref=$(sort -k3,3n -k 4,4n !{task.process}/!{sample}.out | tail -n 1 | cut -f 2 )
-    if [ -z "$top_ref" ] ; then top_ref='not identified' ; fi
-    ani_score=$(sort -k3,3n -k 4,4n !{task.process}/!{sample}.out | tail -n 1 | cut -f 3 )
-    if [ -z "$ani_score" ] ; then ani_score='0' ; fi
-    fragment=$(sort -k3,3n -k 4,4n !{task.process}/!{sample}.out | tail -n 1 | cut -f 4 )
-    if [ -z "$fragment" ] ; then fragment='0' ; fi
-    total=$(sort -k3,3n -k 4,4n !{task.process}/!{sample}.out | tail -n 1 | cut -f 5 )
-    if [ -z "$total" ] ; then total='0' ; fi
+    top_ref=$(sort   -k3,3n -k 4,4n fastani/!{sample}.txt | tail -n 1 | cut -f 2 )
+    ani_score=$(sort -k3,3n -k 4,4n fastani/!{sample}.txt | tail -n 1 | cut -f 3 )
+    fragment=$(sort  -k3,3n -k 4,4n fastani/!{sample}.txt | tail -n 1 | cut -f 4 )
+    total=$(sort     -k3,3n -k 4,4n fastani/!{sample}.txt | tail -n 1 | cut -f 5 )
+
+    if [ -z "$top_ref"   ] ; then top_ref='not identified' ; fi
+    if [ -z "$ani_score" ] ; then ani_score='0'            ; fi
+    if [ -z "$fragment"  ] ; then fragment='0'             ; fi
+    if [ -z "$total"     ] ; then total='0'                ; fi
   '''
 }
