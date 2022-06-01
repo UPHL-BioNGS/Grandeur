@@ -19,6 +19,7 @@ params.spades_options             = '--isolate'
 
 // fastq information
 // 'shigatyper',
+//params.fastq_processes            = ['fastp', 'bbduk', 'spades', 'fastqc', 'cg_pipeline',  'mash', 'shigatyper', 'kraken2', 'summary', 'seqsero2', 'multiqc']
 params.fastq_processes            = ['fastp', 'bbduk', 'spades', 'fastqc', 'cg_pipeline',  'mash', 'kraken2', 'summary', 'seqsero2', 'multiqc']
 params.fastqc_options             = ''
 params.cg_pipeline_options        = '--qual_offset 33 --minLength 1'
@@ -108,7 +109,7 @@ include { mash_dist as mash }     from './modules/mash'                         
 include { summary }               from './modules/summary'                       addParams( fastq_processes:            params.fastq_processes,
                                                                                             contig_processes:           params.contig_processes,
                                                                                             phylogenetic_processes:     params.phylogenetic_processes)
-include { multiqc }               from './modules/multiqc'                       addParams( multiqc_options:            params.multiqc_options
+include { multiqc }               from './modules/multiqc'                       addParams( multiqc_options:            params.multiqc_options,
                                                                                             fastq_processes:            params.fastq_processes,
                                                                                             contig_processes:           params.contig_processes,
                                                                                             phylogenetic_processes:     params.phylogenetic_processes)
@@ -130,15 +131,6 @@ Channel
   .view { "Paired-end fastq files found : ${it[0]}" }
   .set { reads }
 
-// input_reads
-//
-//   .view { "Paired-end fastq files found : ${it[0]}" }
-//   .ifEmpty{
-//     println("No fastq or fastq.gz files were found at ${params.reads}")
-//     println("Set 'params.reads' to directory with paired-end reads" )
-//   }
-//   .set { reads }
-
 // Getting contig or fasta files
 params.fastas = workflow.launchDir + '/fastas'
 Channel
@@ -146,31 +138,12 @@ Channel
   .map { file -> tuple(file.baseName, file) }
   .set { fastas }
 
-// input_fastas
-//   .map { file -> tuple(file.baseName, file) }
-//   .view { "Fasta file found : ${it[0]}" }
-//   .into { fastas_check ; fastas ; fastas_mash ; fastas_quast ; fastas_prokka ; fastas_seqsero2 ; fastas_amrfinder ; fastas_serotypefinder ; fastas_kleborate ; fastas_mlst ; fastas_kraken2 ; fastas_fastani }
-//
-
 // Getting fasta files that have been annotated with prokka
 params.gff = workflow.launchDir + '/gff'
 Channel.fromPath("${params.gff}/*.gff", type: 'file')
   .view { "gff file : $it" }
   .set { gffs }
-//
-// reads_check
-//   .concat(fastas_check)
-//   .concat(gffs_check)
-//   .ifEmpty{
-//     println("FATAL : No fastq or fastq.gz files were found at ${params.reads}")
-//     println("Set 'params.reads' to directory with paired-end reads" )
-//     println("FATAL : No fastas were found at ${params.fastas}")
-//     println("Set 'params.fastas' to directory with fastas" )
-//     println("FATAL : No gff files were found at ${params.gff}")
-//     println("Set 'params.gff' to directory with gff files" )
-//     exit 1
-//   }
-//
+
 // Getting the file with genome sizes of common organisms for cg-pipeline. The End User can use their own file and set with a param
 params.genome_sizes = workflow.projectDir + "/configs/genome_sizes.json"
 genome_sizes = Channel.fromPath(params.genome_sizes, type:'file')
