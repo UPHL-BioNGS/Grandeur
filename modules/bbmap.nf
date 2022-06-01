@@ -28,7 +28,8 @@ process bbduk{
       out2=bbduk/!{sample}_rmphix_R2.fastq.gz \
       outm=bbduk/!{sample}.matched_phix.fq \
       ref=/opt/bbmap/resources/phix174_ill.ref.fa.gz \
-      stats=bbduk/!{sample}.phix.stats.txt
+      stats=bbduk/!{sample}.phix.stats.txt \
+      2>> $err_file | tee -a $log_file
 
     phix_reads=$(grep Matched bbduk/!{sample}.phix.stats.txt | cut -f 2)
   '''
