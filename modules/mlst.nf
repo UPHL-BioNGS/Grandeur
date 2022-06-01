@@ -8,7 +8,7 @@ process mlst {
   tuple val(sample), file(contig)
 
   output:
-  path "${task.process}/${sample}_mlst.txt"                            , emit: collect
+  path "mlst/${sample}_mlst.txt"                                       , emit: collect
   tuple val(sample), env(mlst)                                         , emit: mlst
   path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}", emit: log
 
