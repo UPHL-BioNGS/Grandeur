@@ -1,10 +1,10 @@
-include { fastqc }                               from '../modules/fastqc'         addParams(fastq_processes: params.fastq_processes, fastqc_options: params.fastqc_options )
-include { mash_sketch; mash_dist }               from '../modules/mash'           addParams(fastq_processes: params.fastq_processes, mash_reference: params.mash_reference, mash_options: params.mash_options)
-include { kraken2 }                              from '../modules/kraken2'        addParams(fastq_processes: params.fastq_processes, kraken2_options: params.kraken2_options )
-include { lyveset_shuffle; lyveset_cg_pipeline } from '../modules/lyveset'        addParams(fastq_processes: params.fastq_processes, cg_pipeline_options: params.cg_pipeline_options )
-include { serotypefinder }                       from '../modules/serotypefinder' addParams(fastq_processes: params.fastq_processes, serotypefinder_options: params.serotypefinder_options )
-include { seqsero2 }                             from '../modules/seqsero2'       addParams(fastq_processes: params.fastq_processes, seqsero2_options: params.seqsero2_options )
-include { shigatyper }                           from '../modules/shigatyper'     addParams(fastq_processes: params.fastq_processes, shigatyper_options: params.shigatyper_options )
+include { fastqc }                                 from '../modules/fastqc'         addParams(fastq_processes: params.fastq_processes, fastqc_options: params.fastqc_options )
+include { mash_sketch; mash_dist }                 from '../modules/mash'           addParams(fastq_processes: params.fastq_processes, mash_reference: params.mash_reference, mash_options: params.mash_options)
+include { kraken2_fastq as kraken2 }               from '../modules/kraken2'        addParams(fastq_processes: params.fastq_processes, kraken2_options: params.kraken2_options )
+include { lyveset_shuffle; lyveset_cg_pipeline }   from '../modules/lyveset'        addParams(fastq_processes: params.fastq_processes, cg_pipeline_options: params.cg_pipeline_options )
+include { serotypefinder_fastq as serotypefinder } from '../modules/serotypefinder' addParams(fastq_processes: params.fastq_processes, serotypefinder_options: params.serotypefinder_options )
+include { seqsero2_fastq as seqsero2 }             from '../modules/seqsero2'       addParams(fastq_processes: params.fastq_processes, seqsero2_options: params.seqsero2_options )
+include { shigatyper }                             from '../modules/shigatyper'     addParams(fastq_processes: params.fastq_processes, shigatyper_options: params.shigatyper_options )
 
 workflow fastq_information {
   take:
@@ -27,13 +27,9 @@ workflow fastq_information {
       .set { for_gc }
     lyveset_cg_pipeline(for_gc)
 
-    clean_reads
-      .map { it -> tuple(it[0], it[1], "fastq") }
-      .set {clean_reads_type}
-
-    kraken2(clean_reads_type.combine(kraken2_db))
-    serotypefinder(clean_reads_type.join(mash_dist.out.ecoli_flag, by: 0))
-    seqsero2(clean_reads_type.join(mash_dist.out.salmonella_flag, by: 0))
+    kraken2(clean_reads.combine(kraken2_db))
+    serotypefinder(clean_reads.join(mash_dist.out.ecoli_flag, by: 0))
+    seqsero2(clean_reads.join(mash_dist.out.salmonella_flag, by: 0))
 
     lyveset_cg_pipeline.out.collect
       .collectFile(name: "cg_pipeline_report.txt",

@@ -1,11 +1,11 @@
-include { amrfinderplus }  from '../modules/amrfinderplus'  addParams(contig_processes: params.contig_processes, amrfinderplus_options: params.amrfinderplus_options )
-include { fastani }        from '../modules/fastani'        addParams(contig_processes: params.contig_processes, fastani_options: params.fastani_options )
-include { kleborate }      from '../modules/kleborate'      addParams(contig_processes: params.contig_processes, kleborate_options: params.kleborate_options )
-include { kraken2 }        from '../modules/kraken2'        addParams(contig_processes: params.contig_processes, kraken2_options: params.kraken2_options )
-include { mlst }           from '../modules/mlst'           addParams(contig_processes: params.contig_processes, mlst_options: params.mlst_options )
-include { quast }          from '../modules/quast'          addParams(contig_processes: params.contig_processes, quast_options: params.quast_options )
-include { seqsero2 }       from '../modules/seqsero2'       addParams(contig_processes: params.contig_processes, seqsero2_options: params.seqsero2_options )
-include { serotypefinder } from '../modules/serotypefinder' addParams(contig_processes: params.contig_processes, serotypefinder_options: params.serotypefinder_options )
+include { amrfinderplus }                           from '../modules/amrfinderplus'  addParams(contig_processes: params.contig_processes, amrfinderplus_options: params.amrfinderplus_options )
+include { fastani }                                 from '../modules/fastani'        addParams(contig_processes: params.contig_processes, fastani_options: params.fastani_options )
+include { kleborate }                               from '../modules/kleborate'      addParams(contig_processes: params.contig_processes, kleborate_options: params.kleborate_options )
+include { kraken2_fasta as kraken2 }                from '../modules/kraken2'        addParams(contig_processes: params.contig_processes, kraken2_options: params.kraken2_options )
+include { mlst }                                    from '../modules/mlst'           addParams(contig_processes: params.contig_processes, mlst_options: params.mlst_options )
+include { quast }                                   from '../modules/quast'          addParams(contig_processes: params.contig_processes, quast_options: params.quast_options )
+include { seqsero2_fasta as seqsero2 }              from '../modules/seqsero2'       addParams(contig_processes: params.contig_processes, seqsero2_options: params.seqsero2_options )
+include { serotypefinder_fasta as serotypefinder }  from '../modules/serotypefinder' addParams(contig_processes: params.contig_processes, serotypefinder_options: params.serotypefinder_options )
 
 workflow contig_information {
   take:
@@ -22,20 +22,15 @@ workflow contig_information {
     quast(contigs)
     fastani(contigs.combine(fastani_genomes))
     kleborate(contigs.join(klebsiella_flag, by:0))
+    seqsero2(contigs.join(salmonella_flag,  by:0))
+    serotypefinder(contigs.join(ecoli_flag, by:0))
+    kraken2(contigs.combine(kraken2_db))
 
     contigs
-      .map { it -> tuple(it[0], it[1], "fasta") }
-      .set {contigs_type}
-    seqsero2(contigs_type.join(salmonella_flag, by:0))
-    serotypefinder(contigs_type.join(ecoli_flag, by:0))
-
-    contigs
-      .join(mash_genus, by: 0)
-      .join(mash_species, by: 0)
+      .join(mash_genus,                     by: 0)
+      .join(mash_species,                   by: 0)
       .set {for_amrfinder}
     amrfinderplus(for_amrfinder)
-
-    kraken2(contigs.combine(kraken2_db))
 
     mlst.out.collect
       .collectFile(name: "mlst_result.tsv",
