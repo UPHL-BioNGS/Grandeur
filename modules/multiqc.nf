@@ -2,10 +2,11 @@ process multiqc {
   tag "multiqc"
 
   when:
-  params.fastq_processes =~ /multiqc/ || params.contig_processes =~ /multiqc/
+  params.fastq_processes =~ /multiqc/ || params.contig_processes =~ /multiqc/ || params.phylogenetic_processes =~ /multiqc/
 
   input:
-  file(seqyclean)
+  file(fastp)
+  file(bbduk)
   file(kraken2_contigs)
   file(quast)
   file(fastqc)
@@ -13,13 +14,13 @@ process multiqc {
   file(prokka)
 
   output:
-  path "${task.process}/multiqc_report.html", optional: true                 , emit: report
-  path "${task.process}/multiqc_data/*"     , optional: true                 , emit: data_folder
+  path "multiqc/multiqc_report.html", optional: true                         , emit: report
+  path "multiqc/multiqc_data/*"     , optional: true                         , emit: data_folder
   path "logs/${task.process}/${task.process}.${workflow.sessionId}.{log,err}", emit: log_files
 
   shell:
   '''
-    mkdir -p !{task.process} quast fastqc kraken2 prokka seqyclean logs/!{task.process}
+    mkdir -p multiqc quast logs/!{task.process}
     log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
     err_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.err
 
@@ -41,7 +42,7 @@ process multiqc {
     done
 
     multiqc !{params.multiqc_options} \
-      --outdir !{task.process} \
+      --outdir multiqc \
       --cl_config "prokka_fn_snames: True"  \
       . \
       2>> $err_file >> $log_file
