@@ -1,23 +1,22 @@
-process serotypefinder {
+process serotypefinder_fastq {
   tag "${sample}"
   label "medcpus"
 
   when:
-  ((params.fastq_processes =~ /serotypefinder/ && type == 'fastq' ) || (params.contig_processes =~ /serotypefinder/ && type == 'fasta' )) && flag =~ 'found'
+  params.fastq_processes =~ /serotypefinder/ && flag =~ 'found'
 
   input:
-  tuple val(sample), file(file), val(type), val(flag)
+  tuple val(sample), file(file), val(flag)
 
   output:
-  path "${task.process}/${sample}/*"                                    , emit: files
+  path "serotypefinder/${sample}/*"                                    , emit: files
   tuple val(sample), env(o_type)                                        , emit: ogroup
   tuple val(sample), env(h_type)                                        , emit: hgroup
   path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}" , emit:  log
 
   shell:
-  if ( type == "fastq" )
   '''
-    mkdir -p !{task.process}/!{sample} logs/!{task.process}
+    mkdir -p serotypefinder/!{sample} logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
     err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
@@ -28,19 +27,37 @@ process serotypefinder {
     cat .command.sh >> $log_file
 
     serotypefinder.py !{params.serotypefinder_options} \
-      -i !{fasta} \
-      -o !{task.process}/!{sample} \
+      -i !{file} \
+      -o serotypefinder/!{sample} \
       -x \
       2>> $err_file >> $log_file
 
-    h_type=$(cut -f 3 !{task.process}/!{sample}/results_tab.tsv | grep ^H | sort | uniq | tr '\\n' ',' | sed 's/,$//g' )
-    o_type=$(cut -f 3 !{task.process}/!{sample}/results_tab.tsv | grep ^O | sort | uniq | tr '\\n' ',' | sed 's/,$//g' )
+    h_type=$(cut -f 3 serotypefinder/!{sample}/results_tab.tsv | grep ^H | sort | uniq | tr '\\n' ',' | sed 's/,$//g' )
+    o_type=$(cut -f 3 serotypefinder/!{sample}/results_tab.tsv | grep ^O | sort | uniq | tr '\\n' ',' | sed 's/,$//g' )
     if [ -z "$h_type" ] ; then h_type="none" ; fi
     if [ -z "$o_type" ] ; then o_type="none" ; fi
   '''
-  else if ( type == "fasta" )
+}
+
+process serotypefinder_fasta {
+  tag "${sample}"
+  label "medcpus"
+
+  when:
+  params.contig_processes =~ /serotypefinder/ && flag =~ 'found'
+
+  input:
+  tuple val(sample), file(file), val(flag)
+
+  output:
+  path "serotypefinder/${sample}/*"                                    , emit: files
+  tuple val(sample), env(o_type)                                        , emit: ogroup
+  tuple val(sample), env(h_type)                                        , emit: hgroup
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}" , emit:  log
+
+  shell:
   '''
-    mkdir -p !{task.process}/!{sample} logs/!{task.process}
+    mkdir -p serotypefinder/!{sample} logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
     err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
@@ -51,13 +68,13 @@ process serotypefinder {
     cat .command.sh >> $log_file
 
     serotypefinder.py !{params.serotypefinder_options} \
-      -i !{fasta} \
-      -o !{task.process}/!{sample} \
+      -i !{file} \
+      -o serotypefinder/!{sample} \
       -x \
       2>> $err_file >> $log_file
 
-    h_type=$(cut -f 3 !{task.process}/!{sample}/results_tab.tsv | grep ^H | sort | uniq | tr '\\n' ',' | sed 's/,$//g' )
-    o_type=$(cut -f 3 !{task.process}/!{sample}/results_tab.tsv | grep ^O | sort | uniq | tr '\\n' ',' | sed 's/,$//g' )
+    h_type=$(cut -f 3 serotypefinder/!{sample}/results_tab.tsv | grep ^H | sort | uniq | tr '\\n' ',' | sed 's/,$//g' )
+    o_type=$(cut -f 3 serotypefinder/!{sample}/results_tab.tsv | grep ^O | sort | uniq | tr '\\n' ',' | sed 's/,$//g' )
     if [ -z "$h_type" ] ; then h_type="none" ; fi
     if [ -z "$o_type" ] ; then o_type="none" ; fi
   '''
