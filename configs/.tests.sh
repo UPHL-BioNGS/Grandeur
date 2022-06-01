@@ -2,14 +2,14 @@
 
 # the default workflow on just fastas
 nextflow run /home/eriny/sandbox/Grandeur \
-  -profile singularity \
+  -profile singularity,just_fasta \
   --fastas /home/eriny/sandbox/test_files/grandeur/fastas \
   --outdir default_fastas \
   -with-tower
 
 # the default workflow on just paired-end reads
 nextflow run /home/eriny/sandbox/Grandeur \
-  -profile singularity \
+  -profile singularity,just_fastq \
   --reads /home/eriny/sandbox/test_files/grandeur/reads \
   --outdir default_reads \
   -resume -with-tower
@@ -32,7 +32,7 @@ nextflow run /home/eriny/sandbox/Grandeur \
   -resume -with-tower
 
 # the default workflow on paired-end reads plus fastas with uphl's config
-nextflow run /home/eriny/sandbox/Grandeur -profile singularity,uphl \
+nextflow run /home/eriny/sandbox/Grandeur -profile uphl \
   --reads /home/eriny/sandbox/test_files/grandeur/reads \
   --fastas /home/eriny/sandbox/test_files/grandeur/fastas \
   -resume \
@@ -41,7 +41,7 @@ nextflow run /home/eriny/sandbox/Grandeur -profile singularity,uphl \
 
 # doing a multiple sequence alignment with gff, fastqs, and fastas
 nextflow run /home/eriny/sandbox/Grandeur \
-  -profile singularity \
+  -profile singularity,msa \
   --gff /home/eriny/sandbox/test_files/grandeur/msa \
   --fastas /home/eriny/sandbox/test_files/grandeur/msa \
   --reads /home/eriny/sandbox/test_files/grandeur/msa \
