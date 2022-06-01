@@ -3,7 +3,7 @@
 println("Currently using the Grandeur workflow for use with microbial sequencing. The view is great from 8299 feet (2530 meters) above sea level.\n")
 println("Author: Erin Young")
 println("email: eriny@utah.gov")
-println("Version: v2.0.20220530")
+println("Version: v2.0.20220610")
 println("")
 
 nextflow.enable.dsl = 2
@@ -13,14 +13,13 @@ params.maxcpus                    = 12
 params.medcpus                    = 4
 
 // core workflow of fastq to contig
-// WARNING : DO NOT CHANGE params.seqyclean_contaminant_file UNLESS YOU ARE USING A DIFFERENT SEQYCLEAN CONTAINER
-params.seqyclean_contaminant_file = "/Adapters_plus_PhiX_174.fasta"
-params.seqyclean_options          = '-minlen 25 -qual'
-params.spades_options             = ''
+params.fastp_options              = "--detect_adapter_for_pe"
+params.bbduk_options              = "k=31 hdist=1"
+params.spades_options             = '--isolate'
 
 // fastq information
 // 'shigatyper',
-params.fastq_processes            = ['seqyclean', 'spades', 'fastqc', 'cg_pipeline',  'mash', 'kraken2', 'summary', 'seqsero2', 'multiqc']
+params.fastq_processes            = ['fastp', 'bbduk', 'spades', 'fastqc', 'cg_pipeline',  'mash', 'kraken2', 'summary', 'seqsero2', 'multiqc']
 params.fastqc_options             = ''
 params.cg_pipeline_options        = '--qual_offset 33 --minLength 1'
 params.shigatyper_options         = ''
@@ -41,7 +40,7 @@ params.kleborate_options          = '-all'
 params.mlst_options               = ''
 params.quast_options              = ''
 params.serotypefinder_options     = ''
-params.seqsero2_options           = ''
+params.seqsero2_options           = '-m a -b mem'
 // // duplicate as kraken2 with fastq reads is default
 // // params.kraken2_options         = ''
 
@@ -68,8 +67,8 @@ params.snp_dists_options          = '-c'
 include { de_novo_alignment }     from './subworkflows/de_novo_alignment.nf'     addParams( outdir:                     params.outdir,
                                                                                             fastq_processes:            params.fastq_processes,
                                                                                             spades_options:             params.spades_options,
-                                                                                            seqyclean_contaminant_file: params.seqyclean_contaminant_file,
-                                                                                            seqyclean_options:          params.seqyclean_options)
+                                                                                            bbduk_optons:               params.bbduk_options,
+                                                                                            fastp_options:              params.fastp_options)
 include { fastq_information }     from './subworkflows/fastq_information.nf'     addParams( outdir:                     params.outdir,
                                                                                             fastq_processes:            params.fastq_processes,
                                                                                             fastqc_options:             params.fastqc_options,
@@ -109,7 +108,10 @@ include { mash_dist as mash }     from './modules/mash'                         
 include { summary }               from './modules/summary'                       addParams( fastq_processes:            params.fastq_processes,
                                                                                             contig_processes:           params.contig_processes,
                                                                                             phylogenetic_processes:     params.phylogenetic_processes)
-include { multiqc }               from './modules/multiqc'                       addParams( multiqc_options:            params.multiqc_options)
+include { multiqc }               from './modules/multiqc'                       addParams( multiqc_options:            params.multiqc_options
+                                                                                            fastq_processes:            params.fastq_processes,
+                                                                                            contig_processes:           params.contig_processes,
+                                                                                            phylogenetic_processes:     params.phylogenetic_processes)
 
 // TODO : something for plasmids
 // TODO : frp_plasmid
@@ -230,7 +232,8 @@ workflow {
 
   phylogenetic_analysis(contigs, mash_species, mash_genus, gffs )
 
-  multiqc(de_novo_alignment.out.seqyclean_multiqc.collect().ifEmpty([]),
+  multiqc(de_novo_alignment.out.fastp_multiqc.collect().ifEmpty([]),
+          de_novo_alignment.out.bbduk_multiqc.collect().ifEmpty([]),
           contig_information.out.kraken2_multiqc.collect().ifEmpty([]),
           contig_information.out.quast_multiqc.collect().ifEmpty([]),
           fastq_information.out.fastqc_multiqc.collect().ifEmpty([]),
@@ -240,8 +243,8 @@ workflow {
   reads
     .mix(fastas)
     // de_novo_alignment
-    .join(de_novo_alignment.out.seqyclean_perc_kept                                                       , remainder: true, by: 0)
-    .join(de_novo_alignment.out.seqyclean_perc_pairskept                                                  , remainder: true, by: 0)
+    .join(de_novo_alignment.out.phix_reads                                                                , remainder: true, by: 0)
+    .join(de_novo_alignment.out.fastp_results                                                             , remainder: true, by: 0)
 
     // fastq_information
     .join(fastq_information.out.fastqc_1_results                                                          , remainder: true, by: 0)
