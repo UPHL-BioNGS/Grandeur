@@ -3,7 +3,7 @@ process kleborate {
   label "medcpus"
 
   when:
-  params.contigs_processes =~ /kraken2/ && flag =~ 'found'
+  params.contig_processes =~ /kleborate/ && flag =~ 'found'
 
   input:
   tuple val(sample), file(contig), val(flag)
