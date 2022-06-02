@@ -31,6 +31,7 @@ process summary {
     val(kraken2_top_hit),
     val(kraken2_top_perc),
     val(kraken2_top_reads),
+    val(plasmidfinder_hits),
     val(quast_gc_results),
     val(quast_contigs_results),
     val(quast_N50_contigs_results),
@@ -165,6 +166,12 @@ process summary {
     then
       header="$header;shigatyper_predictions;shigatyper_cadA"
       result="$result;!{shigatyper_predictions};!{shigatyper_cadA}"
+    fi
+
+    if [ -n "$(echo !{params.fastq_processes} !{params.contig_processes} !{params.phylogenetic_processes} | grep plasmidfinder)" ]
+    then
+      header="$header;plasmidfinder_hits"
+      result="$result;!{plasmidfinder_hits}"
     fi
 
     echo $header > summary/!{sample}.summary.txt
