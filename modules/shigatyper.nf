@@ -34,7 +34,7 @@ process shigatyper {
       2>> $err_file \
       > shigatyper/!{sample}_shigatyper.tsv
 
-    if [ -f "!{sample}-hits.tsv" ]; then mv !{sample}-hits.tsv shigatyper/. ; fi
+    if [ -f "!{sample}.tsv" ]; then cp !{sample}.tsv shigatyper/!{sample}-hits.tsv ; fi
 
     predictions=$(grep -v "prediction" shigatyper/!{sample}_shigatyper.tsv | cut -f 2 | tr '\\n' ',' | sed 's/,$//g' )
     lacy_cada="$(grep -ie "lac" -ie "cad" $err_file | head -n 1)"
