@@ -18,12 +18,12 @@ params.bbduk_options              = "k=31 hdist=1"
 params.spades_options             = '--isolate'
 
 // fastq information
-// 'shigatyper',
-//params.fastq_processes            = ['fastp', 'bbduk', 'spades', 'fastqc', 'cg_pipeline',  'mash', 'shigatyper', 'kraken2', 'summary', 'seqsero2', 'multiqc']
-params.fastq_processes            = ['fastp', 'bbduk', 'spades', 'fastqc', 'cg_pipeline',  'mash', 'kraken2', 'summary', 'seqsero2', 'multiqc']
+params.fastq_processes            = ['fastp', 'bbduk', 'spades', 'fastqc', 'cg_pipeline',  'mash', 'shigatyper', 'kraken2', 'summary', 'seqsero2', 'multiqc', 'plasmidfinder']
+//params.fastq_processes            = ['fastp', 'bbduk', 'spades', 'fastqc', 'cg_pipeline',  'mash', 'kraken2', 'summary', 'seqsero2', 'multiqc']
 params.fastqc_options             = ''
 params.cg_pipeline_options        = '--qual_offset 33 --minLength 1'
 params.shigatyper_options         = ''
+params.plasmidfinder_options      = ''
 params.kraken2_db                 = false
 params.kraken2_options            = ''
 // WARNING : DO NOT CHANGE params.mash_reference UNLESS YOU ARE USING A DIFFERENT MASH CONTAINER
@@ -79,6 +79,7 @@ include { fastq_information }     from './subworkflows/fastq_information.nf'    
                                                                                             mash_reference:             params.mash_reference,
                                                                                             mash_options:               params.mash_options,
                                                                                             serotypefinder_options:     params.serotypefinder_options,
+                                                                                            plasmidfinder_options:      params.plasmidfinder_options,
                                                                                             seqsero2_options:           params.seqsero2_options)
 include { contig_information }    from './subworkflows/contig_information.nf'    addParams( outdir:                     params.outdir,
                                                                                             contig_processes:           params.contig_processes,
@@ -89,6 +90,7 @@ include { contig_information }    from './subworkflows/contig_information.nf'   
                                                                                             quast_options:              params.quast_options,
                                                                                             serotypefinder_options:     params.serotypefinder_options,
                                                                                             seqsero2_options:           params.seqsero2_options,
+                                                                                            plasmidfinder_options:      params.plasmidfinder_options,
                                                                                             kraken2_options:            params.kraken2_options)
 include { blobtools }             from './subworkflows/blobtools.nf'             addParams( local_db_type:              params.local_db_type,
                                                                                             blobtools_create_options:   params.blobtools_create_options,
@@ -245,6 +247,7 @@ workflow {
     .join(fastq_information.out.kraken2_top_hit.mix(contig_information.out.kraken2_top_hit)               , remainder: true, by: 0)
     .join(fastq_information.out.kraken2_top_perc.mix(contig_information.out.kraken2_top_perc)             , remainder: true, by: 0)
     .join(fastq_information.out.kraken2_top_reads.mix(contig_information.out.kraken2_top_reads)           , remainder: true, by: 0)
+    .join(fastq_information.out.plasmidfinder_hits.mix(contig_information.out.plasmidfinder_hits)         , remainder: true, by: 0)
 
     // contig_information
     .join(contig_information.out.quast_gc                                                                 , remainder: true, by: 0)
