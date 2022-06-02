@@ -23,6 +23,9 @@ process roary {
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
     roary -a >> $log_file
+    echo "container : !{task.container}" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     echo "There are $(ls *gff | wc -l) files for alignment" >> $log_file
 

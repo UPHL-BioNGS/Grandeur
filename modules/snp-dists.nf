@@ -20,6 +20,9 @@ process snp_dists {
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
     snp-dists -v >> $log_file
+    echo "container : !{task.container}" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     snp-dists !{params.snp_dists_options} \
       !{contigs} \

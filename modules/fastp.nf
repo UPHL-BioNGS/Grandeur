@@ -20,6 +20,9 @@ process fastp {
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
     fastp --version >> $log_file 2>> $err_file
+    echo "container : !{task.container}" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     fastp !{params.fastp_options} \
       -i !{reads[0]} \

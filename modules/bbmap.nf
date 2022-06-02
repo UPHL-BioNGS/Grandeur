@@ -20,6 +20,9 @@ process bbduk{
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
     bbduk.sh --version >> $log_file 2>> $err_file
+    echo "container : !{task.container}" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     bbduk.sh !{params.bbduk_options} \
       in1=!{reads[0]} \

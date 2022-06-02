@@ -21,6 +21,9 @@ process iqtree2 {
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
     iqtree2 -v >> $log_file
+    echo "container : !{task.container}" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
 
     outgroup=''
     if [ -n "!{params.outgroup}" ] ; then outgroup="-o !{params.outgroup}" ; fi
