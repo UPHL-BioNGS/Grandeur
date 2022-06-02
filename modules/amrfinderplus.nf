@@ -28,10 +28,13 @@ process amrfinderplus {
 
     organism_options=(Acinetobacter_baumannii
     Campylobacter
+    Clostridioides_difficile
     Enterococcus_faecalis
     Enterococcus_faecium
     Escherichia:Shigella
     Klebsiella
+    Neisseria
+    Pseudomonas_aeruginosa
     Salmonella
     Staphylococcus_aureus
     Staphylococcus_pseudintermedius
