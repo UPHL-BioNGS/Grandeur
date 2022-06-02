@@ -6,6 +6,7 @@ include { mlst }                                    from '../modules/mlst'      
 include { quast }                                   from '../modules/quast'          addParams(contig_processes: params.contig_processes, quast_options: params.quast_options )
 include { seqsero2_fasta as seqsero2 }              from '../modules/seqsero2'       addParams(contig_processes: params.contig_processes, seqsero2_options: params.seqsero2_options )
 include { serotypefinder_fasta as serotypefinder }  from '../modules/serotypefinder' addParams(contig_processes: params.contig_processes, serotypefinder_options: params.serotypefinder_options )
+include { plasmidfinder }                           from '../modules/plasmidfinder'  addParams(contig_processes: params.contig_processes, plasmidfinder_options: params.plasmidfinder_options )
 
 workflow contig_information {
   take:
@@ -20,6 +21,7 @@ workflow contig_information {
   main:
     mlst(contigs)
     quast(contigs)
+    plasmidfinder(contigs)
     fastani(contigs.combine(fastani_genomes))
     kleborate(contigs.join(klebsiella_flag, by:0))
     seqsero2(contigs.join(salmonella_flag,  by:0))
@@ -63,6 +65,7 @@ workflow contig_information {
         storeDir: "${params.outdir}/quast")
 
   emit:
+    // for summary
     amrfinder_amr_genes     = amrfinderplus.out.amr_genes
     amrfinder_vir_genes     = amrfinderplus.out.vir_genes
     fastani_ref             = fastani.out.ref
@@ -84,6 +87,7 @@ workflow contig_information {
     quast_contigs           = quast.out.contigs
     quast_nfifty            = quast.out.nfifty
     quast_length            = quast.out.length
+    plasmidfinder_hits      = plasmidfinder.out.plasmids
 
     // for combined files
     seqsero2_collect        = seqsero2.out.collect

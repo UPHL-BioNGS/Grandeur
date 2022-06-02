@@ -5,6 +5,7 @@ include { lyveset_shuffle; lyveset_cg_pipeline }   from '../modules/lyveset'    
 include { serotypefinder_fastq as serotypefinder } from '../modules/serotypefinder' addParams(fastq_processes: params.fastq_processes, serotypefinder_options: params.serotypefinder_options )
 include { seqsero2_fastq as seqsero2 }             from '../modules/seqsero2'       addParams(fastq_processes: params.fastq_processes, seqsero2_options: params.seqsero2_options )
 include { shigatyper }                             from '../modules/shigatyper'     addParams(fastq_processes: params.fastq_processes, shigatyper_options: params.shigatyper_options )
+include { plasmidfinder }                          from '../modules/plasmidfinder'  addParams(fastq_processes: params.fastq_processes, plasmidfinder_options: params.plasmidfinder_options )
 
 workflow fastq_information {
   take:
@@ -14,6 +15,7 @@ workflow fastq_information {
     kraken2_db
   main:
     fastqc(reads)
+    plasmidfinder(clean_reads)
     mash_sketch(clean_reads)
     mash_dist(mash_sketch.out.files)
     shigatyper(clean_reads.join(mash_dist.out.ecoli_flag, by: 0))
@@ -61,6 +63,7 @@ workflow fastq_information {
     seqsero2_profile        = seqsero2.out.profile
     seqsero2_serotype       = seqsero2.out.serotype
     seqsero2_contamination  = seqsero2.out.contamination
+    plasmidfinder_hits      = plasmidfinder.out.plasmids
     cg_pipeline_read_length = lyveset_cg_pipeline.out.read_length
     cg_pipeline_quality     = lyveset_cg_pipeline.out.quality
     cg_pipeline_coverage    = lyveset_cg_pipeline.out.coverage
