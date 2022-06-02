@@ -22,33 +22,21 @@ process amrfinderplus {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
+    amrfinder --version >> $log_file
     echo "container : !{task.container}" >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    organism_options=(Acinetobacter_baumannii
-    Campylobacter
-    Clostridioides_difficile
-    Enterococcus_faecalis
-    Enterococcus_faecium
-    Escherichia:Shigella
-    Klebsiella
-    Neisseria
-    Pseudomonas_aeruginosa
-    Salmonella
-    Staphylococcus_aureus
-    Staphylococcus_pseudintermedius
-    Streptococcus_agalactiae
-    Streptococcus_pneumoniae
-    Streptococcus_pyogenes
-    Vibrio_cholerae)
-
-    organism=$(history -p ${organism_options[@]} | grep -i !{genus} | grep -i !{species} | head -n 1 )
-    if [ -z "$organism" ] ; then organism=$(history -p ${organism_options[@]} | grep -i !{genus} | head -n 1 | cut -f 1 -d ":" ) ; fi
+    organism=$(amrfinder -l | tr " " "\\n" | grep -i !{genus} | grep -i !{species} | sed 's/,//g' | head -n 1 )
+    if [ -z "$organism" ] ; then organism=$(amrfinder -l | tr " " "\\n" | grep -i !{genus} | sed 's/,//g' | head -n 1 ) ; fi
     if [ -n "$organism" ]
     then
       organism_check="--organism $organism"
       echo "Mash result of !{genus} !{species} matched with $organism" >> $log_file
+    elif [ "!{genus}" == "Shigella" ]
+    then
+      organism_check="--organism Escherichia"
+      echo "--organism Escherichia with be used because of Mash result of !{genus}" >> $log_file
     else
       organism_check=''
       echo "Mash result of !{genus} !{species} did not match any of the organisms" >> $log_file
