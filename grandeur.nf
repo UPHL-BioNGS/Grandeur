@@ -6,7 +6,7 @@ println("email: eriny@utah.gov")
 println("Version: v2.0.20220610")
 println("")
 
-nextflow.enable.dsl = 2
+nextflow.enable.dsl               = 2
 
 params.outdir                     = workflow.launchDir + '/grandeur'
 params.maxcpus                    = 12
@@ -116,13 +116,14 @@ include { multiqc }               from './modules/multiqc'                      
                                                                                             contig_processes:           params.contig_processes,
                                                                                             phylogenetic_processes:     params.phylogenetic_processes)
 
-// TODO : something for plasmids
 // TODO : frp_plasmid
 // TODO : pointfinder
 // TODO : mubsuite
 // TODO : sistr
 // TODO : plasmidseeker
 // TODO : socru?
+// TODO : kaptive
+// TODO : ngmaster
 
 // Getting the fastq files
 params.reads = workflow.launchDir + '/reads'
