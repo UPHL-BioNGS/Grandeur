@@ -1,11 +1,11 @@
-process create {
+process blobtools_create {
   tag "${sample}"
 
   input:
   tuple val(sample), file(contig), file(blastn), file(bam)
 
   output:
-  tuple val(sample), file("blobtools/${sample}.blobDB.json")            , emit: file
+  tuple val(sample), file("blobtools/${sample}.blobDB.json")            , emit: json
   path "blobtools/${sample}.${sample}.sorted.bam.cov"                   , emit: files
   path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}" , emit: log
 
@@ -31,7 +31,7 @@ process create {
   '''
 }
 
-process view {
+process blobtools_view {
   tag "${sample}"
 
   input:
@@ -61,7 +61,7 @@ process view {
   '''
 }
 
-process blobtools {
+process blobtools_blobtools {
   tag "${sample}"
 
   input:
