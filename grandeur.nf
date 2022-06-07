@@ -18,8 +18,7 @@ params.bbduk_options              = "k=31 hdist=1"
 params.spades_options             = '--isolate'
 
 // fastq information
-params.fastq_processes            = ['fastp', 'bbduk', 'spades', 'fastqc', 'cg_pipeline',  'mash', 'shigatyper', 'kraken2', 'summary', 'seqsero2', 'multiqc', 'plasmidfinder']
-//params.fastq_processes            = ['fastp', 'bbduk', 'spades', 'fastqc', 'cg_pipeline',  'mash', 'kraken2', 'summary', 'seqsero2', 'multiqc']
+params.fastq_processes            = ['fastp', 'bbduk', 'spades', 'fastqc', 'cg_pipeline', 'mash', 'kraken2', 'summary', 'multiqc']
 params.fastqc_options             = ''
 params.cg_pipeline_options        = '--qual_offset 33 --minLength 1'
 params.shigatyper_options         = ''
@@ -34,7 +33,7 @@ params.mash_options               = '-v 0 -d 0.5'
 // params.serotypefinder_options  = ''
 
 // contig information
-params.contig_processes           = ['amrfinderplus', 'kleborate', 'fastani', 'mlst', 'quast', 'serotypefinder', 'blobtools', 'summary', 'multiqc']
+params.contig_processes           = ['amrfinderplus', 'kleborate', 'fastani', 'mlst', 'quast', 'serotypefinder', 'blobtools', 'summary', 'multiqc', 'plasmidfinder', 'seqsero2']
 params.amrfinderplus_options      = ''
 params.fastani_options            = ''
 params.kleborate_options          = '-all'
@@ -231,26 +230,30 @@ workflow {
     .join(fastq_information.out.cg_pipeline_ref_gen_len                                                   , remainder: true, by: 0)
     .join(fastq_information.out.shigatyper_predictions                                                    , remainder: true, by: 0)
     .join(fastq_information.out.shigatyper_cada                                                           , remainder: true, by: 0)
+    .join(fastq_information.out.kraken2_top_hit                                                           , remainder: true, by: 0)
+    .join(fastq_information.out.kraken2_top_perc                                                          , remainder: true, by: 0)
+    .join(fastq_information.out.kraken2_top_reads                                                         , remainder: true, by: 0)
+
+
+    // mash
     .join(fastq_information.out.mash_genome_size                                                          , remainder: true, by: 0)
     .join(fastq_information.out.mash_coverage                                                             , remainder: true, by: 0)
-
-    // fastq_information or contig_information
     .join(mash_genus                                                                                      , remainder: true, by: 0)
     .join(mash_species                                                                                    , remainder: true, by: 0)
     .join(fastq_information.out.mash_full.mix(mash.out.full)                                              , remainder: true, by: 0)
     .join(fastq_information.out.mash_pvalue.mix(mash.out.pvalue)                                          , remainder: true, by: 0)
     .join(fastq_information.out.mash_distance.mix(mash.out.distance)                                      , remainder: true, by: 0)
-    .join(fastq_information.out.seqsero2_profile.mix(contig_information.out.seqsero2_profile)             , remainder: true, by: 0)
-    .join(fastq_information.out.seqsero2_serotype.mix(contig_information.out.seqsero2_serotype)           , remainder: true, by: 0)
-    .join(fastq_information.out.seqsero2_contamination.mix(contig_information.out.seqsero2_contamination) , remainder: true, by: 0)
-    .join(fastq_information.out.serotypefinder_ogroup.mix(contig_information.out.serotypefinder_ogroup)   , remainder: true, by: 0)
-    .join(fastq_information.out.serotypefinder_hgroup.mix(contig_information.out.serotypefinder_hgroup)   , remainder: true, by: 0)
-    .join(fastq_information.out.kraken2_top_hit.mix(contig_information.out.kraken2_top_hit)               , remainder: true, by: 0)
-    .join(fastq_information.out.kraken2_top_perc.mix(contig_information.out.kraken2_top_perc)             , remainder: true, by: 0)
-    .join(fastq_information.out.kraken2_top_reads.mix(contig_information.out.kraken2_top_reads)           , remainder: true, by: 0)
-    .join(fastq_information.out.plasmidfinder_hits.mix(contig_information.out.plasmidfinder_hits)         , remainder: true, by: 0)
 
     // contig_information
+    .join(contig_information.out.seqsero2_profile                                                         , remainder: true, by: 0)
+    .join(contig_information.out.seqsero2_serotype                                                        , remainder: true, by: 0)
+    .join(contig_information.out.seqsero2_contamination                                                   , remainder: true, by: 0)
+    .join(contig_information.out.serotypefinder_ogroup                                                    , remainder: true, by: 0)
+    .join(contig_information.out.serotypefinder_hgroup                                                    , remainder: true, by: 0)
+    .join(contig_information.out.kraken2_top_hit                                                          , remainder: true, by: 0)
+    .join(contig_information.out.kraken2_top_perc                                                         , remainder: true, by: 0)
+    .join(contig_information.out.kraken2_top_reads                                                        , remainder: true, by: 0)
+    .join(contig_information.out.plasmidfinder_hits                                                       , remainder: true, by: 0)
     .join(contig_information.out.quast_gc                                                                 , remainder: true, by: 0)
     .join(contig_information.out.quast_contigs                                                            , remainder: true, by: 0)
     .join(contig_information.out.quast_nfifty                                                             , remainder: true, by: 0)
@@ -273,8 +276,7 @@ workflow {
     .set { results }
   summary(results)
 
-  fastq_information.out.seqsero2_collect
-    .concat(contig_information.out.seqsero2_collect)
+  contig_information.out.seqsero2_collect
     .collectFile(name: "SeqSero_result.tsv",
       keepHeader: true,
       sort: true,
