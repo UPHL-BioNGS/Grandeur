@@ -11,7 +11,7 @@ process blastn {
 
   shell:
   '''
-    mkdir -p !{task.process} logs/!{task.process}
+    mkdir -p blastn logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
     err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
