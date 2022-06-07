@@ -56,7 +56,7 @@ process kraken2_fasta {
   tuple val(sample), file(file), path(kraken2_db)
 
   output:
-  path "kraken2/${sample}_kraken2_report.txt"                           , emit: for_multiqc
+  path "kraken2/${sample}_kraken2_report_contigs.txt"                   , emit: for_multiqc
   path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}" , emit: log
   tuple val(sample), env(top_hit)                                       , emit: top_hit
   tuple val(sample), env(top_perc)                                      , emit: top_perc
@@ -78,14 +78,14 @@ process kraken2_fasta {
       --threads !{task.cpus} \
       --db !{kraken2_db} \
       !{file} \
-      --report kraken2/!{sample}_kraken2_report.txt \
+      --report kraken2/!{sample}_kraken2_report_contigs.txt \
       2>> $err_file >> $log_file
 
-    top_hit=$(cat kraken2/!{sample}_kraken2_report.txt   | grep -w S | sort | tail -n 1 | awk '{print $6 " " $7}')
-    top_perc=$(cat kraken2/!{sample}_kraken2_report.txt  | grep -w S | sort | tail -n 1 | awk '{print $1}')
-    top_reads=$(cat kraken2/!{sample}_kraken2_report.txt | grep -w S | sort | tail -n 1 | awk '{print $3}')
-    if [ -z "$top_hit" ] ; then top_hit="NA" ; fi
-    if [ -z "$top_perc" ] ; then top_perc="0" ; fi
+    top_hit=$(cat kraken2/!{sample}_kraken2_report_contigs.txt   | grep -w S | sort | tail -n 1 | awk '{print $6 " " $7}')
+    top_perc=$(cat kraken2/!{sample}_kraken2_report_contigs.txt  | grep -w S | sort | tail -n 1 | awk '{print $1}')
+    top_reads=$(cat kraken2/!{sample}_kraken2_report_contigs.txt | grep -w S | sort | tail -n 1 | awk '{print $3}')
+    if [ -z "$top_hit" ]   ; then top_hit="NA"  ; fi
+    if [ -z "$top_perc" ]  ; then top_perc="0"  ; fi
     if [ -z "$top_reads" ] ; then top_reads="0" ; fi
   '''
 }
