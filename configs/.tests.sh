@@ -1,96 +1,58 @@
 #/bin/bash
 
-# the default workflow on just fastas
+# one channel at a time
 nextflow run /home/eriny/sandbox/Grandeur \
-  -profile singularity,just_fasta \
-  --fastas /home/eriny/sandbox/test_files/grandeur/fastas \
-  --outdir default_fastas \
+  -profile singularity \
+  --reads  /home/eriny/sandbox/test_files/grandeur/reads \
+  --outdir fastq_channel \
+  -resume  \
   -with-tower
 
-# the default workflow on just paired-end reads
-nextflow run /home/eriny/sandbox/Grandeur \
-  -profile singularity,just_fastq \
-  --reads /home/eriny/sandbox/test_files/grandeur/reads \
-  --outdir default_reads \
-  -resume -with-tower
-
-# the default workflow on paired-end reads plus fastas
 nextflow run /home/eriny/sandbox/Grandeur \
   -profile singularity \
-  --reads /home/eriny/sandbox/test_files/grandeur/reads \
   --fastas /home/eriny/sandbox/test_files/grandeur/fastas \
-  -resume \
-  --outdir default_reads_fastas \
-  -resume -with-tower
+  --outdir fasta_channel \
+  -resume  \
+  -with-tower
 
-# the default workflow on paired-end reads plus fastas with fastq_to_consensus profile
-nextflow run /home/eriny/sandbox/Grandeur \
-  -profile singularity,fastq_to_consensus \
-  --reads /home/eriny/sandbox/test_files/grandeur/reads \
-  --fastas /home/eriny/sandbox/test_files/grandeur/fastas \
-  --outdir default_reads_profile_fastas \
-  -resume -with-tower
-
-# the default workflow on paired-end reads plus fastas with uphl's config
-nextflow run /home/eriny/sandbox/Grandeur -profile uphl \
-  --reads /home/eriny/sandbox/test_files/grandeur/reads \
-  --fastas /home/eriny/sandbox/test_files/grandeur/fastas \
-  -resume \
-  --outdir default_uphl \
-  -resume -with-tower
-
-# doing a multiple sequence alignment with gff, fastqs, and fastas
-nextflow run /home/eriny/sandbox/Grandeur \
-  -profile singularity,msa \
-  --gff /home/eriny/sandbox/test_files/grandeur/msa \
-  --fastas /home/eriny/sandbox/test_files/grandeur/msa \
-  --reads /home/eriny/sandbox/test_files/grandeur/msa \
-  --outdir everything \
-  --prokka true \
-  --roary true \
-  -resume -with-tower
-
-# doing a multiple sequence alignment with gff, fastqs, and fastas with fastq_to_msa profile
-nextflow run /home/eriny/sandbox/Grandeur \
-  -profile singularity,fastq_to_msa \
-  --gff /home/eriny/sandbox/test_files/grandeur/msa \
-  --fastas /home/eriny/sandbox/test_files/grandeur/msa \
-  --reads /home/eriny/sandbox/test_files/grandeur/msa \
-  --outdir everything_profile \
-  -resume -with-tower
-
-# doing a multiple sequence alignment with gff, fastqs, and fastas with fastq_to_msa and extras_off profiles
-nextflow run /home/eriny/sandbox/Grandeur \
-  -profile singularity,fastq_to_msa,extras_off \
-  --gff /home/eriny/sandbox/test_files/grandeur/msa \
-  --fastas /home/eriny/sandbox/test_files/grandeur/msa \
-  --reads /home/eriny/sandbox/test_files/grandeur/msa \
-  --outdir everything_profile_2 \
-  -resume -with-tower
-
-# just doing a multiple sequence alignment with gff and fastas
 nextflow run /home/eriny/sandbox/Grandeur \
   -profile singularity \
-  --gff /home/eriny/sandbox/test_files/grandeur/msa \
-  --fastas /home/eriny/sandbox/test_files/grandeur/msa \
-  --outdir msa \
-  --prokka true \
-  --roary true \
-  -resume -with-tower
+  --gff    /home/eriny/sandbox/test_files/grandeur/msa \
+  --outdir gff_channel \
+  -resume  \
+  -with-tower
 
-# just doing a multiple sequence alignment with gff and fastas with fasta_to_msa profile
-nextflow run /home/eriny/sandbox/Grandeur \
-  -profile singularity,fasta_to_msa \
-  --gff /home/eriny/sandbox/test_files/grandeur/msa \
-  --fastas /home/eriny/sandbox/test_files/grandeur/msa \
-  --outdir msa_profile \
-  -resume -with-tower
+# testing profiles
+for profile in "fastq_to_consensus" "just_fastq" "just_fasta" "extras_off" "uphl"
+do
+  nextflow run /home/eriny/sandbox/Grandeur \
+    -profile singularity,$profile \
+    --fastas /home/eriny/sandbox/test_files/grandeur/fastas \
+    --reads  /home/eriny/sandbox/test_files/grandeur/reads \
+    --outdir profile_$profile \
+    -resume  \
+    -with-tower
+done
+
+# testing msa-related profiles
+for profile in "msa" "extras_off,msa" "fastq_to_msa" "fasta_to_msa"
+do
+  nextflow run /home/eriny/sandbox/Grandeur \
+    -profile singularity,$profile \
+    --gff    /home/eriny/sandbox/test_files/grandeur/msa \
+    --fastas /home/eriny/sandbox/test_files/grandeur/msa \
+    --reads  /home/eriny/sandbox/test_files/grandeur/msa \
+    --outdir msa_$profile \
+    -resume  \
+    -with-tower
+done
 
 # with nothing
 nextflow run /home/eriny/sandbox/Grandeur \
   -profile singularity \
-  --gff wontexist \
+  --gff    wontexist \
   --fastas shouldntexit \
-  --reads doesntexist \
+  --reads  doesntexist \
   --outdir empty \
-  -resume -with-tower
+  -resume  \
+  -with-tower
