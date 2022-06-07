@@ -6,8 +6,11 @@ process summary {
 
   input:
   tuple val(sample), file(file),
+    // de_novo_alignment
     val(bbduk_phix_results),
     val(fastp_results),
+
+    // fastq_information
     val(fastqc_1_results),
     val(fastqc_2_results),
     val(cg_avrl_results),
@@ -16,6 +19,11 @@ process summary {
     val(ref_genome_length),
     val(shigatyper_predictions),
     val(shigatyper_cadA),
+    val(kraken2_top_hit),
+    val(kraken2_top_perc),
+    val(kraken2_top_reads),
+
+    // mash
     val(mash_genome_size_results),
     val(mash_coverage_results),
     val(mash_genus_results),
@@ -23,14 +31,16 @@ process summary {
     val(mash_full_results),
     val(mash_pvalue_results),
     val(mash_distance_results),
+
+    // contig_information
     val(seqsero2_profile_results),
     val(seqsero2_serotype_results),
     val(seqsero2_contamination_results),
     val(serotypefinder_results_o),
     val(serotypefinder_results_h),
-    val(kraken2_top_hit),
-    val(kraken2_top_perc),
-    val(kraken2_top_reads),
+    val(kraken2_top_hit_contigs),
+    val(kraken2_top_perc_contigs),
+    val(kraken2_top_reads_contigs),
     val(plasmidfinder_hits),
     val(quast_gc_results),
     val(quast_contigs_results),
@@ -45,6 +55,8 @@ process summary {
     val(fastani_fragment),
     val(fastani_total),
     val(mlst_results),
+
+    // blobtools
     val(blobtools_species_results),
     val(blobtools_perc_results)
 
@@ -152,8 +164,8 @@ process summary {
 
     if [ -n "$(echo !{params.fastq_processes} !{params.contig_processes} !{params.phylogenetic_processes} | grep kraken2)" ] && [ "!{params.kraken2_db}" != "false" ]
     then
-      header="$header;kraken2_top_species;kraken2_num_reads;kraken2_percentage"
-      result="$result;!{kraken2_top_hit};!{kraken2_top_reads};!{kraken2_top_perc}"
+      header="$header;kraken2_top_species_reads;kraken2_num_reads;kraken2_percentage_reads;kraken2_top_species_contigs;kraken2_num_contigs;kraken2_percentage_contigs"
+      result="$result;!{kraken2_top_hit};!{kraken2_top_reads};!{kraken2_top_perc};!{kraken2_top_hit_contigs};!{kraken2_top_reads_contigs};!{kraken2_top_perc_contigs}"
     fi
 
     if [ -n "$(echo !{params.fastq_processes} !{params.contig_processes} !{params.phylogenetic_processes} | grep mlst)" ]
