@@ -38,7 +38,7 @@ process kraken2_fastq {
 
     top_hit=$(cat kraken2/!{sample}_kraken2_report.txt   | grep -w S | sort | tail -n 1 | awk '{print $6 " " $7}')
     top_perc=$(cat kraken2/!{sample}_kraken2_report.txt  | grep -w S | sort | tail -n 1 | awk '{print $1}')
-    top_reads=$(cat kraken2/!{sample}_kraken2_report.txt | grep -w S | sort | tail -n 1 | awk '{print $3}')
+    top_reads=$(cat kraken2/!{sample}_kraken2_report.txt | grep -w S | sort | tail -n 1 | awk '{print $2}')
     if [ -z "$top_hit" ] ; then top_hit="NA" ; fi
     if [ -z "$top_perc" ] ; then top_perc="0" ; fi
     if [ -z "$top_reads" ] ; then top_reads="0" ; fi
@@ -83,7 +83,7 @@ process kraken2_fasta {
 
     top_hit=$(cat kraken2/!{sample}_kraken2_report_contigs.txt   | grep -w S | sort | tail -n 1 | awk '{print $6 " " $7}')
     top_perc=$(cat kraken2/!{sample}_kraken2_report_contigs.txt  | grep -w S | sort | tail -n 1 | awk '{print $1}')
-    top_reads=$(cat kraken2/!{sample}_kraken2_report_contigs.txt | grep -w S | sort | tail -n 1 | awk '{print $3}')
+    top_reads=$(cat kraken2/!{sample}_kraken2_report_contigs.txt | grep -w S | sort | tail -n 1 | awk '{print $2}')
     if [ -z "$top_hit" ]   ; then top_hit="NA"  ; fi
     if [ -z "$top_perc" ]  ; then top_perc="0"  ; fi
     if [ -z "$top_reads" ] ; then top_reads="0" ; fi
