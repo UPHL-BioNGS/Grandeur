@@ -18,7 +18,7 @@ params.bbduk_options              = "k=31 hdist=1"
 params.spades_options             = '--isolate'
 
 // fastq information
-params.fastq_processes            = ['fastp', 'bbduk', 'spades', 'fastqc', 'cg_pipeline', 'mash', 'kraken2', 'summary', 'multiqc']
+params.fastq_processes            = ['fastp', 'bbduk', 'spades', 'fastqc', 'cg_pipeline', 'mash', 'kraken2', 'summary', 'multiqc', 'shigatyper']
 params.fastqc_options             = ''
 params.cg_pipeline_options        = '--qual_offset 33 --minLength 1'
 params.shigatyper_options         = ''
@@ -33,7 +33,7 @@ params.mash_options               = '-v 0 -d 0.5'
 // params.serotypefinder_options  = ''
 
 // contig information
-params.contig_processes           = ['amrfinderplus', 'kleborate', 'fastani', 'mlst', 'quast', 'serotypefinder', 'blobtools', 'summary', 'multiqc', 'plasmidfinder', 'seqsero2']
+params.contig_processes           = ['amrfinderplus', 'kleborate', 'fastani', 'mlst', 'quast', 'serotypefinder', 'blobtools', 'summary', 'multiqc', 'plasmidfinder', 'seqsero2', 'kraken2', 'mash']
 params.amrfinderplus_options      = ''
 params.fastani_options            = ''
 params.kleborate_options          = '-all'
