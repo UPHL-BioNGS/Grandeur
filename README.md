@@ -529,6 +529,32 @@ Example lines for a config file:
 ```
 params.outgroup = 'GCF_000006765.1_ASM676v1_genomic'
 ```
+# Examples of command line usage
+Phew! With all of that out of the way, what does it look like on the command line?
+```
+# vanilla
+nextflow run UPHL-BioNGS/Grandeur -profile singularity
+
+# specifying directory with reads
+nextflow run UPHL-BioNGS/Grandeur -profile singularity --reads <path to reads>
+nextflow run UPHL-BioNGS/Grandeur -profile singularity --reads reads
+
+# running on reads and fasta files
+nextflow run UPHL-BioNGS/Grandeur -profile singularity --reads reads --fastas fastas
+
+# running on a collection of fastq files that will be placed in a phylogenetic tree
+nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa --reads reads --outgroup outgroup
+
+# running on a collection of fastq files AND fasta files that will be placed in a phylogenetic tree
+nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa --reads reads --fastas fastas --outgroup outgroup
+
+# only wanting to create a tree for some fastas
+nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa,extras_off --fasta fastas --outgroup outgroup
+
+# only wanting to create a tree for some fastas with a different outdir
+nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa,extras_off --fasta fastas --outgroup outgroup --outdir attempt2
+```
+
 
 # Visualizing the tree
 
