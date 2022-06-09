@@ -49,9 +49,9 @@ WARNING: All input files for `*msa*` profiles must all be somewhat related (i.e.
 Default workflow that takes fastq files, runs them through QC/serotyping/etc, creates contig files
 ```
 # using singularity
-nextflow run UPHL-BioNGS/Grandeur -profile singularity
+nextflow run UPHL-BioNGS/Grandeur -profile singularity -r main
 # using docker
-nextflow run UPHL-BioNGS/Grandeur -profile docker
+nextflow run UPHL-BioNGS/Grandeur -profile docker -r main
 ```
 
 
@@ -533,26 +533,26 @@ params.outgroup = 'GCF_000006765.1_ASM676v1_genomic'
 Phew! With all of that out of the way, what does it look like on the command line?
 ```
 # vanilla
-nextflow run UPHL-BioNGS/Grandeur -profile singularity
+nextflow run UPHL-BioNGS/Grandeur -profile singularity -r main
 
 # specifying directory with reads
-nextflow run UPHL-BioNGS/Grandeur -profile singularity --reads <path to reads>
-nextflow run UPHL-BioNGS/Grandeur -profile singularity --reads reads
+nextflow run UPHL-BioNGS/Grandeur -profile singularity -r main --reads <path to reads>
+nextflow run UPHL-BioNGS/Grandeur -profile singularity -r main --reads reads
 
 # running on reads and fasta files
-nextflow run UPHL-BioNGS/Grandeur -profile singularity --reads reads --fastas fastas
+nextflow run UPHL-BioNGS/Grandeur -profile singularity -r main --reads reads --fastas fastas
 
 # running on a collection of fastq files that will be placed in a phylogenetic tree
-nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa --reads reads --outgroup outgroup
+nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa -r main --reads reads --outgroup outgroup
 
 # running on a collection of fastq files AND fasta files that will be placed in a phylogenetic tree
-nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa --reads reads --fastas fastas --outgroup outgroup
+nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa -r main --reads reads --fastas fastas --outgroup outgroup
 
 # only wanting to create a tree for some fastas
-nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa,extras_off --fasta fastas --outgroup outgroup
+nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa,extras_off -r main --fasta fastas --outgroup outgroup
 
 # only wanting to create a tree for some fastas with a different outdir
-nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa,extras_off --fasta fastas --outgroup outgroup --outdir attempt2
+nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa,extras_off -r main --fasta fastas --outgroup outgroup --outdir attempt2
 ```
 
 
@@ -608,7 +608,7 @@ There's also a config file what we use here at UPHL, [UPHL.config](./configs/UPH
 
 To use the config file created by the **End User**, simply specify the path with `-c`
 ```
-nextflow run UPHL-BioNGS/Grandeur -profile singularity -c <path to user edited config file>
+nextflow run UPHL-BioNGS/Grandeur -profile singularity -r main -c <path to user edited config file>
 ```
 
 ## Do you have test data?
@@ -639,7 +639,7 @@ There are also 6 genomes from NCBI genome that are in this repository under data
 
 And then run with
 ```
-nextflow run UPHL-BioNGS/Grandeur -profile singularity --fastas data/fasta -r main
+nextflow run UPHL-BioNGS/Grandeur -profile singularity -r main --fastas data/fasta -r main
 ```
 
 Summary files from running these through the default workflow ([grandeur_results.tsv](./data/grandeur_results.tsv)) as well as with UPHL's config file ([UPHL_grandeur_results.tsv](./data/UPHL_grandeur_results.tsv)) are also available.
@@ -648,7 +648,7 @@ The directory `data/msa` contains one gff file and 6 fasta files of _Stenotropho
 
 Testing creating a phylogenetic tree from a core gene comparison:
 ```
-nextflow run UPHL-BioNGS/Grandeur -profile singularity,fasta_to_msa --fastas data/msa --gff data/msa --outgroup GCF_900475405.1_44087_C01_genomic
+nextflow run UPHL-BioNGS/Grandeur -profile singularity,fasta_to_msa -r main --fastas data/msa --gff data/msa --outgroup GCF_900475405.1_44087_C01_genomic
 ```
 
 ## How do I turn processes off?
@@ -730,6 +730,7 @@ A real use case from UPHL with a _Pseudomonas aeruginosa_
 nextflow run UPHL-BioNGS/Grandeur \
   -with-tower \
   -profile singularity,fasta_to_msa \
+  -r main \
   --outgroup GCF_000006765.1_ASM676v1_genomic \
   --fastas fastas
 ```
