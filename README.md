@@ -15,20 +15,28 @@ Grandeur is a [Nextflow](https://www.nextflow.io/) workflow developed by [@eriny
 "Grandeur" can also take in fastas and [prokka](https://github.com/tseemann/prokka)-annotated gff files to create a phylogenetic tree. Additional fastas includes genomes downloaded from NCBI or contigs generated from another workflow, such as the ones listed above or [Donut Falls](https://github.com/UPHL-BioNGS/Donut_Falls). Fasta files can be serotyped and QCed in the processes that accept fasta/contig files. The gff files created via [prokka](https://github.com/tseemann/prokka), are used by [roary](https://sanger-pathogens.github.io/Roary/) to define and align a core genome (a core genome is the genes that all the provided isolates share, also known as a [pan-genome](https://en.wikipedia.org/wiki/Pan-genome)). This multiple sequence alignment is used to create a tree with [iqtree2](http://www.iqtree.org/) and SNP matrix with [snp-dists](https://github.com/tseemann/snp-dists). As this workflow is dependent on the core genome, all of the fasta files put into this sub-workflow must be the _same species_ (or predicted to have some sort of similar origin, so related plasmids will work as well). [@erinyoung](https://github.com/erinyoung) strongy recommends that the end user checks `'grandeur/roary/summary_statistics.txt'` after running to ensure that the number of genes in the core genome makes sense.
 
 
-"Grandeur" will also probably be a workflow of the [staphb-toolkit](https://github.com/StaPH-B/staphb_toolkit) once [@erinyoung](https://github.com/erinyoung) gets around to it and all the containers are ready.
+"Grandeur" is also a workflow of the [staphb-toolkit](https://github.com/StaPH-B/staphb_toolkit)
 
-# Dependencies
+## Dependencies
 
 - [Nextflow](https://www.nextflow.io/docs/latest/getstarted.html)
 - [Singularity](https://singularity.lbl.gov/install-linux) or [Docker](https://docs.docker.com/get-docker/)
 - [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 
-# Usage
+## Usage
 
-## Choosing the right profile
+Default workflow that takes fastq files, runs them through QC/serotyping/etc, creates contig files
+```
+# using singularity
+nextflow run UPHL-BioNGS/Grandeur -profile singularity
+# using docker
+nextflow run UPHL-BioNGS/Grandeur -profile docker
+```
+
+### Choosing the right profile
 For simplificity for the **End User**, Grandeur has some profiles which _should_ fit the majority of uses. A profile is not required, but will hopefully makes things easier. The workflow is meant to work with containers and has basic profiles for both docker and singularity, which are in the example above. Otherwise, *ALL* the commands used in the workflow will need to be present PATH. 
 
-### Choose a container manager
+#### Choose a container manager
 - singularity : use singularity to manage containers
 - docker : use docker to manage containers
 
@@ -44,32 +52,10 @@ For simplificity for the **End User**, Grandeur has some profiles which _should_
 
 WARNING: All input files for `*msa*` profiles must all be somewhat related (i.e. same species) because they need to share enough genes in their core genome.
 
-## Option 1. Running from this github repository
-
-Default workflow that takes fastq files, runs them through QC/serotyping/etc, creates contig files
-```
-# using singularity
-nextflow run UPHL-BioNGS/Grandeur -profile singularity -r main
-# using docker
-nextflow run UPHL-BioNGS/Grandeur -profile docker -r main
-```
-
-
-## Option 2. Downloading this repository with git and specifying a config file
-
-```
-git clone https://github.com/UPHL-BioNGS/Grandeur.git
-
-# using singularity
-nextflow run Grandeur.nf -c configs/singularity.config
-# using docker
-nextflow run Grandeur.nf -c configs/docker.config
-```
-
-# Default file structure
+## Default file structure
 (can be adjusted with 'params.reads' and 'params.fastas')
 
-## Paired-end fastq.gz (ending with 'fastq', 'fastq.gz', 'fq', or 'fq.gz') reads as follows or designate directory with 'params.reads' or '--reads'
+### Paired-end fastq.gz (ending with 'fastq', 'fastq.gz', 'fq', or 'fq.gz') reads as follows or designate directory with 'params.reads' or '--reads'
 ```
 directory
 └── reads
@@ -77,7 +63,7 @@ directory
 ```
 WARNING : Sometimes nextflow does not catch every name of paired-end fastq files. This workflow is meant to be fairly agnostic, but if paired-end fastq files are not being found it might be worth renaming them to some sort of 'sample_1.fastq.gz', 'sample_2.fastq.gz' format.
 
-## Fasta files (ending with 'fa', 'fasta', or 'fna') as follows or designate directory with 'params.fastas' or '--fastas'
+### Fasta files (ending with 'fa', 'fasta', or 'fna') as follows or designate directory with 'params.fastas' or '--fastas'
 ```
 directory
 └── fastas
@@ -466,10 +452,10 @@ grandeur/
 ```
 </details>
 
-# Finding contamination
+## Finding contamination
 Additionally, "Grandeur" can use two optional tools to find cross-species contamination : [kraken2](https://ccb.jhu.edu/software/kraken2/) or [blobtools](https://blobtools.readme.io/docs) (or both!). These both use large databases that should be downloaded separately.
 
-## If the **End User** would like to use [kraken2](https://ccb.jhu.edu/software/kraken2/) to identify contamination:
+### If the **End User** would like to use [kraken2](https://ccb.jhu.edu/software/kraken2/) to identify contamination:
 
 First, there needs to be a kraken2 database.
 
@@ -486,7 +472,7 @@ Then the corresponding kraken2_db param needs to be updated. `params.kraken2_db`
 params.kraken2_db = 'kraken2_db/minikraken2_v2_8GB_201904_UPDATE'
 ```
 
-## If the **End User** would like to use [blobtools](https://blobtools.readme.io/docs) to identify contamination:
+### If the **End User** would like to use [blobtools](https://blobtools.readme.io/docs) to identify contamination:
 
 [Blobtools](https://blobtools.readme.io/docs) uses a blast database, so there needs to be a blast database:
 
@@ -521,7 +507,7 @@ params.local_db_type = 'nt'
 ![alt text](./configs/grandeur_lucidchart.png)
 
 
-# Suggested inputs
+## Suggested inputs
 
 Although not required, [@erinyoung](https://github.com/erinyoung) suggests changing `params.outgroup` when creating a phylogenetic tree with iqtree2. For a file with a name like 'GCF_000006765.1_ASM676v1_genomic.gff', the outgroup would be 'GCF_000006765.1_ASM676v1_genomic'.
 
@@ -529,30 +515,30 @@ Example lines for a config file:
 ```
 params.outgroup = 'GCF_000006765.1_ASM676v1_genomic'
 ```
-# Examples of command line usage
+## Examples of command line usage
 Phew! With all of that out of the way, what does it look like on the command line?
 ```
 # vanilla
-nextflow run UPHL-BioNGS/Grandeur -profile singularity -r main
+nextflow run UPHL-BioNGS/Grandeur -profile singularity
 
 # specifying directory with reads
-nextflow run UPHL-BioNGS/Grandeur -profile singularity -r main --reads <path to reads>
-nextflow run UPHL-BioNGS/Grandeur -profile singularity -r main --reads reads
+nextflow run UPHL-BioNGS/Grandeur -profile singularity --reads <path to reads>
+nextflow run UPHL-BioNGS/Grandeur -profile singularity --reads reads
 
 # running on reads and fasta files
-nextflow run UPHL-BioNGS/Grandeur -profile singularity -r main --reads reads --fastas fastas
+nextflow run UPHL-BioNGS/Grandeur -profile singularity --reads reads --fastas fastas
 
 # running on a collection of fastq files that will be placed in a phylogenetic tree
-nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa -r main --reads reads --outgroup outgroup
+nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa --reads reads --outgroup outgroup
 
 # running on a collection of fastq files AND fasta files that will be placed in a phylogenetic tree
-nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa -r main --reads reads --fastas fastas --outgroup outgroup
+nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa --reads reads --fastas fastas --outgroup outgroup
 
 # only wanting to create a tree for some fastas
-nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa,extras_off -r main --fasta fastas --outgroup outgroup
+nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa,extras_off --fasta fastas --outgroup outgroup
 
 # only wanting to create a tree for some fastas with a different outdir
-nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa,extras_off -r main --fasta fastas --outgroup outgroup --outdir attempt2
+nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa,extras_off --fasta fastas --outgroup outgroup --outdir attempt2
 ```
 
 
@@ -590,8 +576,8 @@ It would be nice if an image of tree was automatically generated from this. Real
 - [bwa](http://bio-bwa.sourceforge.net/) - alignment for blobtools
 - [samtools](https://github.com/samtools) - sorting and bam creation for blobtools
 
-# Frequently Asked Questions (aka FAQ)
-## What do I do if I encounter an error?
+## Frequently Asked Questions (aka FAQ)
+### What do I do if I encounter an error?
 
 **TELL ME ABOUT IT!!!**
 * [Github issue](https://github.com/UPHL-BioNGS/Grandeur/issues)
@@ -600,7 +586,7 @@ It would be nice if an image of tree was automatically generated from this. Real
 
 Be sure to include the command used, what config file was used, and what the **nextflow** error was.
 
-## Where is an example config file?
+### Where is an example config file?
 There is a template file with all the variables in this repo at [configs/grandeur_template.config](./configs/grandeur_template.config) that the **End User** can copy and edit. All of the parameters are included in that file.
 
 There's also a config file what we use here at UPHL, [UPHL.config](./configs/UPHL.config).
@@ -608,10 +594,10 @@ There's also a config file what we use here at UPHL, [UPHL.config](./configs/UPH
 
 To use the config file created by the **End User**, simply specify the path with `-c`
 ```
-nextflow run UPHL-BioNGS/Grandeur -profile singularity -r main -c <path to user edited config file>
+nextflow run UPHL-BioNGS/Grandeur -profile singularity -c <path to user edited config file>
 ```
 
-## Do you have test data?
+### Do you have test data?
 Yes, actually, but also not quite. Fastq files can be rather large and github is not the best place to store them. Instead, some sample fastq files from the [SRA](https://www.ncbi.nlm.nih.gov/sra) have gone through the "Grandeur" workflow and the results are included in this repo for your comparison.
 
 - [SRR11725329](https://www.ncbi.nlm.nih.gov/sra/?term=SRR11725329) : _Escherichia coli_
@@ -639,7 +625,7 @@ There are also 6 genomes from NCBI genome that are in this repository under data
 
 And then run with
 ```
-nextflow run UPHL-BioNGS/Grandeur -profile singularity -r main --fastas data/fasta -r main
+nextflow run UPHL-BioNGS/Grandeur -profile singularity --fastas data/fasta
 ```
 
 Summary files from running these through the default workflow ([grandeur_results.tsv](./data/grandeur_results.tsv)) as well as with UPHL's config file ([UPHL_grandeur_results.tsv](./data/UPHL_grandeur_results.tsv)) are also available.
@@ -648,10 +634,10 @@ The directory `data/msa` contains one gff file and 6 fasta files of _Stenotropho
 
 Testing creating a phylogenetic tree from a core gene comparison:
 ```
-nextflow run UPHL-BioNGS/Grandeur -profile singularity,fasta_to_msa -r main --fastas data/msa --gff data/msa --outgroup GCF_900475405.1_44087_C01_genomic
+nextflow run UPHL-BioNGS/Grandeur -profile singularity,fasta_to_msa --fastas data/msa --gff data/msa --outgroup GCF_900475405.1_44087_C01_genomic
 ```
 
-## How do I turn processes off?
+### How do I turn processes off?
 Most of the processes in this workflow can be turned off. To turn off all "extra" processes, the simplist option is to use the 'extras_off' profile. If a limited number of processes are to be turned off, there are three editable parameters. These parameters contain an array of which proccesses are used. `params.fastq_processes` are all the processes that run on fastq files. `params.contig_processes` are those that are run on fasta/contig files. `params.phylogenetic_processes` are those that are run when doing core genome alignment. 
 
 ```
@@ -667,7 +653,7 @@ For example turning off kleborate, fastani, mlst, quast, serotypefinder, and blo
 params.contig_processes       = ['amrfinderplus', 'summary', 'multiqc', 'plasmidfinder', 'seqsero2', 'kraken2', 'mash']
 ```
 
-## Can I adjust which genomes fastANI uses?
+### Can I adjust which genomes fastANI uses?
 
 There is a collection of genomes included in "Grandeur" based off of frequently encountered organisms used in outbreak investigations locally. The **End User** can specify their own collection of fasta files by
 
@@ -679,16 +665,16 @@ tar -czvf fastani_refs.tar.gz genomes/
 ```
 4) specifying the directory of this tar file at runtime with `params.fastani_refs` on the command line or in a config file
 
-## What about CLIA validation?
+### What about CLIA validation?
 
 At UPHL, we use this workflow to determine the serotype of Salmonella and E. coli under CLIA. Therefore, all containers with their versions are explicitly selected if available, and any updates to this repo will come with a version change. In future endevours, we hope to use this workflow for organism identification and AMR gene identification.
 
 The CLIA officer of the **End User** may request additional locks be put in place, like having all of the containers specified. If additional help is needed, please [submit an issue](https://github.com/UPHL-BioNGS/Grandeur/issues) or [Email me](eriny@utah.gov).
 
-## How were serotyping tools chosen for this workflow?
+### How were serotyping tools chosen for this workflow?
 They perform _well_, their containers were easy to create, and [@erinyoung](https://github.com/erinyoung) had heard about them.
 
-## Are any other tools getting added to "Grandeur"?
+### Are any other tools getting added to "Grandeur"?
 
 As "Grandeur" is intended to be a species agnostic workflow for a local public health laboratory, and sequencing is continuing to expand in its utility, new tools are constantly being needed to analyze isolates to further public health goals.
 
@@ -698,24 +684,24 @@ Many of these additional tools are added by need locally or from the **End User*
 
 **Warning** : If there's not a reliable container of the suggested tool, [@erinyoung](https://github.com/erinyoung) will request that the **End User** create a container for that tool and contribute to [StaPH-B's docker repositories](https://github.com/StaPH-B/docker-builds).
 
-## What about organisms with large genomes?
+### What about organisms with large genomes?
 Organisms with large genomes can still contribute to disease, but this is not the workflow for those. "Grandeur" uses [spades](https://cab.spbu.ru/software/spades/) for _de novo_ alignment, and large genomes may be too much for [spades](https://cab.spbu.ru/software/spades/).
 
-## What about SARS-CoV-2?
+### What about SARS-CoV-2?
 As of the time of writing this README, reference-based alignment of SARS-CoV-2 is still the norm. "Grandeur" is for _de novo_ assembly of things with small genomes. [Cecret](https://github.com/UPHL-BioNGS/Cecret) would be a better workflow for SARS-CoV-2 sequencing.
 
-## What is genome_sizes.json used for?
+### What is genome_sizes.json used for?
 [genome_sizes.json](./configs/genome_sizes.json) has a list of commonly sequenced organisms and the approximate expected genome size for each organism. This is only used for the "cg-pipeline" process to estimate coverage. A file from the **End User** can be used instead and specified with `params.genome_sizes`.
 
-## How do I cite this workflow?
+### How do I cite this workflow?
 
 This workflow stands on the shoulders of giants. As such, please cite the individual tools that were useful for your manuscript so that those developers can continue to get funding. They are listed above. Mentioning this workflow in the text as "The Grandeur workflow v.VERSION (www.github.com/UPHL-BioNGS/Grandeur)" is good enough for [@erinyoung](https://github.com/erinyoung)'s ego.
 
-## Can I use roary's QC options with kraken?
+### Can I use roary's QC options with kraken?
 
 No. If there is interest in this feature, please contribute to the conversation at [StaPH-B/docker-builds](https://github.com/StaPH-B/docker-builds/issues/254).
 
-## Can I re-use files?
+### Can I re-use files?
 
 Yes. The main use-case at UPHL is to run "Grandeur" per seqeuncing run, which is variety of different organisms. Samples involved in outbreaks are generally spread over multiple runs.
 
@@ -730,12 +716,11 @@ A real use case from UPHL with a _Pseudomonas aeruginosa_
 nextflow run UPHL-BioNGS/Grandeur \
   -with-tower \
   -profile singularity,fasta_to_msa \
-  -r main \
   --outgroup GCF_000006765.1_ASM676v1_genomic \
   --fastas fastas
 ```
 
-## Can I start with prokka-annotated gff files?
+### Can I start with prokka-annotated gff files?
 
 Yes, although this is now a more-hidden option because several **End Users** were trying to use gff files downloaded from NCBI instead of re-using gff files created from prokka.
 
@@ -747,5 +732,3 @@ directory
 ```
 
 There is also a `gff_to_msa` to msa profile.
-
-![alt text](https://uphl.utah.gov/wp-content/uploads/New-UPHL-Logo.png)

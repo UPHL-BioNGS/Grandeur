@@ -1,0 +1,158 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://raw.githubusercontent.com/UPHL-BioNGS/Grandeur/main/nextflow_schema.json",
+    "title": "Grandeur Parameters",
+    "description": "Grandeur is short-read de novo assembly pipeline with serotyping.",
+    "type": "object",
+    "properties": {
+        "outdir": {
+            "type": "string",
+            "description": "result output directory",
+            "default": "grandeur"
+        },
+        "maxcpus": {
+            "type": "number",
+            "default": 12
+        },
+        "medcpus": {
+            "type": "number",
+            "default": 4
+        },
+        "fastp_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "bbduk_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "spades_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "fastq_processes": {
+            "type": "string",
+            "description": "specifies which processes are run on fastq files"
+        },
+        "fastqc_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "cg_pipeline_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "shigatyper_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "plasmidfinder_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "kraken2_db": {
+            "type": "string",
+            "description": "Path to kraken2 database"
+        },
+        "kraken2_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "mash_reference": {
+            "type": "string",
+            "description": "reference file for mash. Must be located in mash container."
+        },
+        "mash_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "contig_processes": {
+            "type": "string",
+            "description": "specifies which processes are run on contig or fasta files"
+        },
+        "amrfinderplus_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "fastani_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "kleborate_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "mlst_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "quast_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "serotypefinder_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "seqsero2_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "blast_db": {
+            "type": "string",
+            "description": "Path to blast database for use with blobtools"
+        },
+        "local_db_type": {
+            "type": "string",
+            "description": "type of blast database"
+        },
+        "blobtools_create_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "blobtools_view_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "blobtools_plot_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "bwa_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "samtools_sort_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "multiqc_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "phylogenetic_processes": {
+            "type": "string",
+            "description": "specifies which processes are run during phylogenetic analysis"
+        },
+        "iqtree2_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "outgroup": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "prokka_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "roary_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        },
+        "snp_dists_options": {
+            "type": "string",
+            "description": "additional options for editing for process"
+        }
+    }
+}

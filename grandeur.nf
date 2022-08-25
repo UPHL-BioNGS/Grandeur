@@ -3,7 +3,7 @@
 println("Currently using the Grandeur workflow for use with microbial sequencing. The view is great from 8299 feet (2530 meters) above sea level.\n")
 println("Author: Erin Young")
 println("email: eriny@utah.gov")
-println("Version: v2.0.20220610")
+println("Version: v2.0.20220825")
 println("")
 
 nextflow.enable.dsl               = 2
@@ -233,7 +233,6 @@ workflow {
     .join(fastq_information.out.kraken2_top_hit                                                           , remainder: true, by: 0)
     .join(fastq_information.out.kraken2_top_perc                                                          , remainder: true, by: 0)
     .join(fastq_information.out.kraken2_top_reads                                                         , remainder: true, by: 0)
-
 
     // mash
     .join(fastq_information.out.mash_genome_size                                                          , remainder: true, by: 0)
