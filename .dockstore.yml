@@ -1,0 +1,6 @@
+version: 1.2
+workflows:
+   - name: Grandeur
+     subclass: NFL
+     publish: TRUE
+     primaryDescriptorPath: ./nextflow.config
