@@ -53,8 +53,7 @@ workflow contig_information {
         storeDir: "${params.outdir}/ncbi-AMRFinderplus")
 
     fastani.out.collect
-      .collectFile(name: "fastani.out",
-        keepHeader: true,
+      .collectFile(name: "fastani.out.txt",
         sort: true,
         storeDir: "${params.outdir}/fastani")
 
