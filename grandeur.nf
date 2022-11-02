@@ -3,7 +3,7 @@
 println("Currently using the Grandeur workflow for use with microbial sequencing. The view is great from 8299 feet (2530 meters) above sea level.\n")
 println("Author: Erin Young")
 println("email: eriny@utah.gov")
-println("Version: v2.0.20220825")
+println("Version: ${workflow.manifest.version}")
 println("")
 
 nextflow.enable.dsl               = 2
@@ -12,28 +12,44 @@ params.outdir                     = workflow.launchDir + '/grandeur'
 params.maxcpus                    = 12
 params.medcpus                    = 4
 
-// core workflow of fastq to contig
-params.fastp_options              = "--detect_adapter_for_pe"
-params.bbduk_options              = "k=31 hdist=1"
+// core workflow of fastq to contig if not using phoenix
+params.fastp_options              = '--detect_adapter_for_pe'
+params.bbduk_options              = 'k=31 hdist=1'
 params.spades_options             = '--isolate'
 
+// connecting to phoenix
+params.phoenix                    = true
+
+
+// connecting to Donut Falls
+params.donut_falls                = false
+
+
 // fastq information
-params.fastq_processes            = ['fastp', 'bbduk', 'spades', 'fastqc', 'cg_pipeline', 'mash', 'kraken2', 'summary', 'multiqc', 'shigatyper']
 params.fastqc_options             = ''
 params.cg_pipeline_options        = '--qual_offset 33 --minLength 1'
-params.shigatyper_options         = ''
+
+// classification
 params.plasmidfinder_options      = ''
 params.kraken2_db                 = false
 params.kraken2_options            = ''
-// WARNING : DO NOT CHANGE params.mash_reference UNLESS YOU ARE USING A DIFFERENT MASH CONTAINER
 params.mash_reference             = '/db/RefSeqSketchesDefaults.msh'
 params.mash_options               = '-v 0 -d 0.5'
-// duplicates as seqsero2 and serotypefinder defaults are for contigs
-// params.seqsero2_options        = '-t 2 -m a -b mem'
-// params.serotypefinder_options  = ''
+params.blast_db                   = false
+params.local_db_type              = 'nt'
+params.blobtools_create_options   = ''
+params.blobtools_view_options     = ''
+params.blobtools_plot_options     = '--format png -r species'
+params.blobtools_bbmap_options    = ''
+
+// organism specific tools
+params.ecoli_tools                = ['shigatyper', 'serotypefinder']
+params.klebsiella_tools           = ['kleborate']
+params.salmonella_tools           = ['seqsero2']
+params.shigatyper_options         = ''
+
 
 // contig information
-params.contig_processes           = ['amrfinderplus', 'kleborate', 'fastani', 'mlst', 'quast', 'serotypefinder', 'blobtools', 'summary', 'multiqc', 'plasmidfinder', 'seqsero2', 'kraken2', 'mash']
 params.amrfinderplus_options      = ''
 params.fastani_options            = ''
 params.kleborate_options          = '-all'
@@ -45,13 +61,7 @@ params.seqsero2_options           = '-m a -b mem'
 // // params.kraken2_options         = ''
 
 // for blobtools
-params.blast_db                   = false
-params.local_db_type              = 'nt'
-params.blobtools_create_options   = ''
-params.blobtools_view_options     = ''
-params.blobtools_plot_options     = '--format png -r species'
-params.bwa_options                = ''
-params.samtools_sort_options      = ''
+
 
 // summary
 params.multiqc_options            = ''
