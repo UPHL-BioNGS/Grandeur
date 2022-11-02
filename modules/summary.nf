@@ -63,15 +63,14 @@ process summary {
   output:
   path "summary/${sample}.summary.txt"                                  , emit: summary_files_txt
   path "summary/${sample}.summary.tsv"                                  , emit: summary_files_tsv
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}" , emit: log
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
 
   shell:
   '''
     mkdir -p summary logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     echo "container : !{task.container}" >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file

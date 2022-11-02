@@ -12,16 +12,15 @@ process spades {
   output:
   path "spades/${sample}/*"                                              , emit: files
   tuple val(sample), file("contigs/${sample}_contigs.fa"), optional: true, emit: contigs
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}"  , emit: log
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log"  , emit: log
 
   shell:
   '''
     mkdir -p spades contigs logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     echo "container : !{task.container}" >> $log_file
     spades.py --version >> $log_file
     echo "Nextflow command : " >> $log_file
@@ -32,7 +31,7 @@ process spades {
       -2 !{reads[1]} \
       --threads !{task.cpus} \
       -o spades/!{sample} \
-      2>> $err_file >> $log_file
+      | tee -a $log_file
 
     if [ -f "spades/!{sample}/contigs.fasta" ] ; then cp spades/!{sample}/contigs.fasta contigs/!{sample}_contigs.fa ; fi
   '''

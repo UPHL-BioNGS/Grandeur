@@ -12,16 +12,15 @@ process amrfinderplus {
   path "ncbi-AMRFinderplus/${sample}_amrfinder_plus.txt"                , emit: collect
   tuple val(sample), env(amr_genes)                                     , emit: amr_genes
   tuple val(sample), env(virulence_genes)                               , emit: vir_genes
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}" , emit: log
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
 
   shell:
   '''
     mkdir -p ncbi-AMRFinderplus logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file 
     amrfinder --version >> $log_file
     echo "container : !{task.container}" >> $log_file
     echo "Nextflow command : " >> $log_file
@@ -49,7 +48,7 @@ process amrfinderplus {
       --output ncbi-AMRFinderplus/!{sample}_amrfinder_plus.txt \
       $organism_check \
       --plus \
-      2>> $err_file >> $log_file
+      | tee -a $log_file
 
     amr_genes=$(cut -f 7 ncbi-AMRFinderplus/!{sample}_amrfinder_plus.txt | tail +2 | sort | uniq | tr '\\n' ',' | sed 's/,$//g' )
     virulence_genes=$(grep "VIRULENCE" ncbi-AMRFinderplus/!{sample}_amrfinder_plus.txt | cut -f 7 | sort | uniq | tr '\\n' ',' | sed 's/,$//g' )

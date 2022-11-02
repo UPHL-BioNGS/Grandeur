@@ -7,16 +7,15 @@ process blastn {
 
   output:
   tuple val(sample), file("blastn/${sample}.tsv")                       , emit: blastn
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}" , emit: log
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
 
   shell:
   '''
     mkdir -p blastn logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     echo "container : !{task.container}" >> $log_file
     blastn -version >> $log_file
     echo "Nextflow command : " >> $log_file
@@ -30,6 +29,6 @@ process blastn {
       -max_target_seqs 10 \
       -max_hsps 1 \
       -evalue 1e-25 \
-      2>> $err_file >> $log_file
+      | tee -a $log_file
   '''
 }

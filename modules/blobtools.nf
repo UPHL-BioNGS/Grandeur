@@ -7,16 +7,15 @@ process blobtools_create {
   output:
   tuple val(sample), file("blobtools/${sample}.blobDB.json")            , emit: json
   path "blobtools/${sample}.${sample}.sorted.bam.cov"                   , emit: files
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}" , emit: log
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
 
   shell:
   '''
     mkdir -p blobtools logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     echo "container : !{task.container}" >> $log_file
     echo "blobtools version $(blobtools -v)" >> $log_file
     echo "Nextflow command : " >> $log_file
@@ -27,7 +26,7 @@ process blobtools_create {
       -i !{contig} \
       -b !{sample}.sorted.bam \
       -t !{blastn} \
-      2>> $err_file >> $log_file
+      | tee -a $log_file
   '''
 }
 
@@ -39,16 +38,15 @@ process blobtools_view {
 
   output:
   tuple val(sample), file("blobtools/${sample}.blobDB.table.txt")       , emit: file
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}" , emit: log
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
 
   shell:
   '''
     mkdir -p blobtools logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     echo "container : !{task.container}" >> $log_file
     echo "blobtools version $(blobtools -v)" >> $log_file
     echo "Nextflow command : " >> $log_file
@@ -57,7 +55,7 @@ process blobtools_view {
     blobtools view !{params.blobtools_view_options} \
       -i !{json} \
       -o blobtools/ \
-      2>> $err_file >> $log_file
+      | tee -a $log_file
   '''
 }
 
@@ -71,16 +69,15 @@ process blobtools_blobtools {
   path "blobtools/${sample}.*"                                          , emit: files
   tuple val(sample), env(blobtools_species)                             , emit: species
   tuple val(sample), env(blobtools_perc)                                , emit: perc
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}" , emit: log
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
 
   shell:
   '''
     mkdir -p blobtools logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     echo "container : !{task.container}" >> $log_file
     echo "blobtools version $(blobtools -v)" >> $log_file
     echo "Nextflow command : " >> $log_file
@@ -89,7 +86,7 @@ process blobtools_blobtools {
     blobtools plot !{params.blobtools_plot_options} \
       -i !{json} \
       -o blobtools/ \
-      2>> $err_file 2>> $log_file
+      | tee -a $log_file
 
     perc='0.0'
     blobtools_species='missing'

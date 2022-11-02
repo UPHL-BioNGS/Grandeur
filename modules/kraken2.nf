@@ -10,7 +10,7 @@ process kraken2_fastq {
 
   output:
   path "kraken2/${sample}_kraken2_report.txt"                           , emit: for_multiqc
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}" , emit: log
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
   tuple val(sample), env(top_hit)                                       , emit: top_hit
   tuple val(sample), env(top_perc)                                      , emit: top_perc
   tuple val(sample), env(top_reads)                                     , emit: top_reads
@@ -19,9 +19,8 @@ process kraken2_fastq {
   '''
     mkdir -p kraken2 logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     echo "container : !{task.container}" >> $log_file
     kraken2 --version >> $log_file
     echo "Nextflow command : " >> $log_file
@@ -34,7 +33,7 @@ process kraken2_fastq {
       --db !{kraken2_db} \
       !{file} \
       --report kraken2/!{sample}_kraken2_report.txt \
-      2>> $err_file >> $log_file
+      | tee -a $log_file
 
     top_hit=$(cat kraken2/!{sample}_kraken2_report.txt   | grep -w S | sort | tail -n 1 | awk '{print $6 " " $7}')
     top_perc=$(cat kraken2/!{sample}_kraken2_report.txt  | grep -w S | sort | tail -n 1 | awk '{print $1}')
@@ -57,7 +56,7 @@ process kraken2_fasta {
 
   output:
   path "kraken2/${sample}_kraken2_report_contigs.txt"                   , emit: for_multiqc
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}" , emit: log
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
   tuple val(sample), env(top_hit)                                       , emit: top_hit
   tuple val(sample), env(top_perc)                                      , emit: top_perc
   tuple val(sample), env(top_reads)                                     , emit: top_reads
@@ -66,9 +65,8 @@ process kraken2_fasta {
     '''
     mkdir -p kraken2 logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     echo "container : !{task.container}" >> $log_file
     kraken2 --version >> $log_file
     echo "Nextflow command : " >> $log_file
@@ -79,7 +77,7 @@ process kraken2_fasta {
       --db !{kraken2_db} \
       !{file} \
       --report kraken2/!{sample}_kraken2_report_contigs.txt \
-      2>> $err_file >> $log_file
+      | tee -a $log_file
 
     top_hit=$(cat kraken2/!{sample}_kraken2_report_contigs.txt   | grep -w S | sort | tail -n 1 | awk '{print $6 " " $7}')
     top_perc=$(cat kraken2/!{sample}_kraken2_report_contigs.txt  | grep -w S | sort | tail -n 1 | awk '{print $1}')

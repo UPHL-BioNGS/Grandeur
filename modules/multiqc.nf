@@ -16,16 +16,15 @@ process multiqc {
   output:
   path "multiqc/multiqc_report.html", optional: true                         , emit: report
   path "multiqc/multiqc_data/*"     , optional: true                         , emit: data_folder
-  path "logs/${task.process}/${task.process}.${workflow.sessionId}.{log,err}", emit: log_files
+  path "logs/${task.process}/${task.process}.${workflow.sessionId}.log", emit: log_files
 
   shell:
   '''
     mkdir -p multiqc quast logs/!{task.process}
     log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     echo "container : !{task.container}" >> $log_file
     multiqc --version >> $log_file
     echo "Nextflow command : " >> $log_file
@@ -45,6 +44,6 @@ process multiqc {
       --outdir multiqc \
       --cl_config "prokka_fn_snames: True"  \
       . \
-      2>> $err_file >> $log_file
+      | tee -a $log_file
   '''
 }

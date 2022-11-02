@@ -12,16 +12,15 @@ process kleborate {
   tuple val(sample), env(kleborate_score)                               , emit: score
   tuple val(sample), env(kleborate_mlst)                                , emit: mlst
   path "kleborate/${sample}_results.txt"                          , emit: collect
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}" , emit: log
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
 
   shell:
   '''
     mkdir -p kleborate logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     echo "container : !{task.container}" >> $log_file
     kleborate --version >> $log_file
     echo "Nextflow command : " >> $log_file
@@ -30,7 +29,7 @@ process kleborate {
     kleborate !{params.kleborate_options} \
       -o kleborate/!{sample}_results.txt \
       -a !{contig} \
-      2>> $err_file >> $log_file
+      | tee -a $log_file
 
     virulence_column=$(head -n 1 kleborate/!{sample}_results.txt | tr '\\t' '\\n' | grep -n virulence_score | cut -f 1 -d ":" )
     mlst_column=$(head -n 1 kleborate/!{sample}_results.txt | tr '\\t' '\\n' | grep -n ST | cut -f 1 -d ":" )

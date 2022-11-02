@@ -10,7 +10,7 @@ process fastani {
 
   output:
   path "fastani/${sample}.txt", optional: true                          , emit: collect
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}" , emit: log
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
   tuple val(sample), env(top_ref)                                       , emit: ref
   tuple val(sample), env(ani_score)                                     , emit: ani
   tuple val(sample), env(fragment)                                      , emit: fragment
@@ -20,10 +20,9 @@ process fastani {
   '''
     mkdir -p fastani logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     echo "container : !{task.container}" >> $log_file
     echo "fastANI version: " >> $log_file
     fastANI --version 2>> $log_file
@@ -38,7 +37,7 @@ process fastani {
       -q !{contigs} \
       --rl reference_list.txt \
       -o fastani/!{sample}.txt \
-      2>> $err_file | tee -a $log_file
+      | tee -a $log_file
 
     top_ref=$(sort   -k3,3n -k 4,4n fastani/!{sample}.txt | tail -n 1 | cut -f 2 )
     ani_score=$(sort -k3,3n -k 4,4n fastani/!{sample}.txt | tail -n 1 | cut -f 3 )

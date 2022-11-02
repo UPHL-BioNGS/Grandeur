@@ -12,16 +12,15 @@ process fastqc {
   path "fastqc/*_fastqc.zip"                                           , emit: for_multiqc
   tuple val(sample), env(raw_1)                                        , emit: fastqc_1_results
   tuple val(sample), env(raw_2)                                        , emit: fastqc_2_results
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}", emit: log_files
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log_files
 
   shell:
   '''
     mkdir -p fastqc logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     echo "container : !{task.container}" >> $log_file
     fastqc --version >> $log_file
     echo "Nextflow command : " >> $log_file
@@ -31,7 +30,7 @@ process fastqc {
       --outdir fastqc \
       --threads !{task.cpus} \
       !{raw} \
-      2>> $err_file >> $log_file
+      | tee -a $log_file
 
     zipped_fastq=($(ls fastqc/*fastqc.zip) "")
 

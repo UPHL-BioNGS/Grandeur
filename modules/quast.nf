@@ -15,16 +15,15 @@ process quast {
   tuple val(sample), env(num_contigs)                                   , emit: contigs
   tuple val(sample), env(n50)                                           , emit: nfifty
   tuple val(sample), env(length)                                        , emit: length
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}" , emit: log
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
 
   shell:
   '''
     mkdir -p !{task.process} logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     echo "container : !{task.container}" >> $log_file
     quast.py --version >> $log_file
     echo "Nextflow command : " >> $log_file
@@ -34,7 +33,7 @@ process quast {
       !{contigs} \
       --output-dir quast/!{sample} \
       --threads !{task.cpus} \
-      2>> $err_file | tee -a $log_file
+      | tee -a $log_file
 
     gc=$(grep "GC (" quast/!{sample}/report.txt | awk '{print $3}' )
     num_contigs=$(grep "contigs" quast/!{sample}/report.txt | grep -v "(" | awk '{print $3}' )

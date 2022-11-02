@@ -17,16 +17,15 @@ process mash_sketch {
   '''
     mkdir -p mash logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     echo "container : !{task.container}" >> $log_file
     echo "mash version: $(mash --version | head -n 1 )" >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    cat !{reads} | mash sketch -m 2 -o mash/!{sample} - 2>> $err_file | tee $log_file
+    cat !{reads} | mash sketch -m 2 -o mash/!{sample} - 2>> $err_file | tee -a $log_file
 
     genome_size=$(grep "Estimated genome size" $err_file | awk '{print $4}' )
     coverage=$(grep "Estimated coverage" $err_file | awk '{print $3}' )
@@ -56,27 +55,26 @@ process mash_dist {
   tuple val(sample), env(salmonella_flag)                               , emit: salmonella_flag
   tuple val(sample), env(ecoli_flag)                                    , emit: ecoli_flag
   tuple val(sample), env(klebsiella_flag)                               , emit: klebsiella_flag
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}" , emit: log
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
 
   shell:
   '''
     mkdir -p mash logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     echo "container : !{task.container}" >> $log_file
     echo "mash version: $(mash --version | head -n 1 )" >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    mash dist -p !{task.cpus} !{params.mash_options} !{params.mash_reference} !{msh} | sort -gk3 > mash/!{sample}_mashdist.txt 2>> $err_file
+    mash dist -p !{task.cpus} !{params.mash_options} !{params.mash_reference} !{msh} | sort -gk3 > mash/!{sample}_mashdist.txt
 
     if [ ! -s "mash/!{sample}_mashdist.txt" ]
     then
-      echo "!{sample} had no mash results with '!{params.mash_options}'. Trying again without those parameters." 2>> $log_file
-      mash dist -p !{task.cpus} !{params.mash_reference} !{msh} | sort -gk3 > mash/!{sample}_mashdist.txt 2>> $err_file
+      echo "!{sample} had no mash results with '!{params.mash_options}'. Trying again without those parameters." | tee -a $log_file
+      mash dist -p !{task.cpus} !{params.mash_reference} !{msh} | sort -gk3 > mash/!{sample}_mashdist.txt
     fi
 
     mash_result=($(head -n 1 mash/!{sample}_mashdist.txt | head -n 1 | cut -f 1 | cut -f 8 -d "-" | cut -f 1,2 -d "_" | cut -f 1 -d "." | tr "_" " " ) 'missing' 'missing')

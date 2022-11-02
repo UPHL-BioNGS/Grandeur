@@ -9,21 +9,20 @@ process lyveset_shuffle {
 
   output:
   tuple val(sample), file("shuffled/${sample}_shuffled.fastq.gz")      , emit: shuffled
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}", emit: log
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
   '''
     mkdir -p shuffled logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     echo "container : !{task.container}" >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    run_assembly_shuffleReads.pl -gz !{reads} 2>> $err_file > shuffled/!{sample}_shuffled.fastq.gz
+    run_assembly_shuffleReads.pl -gz !{reads} > shuffled/!{sample}_shuffled.fastq.gz
   '''
 }
 
@@ -40,16 +39,15 @@ process lyveset_cg_pipeline {
   tuple val(sample), env(quality)                                      , emit: quality
   tuple val(sample), env(coverage)                                     , emit: coverage
   tuple val(sample), env(reference_genome_length)                      , emit: ref_genome_length
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}", emit: log
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
   '''
     mkdir -p cg_pipeline logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     echo "container : !{task.container}" >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
@@ -65,7 +63,7 @@ process lyveset_cg_pipeline {
         --fast \
         --numcpus !{task.cpus} \
         -e $genome_length \
-        2>> $err_file > cg_pipeline/!{sample}_cg_pipeline_report.txt
+        > cg_pipeline/!{sample}_cg_pipeline_report.txt
 
         read_length=$(cut -f 2 cg_pipeline/!{sample}_cg_pipeline_report.txt | tail -n 1 )
         quality=$(cut -f 6 cg_pipeline/!{sample}_cg_pipeline_report.txt | tail -n 1 )

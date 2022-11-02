@@ -10,16 +10,15 @@ process iqtree2 {
 
   output:
   path "iqtree2/iqtree*"                                                     , emit: tree
-  path "logs/${task.process}/${task.process}.${workflow.sessionId}.{log,err}", emit: log
+  path "logs/${task.process}/${task.process}.${workflow.sessionId}.log", emit: log
 
   shell:
   '''
     mkdir -p iqtree2 logs/!{task.process}
     log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     iqtree2 -v >> $log_file
     echo "container : !{task.container}" >> $log_file
     echo "Nextflow command : " >> $log_file
@@ -34,6 +33,6 @@ process iqtree2 {
       -nt AUTO \
       -ntmax !{task.cpus} \
       $outgroup \
-      2>> $err_file >> $log_file
+      | tee -a $log_file
   '''
 }
