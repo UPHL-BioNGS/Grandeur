@@ -1,21 +1,31 @@
-include { bwa }                     from '../modules/bwa'        addParams(bwa_options: params.bwa_options )
-include { sort }                    from '../modules/samtools'   addParams(samtools_sort_options: params.samtools_sort_options )
-include { blastn }                  from '../modules/blast'      addParams(local_db_type: params.local_db_type )
-include { blobtools_create; blobtools_view; blobtools_blobtools } from '../modules/blobtools'  addParams(blobtools_create_options: params.blobtools_create_options, blobtools_view_options: params.blobtools_view_options, blobtools_plot_options: params.blobtools_plot_options)
-
+include { bbmap }             from '../modules/bbmap'      addParams(outdir: params.outdir)
+include { blastn }            from '../modules/blast'      addParams(blast_db_type: params.blast_db_type, blastn_options: params.blastn_options )
+include { blobtools_create }  from '../modules/blobtools'  addParams(blobtools_create_options: params.blobtools_create_options)
+include { blobtools_plot }    from '../modules/blobtools'  addParams(blobtools_plot_options: params.blobtools_plot_options)    
+include { blobtools_view }    from '../modules/blobtools'  addParams(blobtools_view_options: params.blobtools_view_options)
+                                                                    
 workflow blobtools {
   take:
     clean_reads
     contigs
     blast_db
+  
   main:
-    bwa(clean_reads.join(contigs, by: 0))
+
+    bbmap(clean_reads.join(contigs, by: 0))
     blastn(contigs.combine(blast_db))
-    sort(bwa.out.sam)
-    blobtools_create(contigs.join(blastn.out.blastn, by: 0).join(sort.out.bam, by: 0))
+    blobtools_create(contigs.join(blastn.out.blastn, by: 0).join(bbmap.out.bam, by: 0))
     blobtools_view(blobtools_create.out.json)
-    blobtools_blobtools(blobtools_create.out.json)
+    blobtools_plot(blobtools_create.out.json)
+  
+    blobtools_plot.out.results
+      .collectFile(
+        storeDir: "${params.outdir}/blobtools/",
+        keepHeader: true,
+        sort: true,
+        name: "blobtools_species.txt")
+
   emit:
-    species = blobtools_blobtools.out.species
-    perc    = blobtools_blobtools.out.perc
+    species = blobtools_plot.out.species
+    perc    = blobtools_plot.out.perc
 }
