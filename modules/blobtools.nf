@@ -5,9 +5,9 @@ process blobtools_create {
   tuple val(sample), file(contig), file(blastn), file(bam)
 
   output:
-  tuple val(sample), file("blobtools/${sample}.blobDB.json")            , emit: json
-  path "blobtools/${sample}.${sample}.sorted.bam.cov"                   , emit: files
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
+  tuple val(sample), file("blobtools/${sample}.blobDB.json")     , emit: json
+  path "blobtools/${sample}.${sample}*.bam.cov"                  , emit: files
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
   '''
@@ -24,7 +24,7 @@ process blobtools_create {
     blobtools create !{params.blobtools_create_options} \
       -o blobtools/!{sample} \
       -i !{contig} \
-      -b !{sample}.sorted.bam \
+      -b !{bam[0]} \
       -t !{blastn} \
       | tee -a $log_file
   '''
@@ -37,8 +37,8 @@ process blobtools_view {
   tuple val(sample), file(json)
 
   output:
-  tuple val(sample), file("blobtools/${sample}.blobDB.table.txt")       , emit: file
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
+  tuple val(sample), file("blobtools/${sample}.blobDB.table.txt"), emit: file
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
   '''
@@ -59,17 +59,18 @@ process blobtools_view {
   '''
 }
 
-process blobtools_blobtools {
+process blobtools_plot {
   tag "${sample}"
 
   input:
   tuple val(sample), file(json)
 
   output:
-  path "blobtools/${sample}.*"                                          , emit: files
-  tuple val(sample), env(blobtools_species)                             , emit: species
-  tuple val(sample), env(blobtools_perc)                                , emit: perc
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
+  path "blobtools/${sample}.*"                                   , emit: files
+  path "blobtools/${sample}_species.txt"                         , emit: results
+  tuple val(sample), env(blobtools_species)                      , emit: species
+  tuple val(sample), env(blobtools_perc)                         , emit: perc
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
   '''
@@ -90,6 +91,7 @@ process blobtools_blobtools {
 
     perc='0.0'
     blobtools_species='missing'
+    grep "^# " blobtools/!{sample}*.stats.txt | sed 's/# //g' | awk '{print "sample\t" $0 }' > blobtools/!{sample}_species.txt
     while read line
     do
       new_perc=$(echo $line | cut -f 13 -d " " | sed 's/%//g')
@@ -99,6 +101,11 @@ process blobtools_blobtools {
         perc=$new_perc
         blobtools_species=$(echo $line | cut -f 1 -d " " )
         blobtools_perc=$(echo $line | cut -f 13 -d " " )
+      fi
+      
+      if [ -z "$(echo $line | grep ^# )" ]
+      then
+        echo $line | tr " " "\\t" | awk -v sample=!{sample} '{print sample "\\t" $0 }' >> blobtools/!{sample}_species.txt
       fi
     done < <(grep -vw all blobtools/!{sample}*.stats.txt | grep -v "# name" | tr ' ' '_' | grep '%')
   '''

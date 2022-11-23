@@ -2,16 +2,13 @@ process roary {
   tag "Core Genome Alignment"
   label 'maxcpus'
 
-  when:
-  params.phylogenetic_processes =~ /roary/
-
   input:
   file(contigs)
 
   output:
-  path "roary/*"                                                             , emit: roary_files
-  path "roary/fixed_input_files/*"                                           , emit: roary_input_files
-  path "roary/core_gene_alignment.aln"                                       , emit: core_gene_alignment
+  path "roary/*"                                                       , emit: roary_files
+  path "roary/fixed_input_files/*"                                     , emit: roary_input_files
+  path "roary/core_gene_alignment.aln"                                 , emit: core_gene_alignment
   path "logs/${task.process}/${task.process}.${workflow.sessionId}.log", emit: log_files
 
   shell:

@@ -1,16 +1,13 @@
 process plasmidfinder {
   tag "${sample}"
 
-  when:
-  params.fastq_processes =~ /plasmidfinder/ && task.process =~ /fastq_information/ || params.contig_processes =~ /plasmidfinder/ && task.process =~ /contig_information/
-
   input:
   tuple val(sample), file(file)
 
   output:
-  path "plasmidfinder/${sample}/*"                                      , emit: files
-  tuple val(sample), env(plasmids)                                      , emit: plasmids
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
+  path "plasmidfinder/${sample}/*"                               , emit: files
+  tuple val(sample), env(plasmids)                               , emit: plasmids
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
   '''

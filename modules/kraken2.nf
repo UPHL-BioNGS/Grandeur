@@ -2,18 +2,15 @@ process kraken2_fastq {
   tag "${sample}"
   label "maxcpus"
 
-  when:
-  params.fastq_processes =~ /kraken2/
-
   input:
   tuple val(sample), file(file), path(kraken2_db)
 
   output:
-  path "kraken2/${sample}_kraken2_report.txt"                           , emit: for_multiqc
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
-  tuple val(sample), env(top_hit)                                       , emit: top_hit
-  tuple val(sample), env(top_perc)                                      , emit: top_perc
-  tuple val(sample), env(top_reads)                                     , emit: top_reads
+  path "kraken2/${sample}_kraken2_report.txt"                    , emit: for_multiqc
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
+  tuple val(sample), env(top_hit)                                , emit: top_hit
+  tuple val(sample), env(top_perc)                               , emit: top_perc
+  tuple val(sample), env(top_reads)                              , emit: top_reads
 
   shell:
   '''
@@ -48,18 +45,15 @@ process kraken2_fasta {
   tag "${sample}"
   label "maxcpus"
 
-  when:
-  params.contig_processes =~ /kraken2/
-
   input:
   tuple val(sample), file(file), path(kraken2_db)
 
   output:
-  path "kraken2/${sample}_kraken2_report_contigs.txt"                   , emit: for_multiqc
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
-  tuple val(sample), env(top_hit)                                       , emit: top_hit
-  tuple val(sample), env(top_perc)                                      , emit: top_perc
-  tuple val(sample), env(top_reads)                                     , emit: top_reads
+  path "kraken2/${sample}_kraken2_report_contigs.txt"            , emit: for_multiqc
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
+  tuple val(sample), env(top_hit)                                , emit: top_hit
+  tuple val(sample), env(top_perc)                               , emit: top_perc
+  tuple val(sample), env(top_reads)                              , emit: top_reads
 
   shell:
     '''

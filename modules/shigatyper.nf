@@ -3,16 +3,16 @@ process shigatyper {
   label "medcpus"
 
   when:
-  params.fastq_processes =~ /shigatyper/ && flag =~ 'found'
+  flag =~ 'found'
 
   input:
   tuple val(sample), file(fastq), val(flag)
 
   output:
-  path "shigatyper/${sample}_shigatyper.tsv"                           , emit: files
-  path "shigatyper/${sample}-hits.tsv", optional: true                 , emit: hits
-  tuple val(sample), env(predictions)                                  , emit: predictions
-  tuple val(sample), env(lacy_cada)                                    , emit: cada
+  path "shigatyper/${sample}_shigatyper.tsv"                     , emit: files
+  path "shigatyper/${sample}-hits.tsv", optional: true           , emit: hits
+  tuple val(sample), env(predictions)                            , emit: predictions
+  tuple val(sample), env(lacy_cada)                              , emit: cada
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:

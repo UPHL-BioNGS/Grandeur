@@ -6,8 +6,8 @@ process blastn {
   tuple val(sample), file(contig), path(blastdb)
 
   output:
-  tuple val(sample), file("blastn/${sample}.tsv")                       , emit: blastn
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
+  tuple val(sample), file("blastn/${sample}.tsv")                , emit: blastn
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
   '''
@@ -24,11 +24,9 @@ process blastn {
     blastn -query !{contig} \
       -out blastn/!{sample}.tsv \
       -num_threads !{task.cpus} \
-      -db !{blastdb}/!{params.local_db_type} \
+      -db !{blastdb}/!{params.blast_db_type} \
       -outfmt '6 qseqid staxids bitscore std' \
-      -max_target_seqs 10 \
-      -max_hsps 1 \
-      -evalue 1e-25 \
+      !{params.blastn_options} \
       | tee -a $log_file
   '''
 }

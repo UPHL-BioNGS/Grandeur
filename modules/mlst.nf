@@ -1,15 +1,12 @@
 process mlst {
   tag "${sample}"
 
-  when:
-  params.contig_processes =~ /mlst/
-
   input:
   tuple val(sample), file(contig)
 
   output:
-  path "mlst/${sample}_mlst.txt"                                       , emit: collect
-  tuple val(sample), env(mlst)                                         , emit: mlst
+  path "mlst/${sample}_mlst.txt"                                 , emit: collect
+  tuple val(sample), env(mlst)                                   , emit: mlst
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:

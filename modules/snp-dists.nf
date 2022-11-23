@@ -1,14 +1,11 @@
 process snp_dists {
   tag "SNP matrix"
 
-  when:
-  params.phylogenetic_processes =~ /snpdists/
-
   input:
   file(contigs)
 
   output:
-  path "snp-dists/snp_matrix.txt"                                            , emit: snp_matrix
+  path "snp-dists/snp_matrix.txt"                                      , emit: snp_matrix
   path "logs/${task.process}/${task.process}.${workflow.sessionId}.log", emit: log_files
 
   shell:

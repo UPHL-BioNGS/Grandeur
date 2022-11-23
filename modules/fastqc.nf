@@ -1,17 +1,14 @@
 process fastqc {
   tag "${sample}"
   
-  when:
-  params.fastq_processes =~ /fastqc/
-
   input:
   tuple val(sample), file(raw)
 
   output:
-  path "fastqc/*"                                                      , emit: fastq_files
-  path "fastqc/*_fastqc.zip"                                           , emit: for_multiqc
-  tuple val(sample), env(raw_1)                                        , emit: fastqc_1_results
-  tuple val(sample), env(raw_2)                                        , emit: fastqc_2_results
+  path "fastqc/*"                                                , emit: fastq_files
+  path "fastqc/*_fastqc.zip"                                     , emit: for_multiqc
+  tuple val(sample), env(raw_1)                                  , emit: fastqc_1_results
+  tuple val(sample), env(raw_2)                                  , emit: fastqc_2_results
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log_files
 
   shell:

@@ -1,14 +1,11 @@
 process lyveset_shuffle {
   tag "${sample}"
 
-  when:
-  params.fastq_processes =~ /cg_pipeline/
-
   input:
   tuple val(sample), file(reads)
 
   output:
-  tuple val(sample), file("shuffled/${sample}_shuffled.fastq.gz")      , emit: shuffled
+  tuple val(sample), file("shuffled/${sample}_shuffled.fastq.gz"), emit: shuffled
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
@@ -34,12 +31,12 @@ process lyveset_cg_pipeline {
   tuple val(sample), file(fastq), val(mash), val(genus), val(species), file(genome_file)
 
   output:
-  path "cg_pipeline/${sample}_cg_pipeline_report.txt", optional: true  , emit: collect
-  tuple val(sample), env(read_length)                                  , emit: read_length
-  tuple val(sample), env(quality)                                      , emit: quality
-  tuple val(sample), env(coverage)                                     , emit: coverage
-  tuple val(sample), env(reference_genome_length)                      , emit: ref_genome_length
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
+  path "cg_pipeline/${sample}_cg_pipeline_report.txt", optional: true, emit: collect
+  tuple val(sample), env(read_length)                                , emit: read_length
+  tuple val(sample), env(quality)                                    , emit: quality
+  tuple val(sample), env(coverage)                                   , emit: coverage
+  tuple val(sample), env(reference_genome_length)                    , emit: ref_genome_length
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log"    , emit: log
 
   shell:
   '''

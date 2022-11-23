@@ -3,16 +3,16 @@ process kleborate {
   label "medcpus"
 
   when:
-  params.contig_processes =~ /kleborate/ && flag =~ 'found'
+  flag =~ 'found'
 
   input:
   tuple val(sample), file(contig), val(flag)
 
   output:
-  tuple val(sample), env(kleborate_score)                               , emit: score
-  tuple val(sample), env(kleborate_mlst)                                , emit: mlst
-  path "kleborate/${sample}_results.txt"                          , emit: collect
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
+  tuple val(sample), env(kleborate_score)                        , emit: score
+  tuple val(sample), env(kleborate_mlst)                         , emit: mlst
+  path "kleborate/${sample}_results.txt"                         , emit: collect
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
   '''

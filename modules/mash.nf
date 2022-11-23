@@ -1,9 +1,6 @@
 process mash_sketch {
   tag "${sample}"
 
-  when:
-  params.fastq_processes =~ /mash/
-
   input:
   tuple val(sample), file(reads)
 
@@ -17,6 +14,7 @@ process mash_sketch {
   '''
     mkdir -p mash logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
     date > $log_file
@@ -25,7 +23,7 @@ process mash_sketch {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    cat !{reads} | mash sketch -m 2 -o mash/!{sample} - 2>> $err_file | tee -a $log_file
+    cat !{reads} | mash sketch !{params.mash_sketch_options} -o mash/!{sample} - 2>> $err_file | tee -a $log_file
 
     genome_size=$(grep "Estimated genome size" $err_file | awk '{print $4}' )
     coverage=$(grep "Estimated coverage" $err_file | awk '{print $3}' )
@@ -38,9 +36,6 @@ process mash_sketch {
 process mash_dist {
   tag "${sample}"
   label "medcpus"
-
-  when:
-  params.fastq_processes =~ /mash/ || params.contig_processes =~ /mash/
 
   input:
   tuple val(sample), file(msh)
@@ -55,7 +50,7 @@ process mash_dist {
   tuple val(sample), env(salmonella_flag)                               , emit: salmonella_flag
   tuple val(sample), env(ecoli_flag)                                    , emit: ecoli_flag
   tuple val(sample), env(klebsiella_flag)                               , emit: klebsiella_flag
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log"       , emit: log
 
   shell:
   '''

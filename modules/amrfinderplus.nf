@@ -2,17 +2,14 @@ process amrfinderplus {
   tag "${sample}"
   label "medcpus"
 
-  when:
-  params.contig_processes =~ /amrfinderplus/
-
   input:
   tuple val(sample), file(contigs), val(genus), val(species)
 
   output:
-  path "ncbi-AMRFinderplus/${sample}_amrfinder_plus.txt"                , emit: collect
-  tuple val(sample), env(amr_genes)                                     , emit: amr_genes
-  tuple val(sample), env(virulence_genes)                               , emit: vir_genes
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
+  path "ncbi-AMRFinderplus/${sample}_amrfinder_plus.txt"         , emit: collect
+  tuple val(sample), env(amr_genes)                              , emit: amr_genes
+  tuple val(sample), env(virulence_genes)                        , emit: vir_genes
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
   '''

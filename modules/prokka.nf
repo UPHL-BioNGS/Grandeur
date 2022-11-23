@@ -2,16 +2,13 @@ process prokka {
   tag "${sample}"
   label "maxcpus"
 
-  when:
-  params.phylogenetic_processes =~ /prokka/
-
   input:
   tuple val(sample), file(contigs), val(genus), val(species)
 
   output:
-  path "prokka/${sample}/*"                                            , emit: prokka_files
-  path "prokka/${sample}/${sample}.txt"                                , emit: for_multiqc
-  path "gff/${sample}.gff"                                             , emit: gffs
+  path "prokka/${sample}/*"                                      , emit: prokka_files
+  path "prokka/${sample}/${sample}.txt"                          , emit: for_multiqc
+  path "gff/${sample}.gff"                                       , emit: gffs
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:

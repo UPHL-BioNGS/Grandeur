@@ -3,16 +3,13 @@ process spades {
   label "maxcpus"
   errorStrategy { task.exitStatus == 21 ? 'ignore' : 'terminate' }
 
-  when:
-  params.fastq_processes =~ /spades/
-
   input:
   tuple val(sample), file(reads)
 
   output:
   path "spades/${sample}/*"                                              , emit: files
   tuple val(sample), file("contigs/${sample}_contigs.fa"), optional: true, emit: contigs
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log"  , emit: log
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log"        , emit: log
 
   shell:
   '''

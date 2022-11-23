@@ -3,16 +3,16 @@ process serotypefinder {
   label "medcpus"
 
   when:
-  params.contig_processes =~ /serotypefinder/ && flag =~ 'found'
+  flag =~ 'found'
 
   input:
   tuple val(sample), file(file), val(flag)
 
   output:
-  path "serotypefinder/${sample}/*"                                    , emit: files
-  tuple val(sample), env(o_type)                                        , emit: ogroup
-  tuple val(sample), env(h_type)                                        , emit: hgroup
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit:  log
+  path "serotypefinder/${sample}/*"                              , emit: files
+  tuple val(sample), env(o_type)                                 , emit: ogroup
+  tuple val(sample), env(h_type)                                 , emit: hgroup
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit:  log
 
   shell:
   '''

@@ -1,9 +1,6 @@
 process multiqc {
   tag "multiqc"
 
-  when:
-  params.fastq_processes =~ /multiqc/ || params.contig_processes =~ /multiqc/ || params.phylogenetic_processes =~ /multiqc/
-
   input:
   file(fastp)
   file(bbduk)
@@ -14,8 +11,8 @@ process multiqc {
   file(prokka)
 
   output:
-  path "multiqc/multiqc_report.html", optional: true                         , emit: report
-  path "multiqc/multiqc_data/*"     , optional: true                         , emit: data_folder
+  path "multiqc/multiqc_report.html", optional: true                   , emit: report
+  path "multiqc/multiqc_data/*"     , optional: true                   , emit: data_folder
   path "logs/${task.process}/${task.process}.${workflow.sessionId}.log", emit: log_files
 
   shell:

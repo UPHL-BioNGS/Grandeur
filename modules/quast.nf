@@ -1,21 +1,18 @@
 process quast {
   tag "${sample}"
 
-  when:
-  params.contig_processes =~ /quast/
-
   input:
   tuple val(sample), file(contigs)
 
   output:
-  path "quast/${sample}"                                                , emit: files
-  path "quast/${sample}_quast_report.tsv"     , optional: true          , emit: for_multiqc
-  path "quast/${sample}/transposed_report.tsv", optional: true          , emit: collect
-  tuple val(sample), env(gc)                                            , emit: gc
-  tuple val(sample), env(num_contigs)                                   , emit: contigs
-  tuple val(sample), env(n50)                                           , emit: nfifty
-  tuple val(sample), env(length)                                        , emit: length
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
+  path "quast/${sample}"                                         , emit: files
+  path "quast/${sample}_quast_report.tsv"     , optional: true   , emit: for_multiqc
+  path "quast/${sample}/transposed_report.tsv", optional: true   , emit: collect
+  tuple val(sample), env(gc)                                     , emit: gc
+  tuple val(sample), env(num_contigs)                            , emit: contigs
+  tuple val(sample), env(n50)                                    , emit: nfifty
+  tuple val(sample), env(length)                                 , emit: length
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
   '''

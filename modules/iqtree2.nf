@@ -2,14 +2,11 @@ process iqtree2 {
   tag "Pylogenetic Analysis"
   label "maxcpus"
 
-  when:
-  params.phylogenetic_processes =~ /iqtree2/
-
   input:
   file(msa)
 
   output:
-  path "iqtree2/iqtree*"                                                     , emit: tree
+  path "iqtree2/iqtree*"                                               , emit: tree
   path "logs/${task.process}/${task.process}.${workflow.sessionId}.log", emit: log
 
   shell:

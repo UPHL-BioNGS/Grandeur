@@ -2,19 +2,16 @@ process fastani {
   tag "${sample}"
   label "medcpus"
 
-  when:
-  params.contig_processes =~ /fastani/
-
   input:
   tuple val(sample), file(contigs), file(genomes)
 
   output:
-  path "fastani/${sample}.txt", optional: true                          , emit: collect
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
-  tuple val(sample), env(top_ref)                                       , emit: ref
-  tuple val(sample), env(ani_score)                                     , emit: ani
-  tuple val(sample), env(fragment)                                      , emit: fragment
-  tuple val(sample), env(total)                                         , emit: total
+  path "fastani/${sample}.txt", optional: true                   , emit: collect
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
+  tuple val(sample), env(top_ref)                                , emit: ref
+  tuple val(sample), env(ani_score)                              , emit: ani
+  tuple val(sample), env(fragment)                               , emit: fragment
+  tuple val(sample), env(total)                                  , emit: total
 
   shell:
   '''
@@ -30,7 +27,7 @@ process fastani {
     cat .command.sh >> $log_file
 
     tar -xvf !{genomes}
-    ls genomes/*fna > reference_list.txt
+    ls */*.fna > reference_list.txt
 
     fastANI !{params.fastani_options} \
       --threads !{task.cpus} \

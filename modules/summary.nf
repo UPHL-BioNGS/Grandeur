@@ -1,9 +1,6 @@
 process summary {
   tag "${sample}"
 
-  when:
-  params.fastq_processes =~ /summary/ || params.contig_processes =~ /summary/
-
   input:
   tuple val(sample), file(file),
     // de_novo_alignment

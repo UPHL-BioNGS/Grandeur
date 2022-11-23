@@ -3,18 +3,18 @@ process seqsero2 {
   label "medcpus"
 
   when:
-  params.contig_processes =~ /seqsero2/ && flag =~ 'found'
+  flag =~ 'found'
 
   input:
   tuple val(sample), file(file), val(flag)
 
   output:
-  tuple val(sample), env(antigenic_profile)                             , emit: profile
-  tuple val(sample), env(serotype)                                      , emit: serotype
-  tuple val(sample), env(contamination)                                 , emit: contamination
-  path "seqsero2/${sample}/*"                                           , emit: files
-  path "seqsero2/${sample}/SeqSero_result.tsv"                          , emit: collect
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
+  tuple val(sample), env(antigenic_profile)                      , emit: profile
+  tuple val(sample), env(serotype)                               , emit: serotype
+  tuple val(sample), env(contamination)                          , emit: contamination
+  path "seqsero2/${sample}/*"                                    , emit: files
+  path "seqsero2/${sample}/SeqSero_result.tsv"                   , emit: collect
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
   '''
