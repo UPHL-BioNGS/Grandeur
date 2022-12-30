@@ -1,8 +1,8 @@
-include { bbmap }             from '../modules/bbmap'      addParams(outdir: params.outdir)
-include { blastn }            from '../modules/blast'      addParams(blast_db_type: params.blast_db_type, blastn_options: params.blastn_options )
-include { blobtools_create }  from '../modules/blobtools'  addParams(blobtools_create_options: params.blobtools_create_options)
-include { blobtools_plot }    from '../modules/blobtools'  addParams(blobtools_plot_options: params.blobtools_plot_options)    
-include { blobtools_view }    from '../modules/blobtools'  addParams(blobtools_view_options: params.blobtools_view_options)
+include { bbmap }             from '../modules/bbmap'      addParams(params)
+include { blastn }            from '../modules/blast'      addParams(params)
+include { blobtools_create }  from '../modules/blobtools'  addParams(params)
+include { blobtools_plot }    from '../modules/blobtools'  addParams(params)   
+include { blobtools_view }    from '../modules/blobtools'  addParams(params)
                                                                     
 workflow blobtools {
   take:
@@ -22,10 +22,10 @@ workflow blobtools {
       .collectFile(
         storeDir: "${params.outdir}/blobtools/",
         keepHeader: true,
-        sort: true,
+        sort: { file -> file.text },
         name: "blobtools_species.txt")
+      .set{ summary }
 
   emit:
-    species = blobtools_plot.out.species
-    perc    = blobtools_plot.out.perc
+    for_summary = summary
 }
