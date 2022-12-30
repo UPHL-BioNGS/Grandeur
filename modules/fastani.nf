@@ -6,12 +6,8 @@ process fastani {
   tuple val(sample), file(contigs), file(genomes)
 
   output:
-  path "fastani/${sample}.txt", optional: true                   , emit: collect
+  path "fastani/${sample}.txt"                   , emit: results
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
-  tuple val(sample), env(top_ref)                                , emit: ref
-  tuple val(sample), env(ani_score)                              , emit: ani
-  tuple val(sample), env(fragment)                               , emit: fragment
-  tuple val(sample), env(total)                                  , emit: total
 
   shell:
   '''
@@ -26,8 +22,20 @@ process fastani {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    tar -xvf !{genomes}
-    ls */*.fna > reference_list.txt
+    mkdir db
+
+    cp !{genomes}/* 2>/dev/null db/.
+
+    ls db/{*fna,*fa,*fasta} 2>/dev/null > reference_list.txt
+
+    fastANI \
+      -q !{contigs} \
+      --rl reference_list.txt \
+      -o test
+
+    echo "WTF?"
+
+      exit 1
 
     fastANI !{params.fastani_options} \
       --threads !{task.cpus} \
@@ -35,15 +43,7 @@ process fastani {
       --rl reference_list.txt \
       -o fastani/!{sample}.txt \
       | tee -a $log_file
-
-    top_ref=$(sort   -k3,3n -k 4,4n fastani/!{sample}.txt | tail -n 1 | cut -f 2 )
-    ani_score=$(sort -k3,3n -k 4,4n fastani/!{sample}.txt | tail -n 1 | cut -f 3 )
-    fragment=$(sort  -k3,3n -k 4,4n fastani/!{sample}.txt | tail -n 1 | cut -f 4 )
-    total=$(sort     -k3,3n -k 4,4n fastani/!{sample}.txt | tail -n 1 | cut -f 5 )
-
-    if [ -z "$top_ref"   ] ; then top_ref='not identified' ; fi
-    if [ -z "$ani_score" ] ; then ani_score='0'            ; fi
-    if [ -z "$fragment"  ] ; then fragment='0'             ; fi
-    if [ -z "$total"     ] ; then total='0'                ; fi
   '''
 }
+
+//total=$(sort     -k3,3n -k 4,4n fastani/!{sample}.txt | tail -n 1 | cut -f 5 )

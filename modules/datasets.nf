@@ -5,7 +5,7 @@ process datasets_summary {
   val(taxon)
 
   output:
-  file("datasets/${taxon}*genomes.txt")                         , emit: genomes
+  path "datasets/${taxon}_genomes.csv"                          , emit: genomes
   path "logs/${task.process}/${taxon}.${workflow.sessionId}.log", emit: log
 
   shell:
@@ -20,35 +20,25 @@ process datasets_summary {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    datasets summary genome taxon "!{taxon}" --reference --as-json-lines | \
-        dataformat tsv genome --fields accession,assminfo-refseq-category,organism-name --elide-header | \
-        grep representative | \
-        head -n !{params.fastani_max_genomes} > \
-        datasets/!{taxon}_representative_genomes.txt
+    taxon=$(echo !{taxon} | tr "_" " ")
 
-    if [ ! -s genome_ids.txt ] 
-    then
-
-        echo "representative genome for !{taxon} taxon not found"
-        datasets summary genome taxon "!{taxon}" --reference --as-json-lines | \
-            dataformat tsv genome --fields accession,assminfo-refseq-category,organism-name --elide-header | \
-            head -n !{params.fastani_max_genomes} > \
-            datasets/!{taxon}_genomes.txt
-    fi
-
-    exit
-    '''
+    datasets summary genome taxon "$taxon" --reference  --limit !{params.datasets_max_genomes} --as-json-lines | \
+      dataformat tsv genome --fields accession,assminfo-refseq-category,assminfo-level,organism-name | \
+      tr '\\t' ',' \
+      > datasets/!{taxon}_genomes.csv
+  '''
 }
 
 process datasets_download {
-  tag "${taxon}"
+  tag "Downloading Genomes"
+  // because there's no way to specify threads
   label "medcpus"
 
   input:
   file(ids)
 
   output:
-  file("datasets/fastani_refs.tar.gz")                                   , emit: tar
+  path "datasets/fastani_refs.tar.gz"                                    , emit: tar
   path "logs/${task.process}/datasets_download.${workflow.sessionId}.log", emit: log
 
   shell:
@@ -63,21 +53,21 @@ process datasets_download {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    sort !{ids} | uniq | cut -f 1 > id_list.txt
+    grep -h -v Accession !{ids} | cut -f 1 -d , | sort | uniq > id_list.txt
 
-    datasets download genome accession --inputfile id_list.txt --filename ncbi_datasets.zip
+    datasets download genome accession --inputfile id_list.txt --filename ncbi_dataset.zip
 
-    unzip ncbi_datasets.zip
+    unzip -o ncbi_dataset.zip
     
-    while read line
+    fastas=$(ls ncbi_dataset/data/*/*.fna)
+    
+    for fasta in ${fastas[@]}
     do
-        accesion="$(echo $line | cut -f 1 -d , )"
-        organism="$(echo $line | cut -f 3 -d , | sed 's/ /_/g')"
-        cat ncbi_datasets/data/$accesion/$accesion*.fna | sed 's/ /_/g' | sed 's/,//g' > genomes/${organism}_${accesion}.fna
-    done < <(sort !{ids} | uniq | tr "\t" "," )
+      accession=$(echo $fasta | cut -f 3 -d / )
+      organism=$(grep -h $accession !{ids} | cut -f 4 -d , | sed 's/ /_/g' )
+      cat $fasta | sed 's/ /_/g' | sed 's/,//g' > genomes/${organism}_${accession}.fna
+    done
 
     tar -czvf datasets/fastani_refs.tar.gz genomes/
-
-    exit
-    '''
+  '''
 }

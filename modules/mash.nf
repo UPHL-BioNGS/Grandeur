@@ -1,14 +1,24 @@
-process mash_sketch {
+process mash {
   tag "${sample}"
+  label "medcpus"
 
   input:
   tuple val(sample), file(reads)
 
   output:
-  tuple val(sample), file("mash/${sample}.msh"), optional: true        , emit: files
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}", emit: log
   tuple val(sample), env(genome_size)                                  , emit: genome_size
   tuple val(sample), env(coverage)                                     , emit: coverage
+  tuple val(sample), file("mash/${sample}_mashdist.txt"), optional: true, emit: files
+  tuple val(sample), env(genus)                                         , emit: genus
+  tuple val(sample), env(species)                                       , emit: species
+  tuple val(sample), env(full_mash)                                     , emit: full
+  tuple val(sample), env(pvalue)                                        , emit: pvalue
+  tuple val(sample), env(distance)                                      , emit: distance
+  tuple val(sample), env(salmonella_flag)                               , emit: salmonella_flag
+  tuple val(sample), env(ecoli_flag)                                    , emit: ecoli_flag
+  tuple val(sample), env(klebsiella_flag)                               , emit: klebsiella_flag
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log,err"       , emit: log
+
 
   shell:
   '''
@@ -25,46 +35,16 @@ process mash_sketch {
 
     cat !{reads} | mash sketch !{params.mash_sketch_options} -o mash/!{sample} - 2>> $err_file | tee -a $log_file
 
+
+
     genome_size=$(grep "Estimated genome size" $err_file | awk '{print $4}' )
     coverage=$(grep "Estimated coverage" $err_file | awk '{print $3}' )
 
     if [ -z "$genome_size" ] ; then genome_size=0 ; fi
     if [ -z "$coverage" ] ; then coverage=0 ; fi
-  '''
-}
 
-process mash_dist {
-  tag "${sample}"
-  label "medcpus"
 
-  input:
-  tuple val(sample), file(msh)
-
-  output:
-  tuple val(sample), file("mash/${sample}_mashdist.txt"), optional: true, emit: files
-  tuple val(sample), env(genus)                                         , emit: genus
-  tuple val(sample), env(species)                                       , emit: species
-  tuple val(sample), env(full_mash)                                     , emit: full
-  tuple val(sample), env(pvalue)                                        , emit: pvalue
-  tuple val(sample), env(distance)                                      , emit: distance
-  tuple val(sample), env(salmonella_flag)                               , emit: salmonella_flag
-  tuple val(sample), env(ecoli_flag)                                    , emit: ecoli_flag
-  tuple val(sample), env(klebsiella_flag)                               , emit: klebsiella_flag
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log"       , emit: log
-
-  shell:
-  '''
-    mkdir -p mash logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-
-    # time stamp + capturing tool versions
-    date > $log_file
-    echo "container : !{task.container}" >> $log_file
-    echo "mash version: $(mash --version | head -n 1 )" >> $log_file
-    echo "Nextflow command : " >> $log_file
-    cat .command.sh >> $log_file
-
-    mash dist -p !{task.cpus} !{params.mash_options} !{params.mash_reference} !{msh} | sort -gk3 > mash/!{sample}_mashdist.txt
+    mash dist -p !{task.cpus} !{params.mash_options} !{params.mash_reference} mash/!{sample}.msh | sort -gk3 > mash/!{sample}_mashdist.txt
 
     if [ ! -s "mash/!{sample}_mashdist.txt" ]
     then
