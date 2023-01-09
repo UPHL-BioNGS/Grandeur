@@ -1,7 +1,11 @@
 process iqtree2 {
-  tag "Pylogenetic Analysis"
-  label "maxcpus"
-
+  tag           "Pylogenetic Analysis"
+  label         "maxcpus"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/iqtree2:2.1.2'
+  maxForks      10
+  
   input:
   file(msa)
 

@@ -1,12 +1,15 @@
 process mlst {
-  tag "${sample}"
-
+  tag           "${sample}"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/mlst:2.22.1'
+  maxForks      10
+  
   input:
   tuple val(sample), file(contig)
 
   output:
-  path "mlst/${sample}_mlst.txt"                                 , emit: collect
-  tuple val(sample), env(mlst)                                   , emit: mlst
+  path "mlst/${sample}_mlst.csv"                                 , emit: collect
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
@@ -21,8 +24,11 @@ process mlst {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    mlst !{params.mlst_options} !{contig} > mlst/!{sample}_mlst.txt
+    echo "sample,filename,matching PubMLST scheme,ST,ID1,ID2,ID3,ID4,ID5,ID6,ID7,ID8,ID9,ID10,ID11,ID12,ID13,ID14,ID15" > mlst/!{sample}_mlst.csv
 
-    mlst=$(awk '{ print $2 ":" $3 }' mlst/!{sample}_mlst.txt)
+    mlst !{params.mlst_options} \
+      --threads !{task.cpus} \
+      !{contig} | \
+      awk -v sample=!{sample} '{print sample "," $1 "," $2 "," $3 "," $4 "," $5 "," $6 "," $7 "," $8 "," $9 "," $10 "," $11 "," $12 "," $13 "," $14 "," $15 "," $16 "," $17 "," $18}' >> mlst/!{sample}_mlst.csv
   '''
 }

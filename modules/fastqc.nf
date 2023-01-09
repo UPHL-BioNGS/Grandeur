@@ -1,14 +1,17 @@
 process fastqc {
-  tag "${sample}"
-  
+  tag           "${sample}"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/fastqc:0.11.9'
+  maxForks      10
+    
   input:
-  tuple val(sample), file(raw)
+  tuple val(sample), file(fastq)
 
   output:
-  path "fastqc/*"                                                , emit: fastq_files
+  path "fastqc/*html"                                            , emit: fastq_files
   path "fastqc/*_fastqc.zip"                                     , emit: for_multiqc
-  tuple val(sample), env(raw_1)                                  , emit: fastqc_1_results
-  tuple val(sample), env(raw_2)                                  , emit: fastqc_2_results
+  path "fastqc/${sample}_summary.csv"                            , emit: collect
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log_files
 
   shell:
@@ -26,15 +29,20 @@ process fastqc {
     fastqc !{params.fastqc_options} \
       --outdir fastqc \
       --threads !{task.cpus} \
-      !{raw} \
+      !{fastq} \
+      --extract \
       | tee -a $log_file
 
-    zipped_fastq=($(ls fastqc/*fastqc.zip) "")
+    header=$(head -n 10 fastqc/*_fastqc/fastqc_data.txt | cut -f 1 | tr "\\n" ",")
 
-    raw_1=$(unzip -p ${zipped_fastq[0]} */fastqc_data.txt | grep "Total Sequences" | awk '{ print $3 }' )
-    raw_2=$(unzip -p fastqc/*fastqc.zip */fastqc_data.txt | grep "Total Sequences" | awk '{ print $3 }' )
+    for data in fastqc/*_fastqc/fastqc_data.txt
+    do
+      if [ ! -f "fastqc/!{sample}_summary.csv" ]
+      then
+        head -n 10 $data | cut -f 1 | tr "\\n" "," | sed 's/,$/\\n/' | sed 's/#//g' | sed 's/>//g' | awk '{print "sample," $0}' > fastqc/!{sample}_summary.csv
+      fi
 
-    if [ -z "$raw_1" ] ; then raw_1="0" ; fi
-    if [ -z "$raw_2" ] ; then raw_2="0" ; fi
+      head -n 10 $data | cut -f 2 | tr "\\n" "," | sed 's/,$/\\n/' | awk -v sample=!{sample} '{print sample "," $0}' >> fastqc/!{sample}_summary.csv
+    done
   '''
 }

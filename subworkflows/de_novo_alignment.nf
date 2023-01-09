@@ -1,6 +1,6 @@
-include { fastp }     from '../modules/fastp'     addParams(fastp_options: params.fastp_options)
-include { bbduk }     from '../modules/bbmap'     addParams(bbduk_options: params.bbduk_options)
-include { spades }    from '../modules/spades'    addParams(spades_options: params.spades_options)
+include { fastp }   from '../modules/fastp'   addParams(params)
+include { bbduk }   from '../modules/bbmap'   addParams(params)
+include { spades }  from '../modules/spades'  addParams(params)
 
 workflow de_novo_alignment {
   take: reads
@@ -20,14 +20,13 @@ workflow de_novo_alignment {
 
   emit:
     // for summary
-    fastp_results             = fastp.out.fastp_results
-    phix_reads                = bbduk.out.phix_reads
+    fastp_reads = fastp.out.fastp_results
+    phix_reads  = bbduk.out.phix_reads
 
     // for downstream analyses
-    clean_reads               = fastp.out.fastq
-    contigs                   = spades.out.contigs
+    clean_reads = fastp.out.fastq
+    contigs     = spades.out.contigs
 
     // for multiqc
-    fastp_multiqc             = fastp.out.fastp_files
-    bbduk_multiqc             = bbduk.out.stats
+    for_multiqc = fastp.out.fastp_files.mix(bbduk.out.stats)
 }

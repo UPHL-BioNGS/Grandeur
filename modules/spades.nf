@@ -1,8 +1,11 @@
 process spades {
-  tag "${sample}"
-  label "maxcpus"
-  errorStrategy { task.exitStatus == 21 ? 'ignore' : 'terminate' }
-
+  tag           "${sample}"
+  label         "maxcpus"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/spades:3.15.5'
+  maxForks      10
+  
   input:
   tuple val(sample), file(reads)
 

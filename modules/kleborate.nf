@@ -1,7 +1,10 @@
 process kleborate {
-  tag "${sample}"
-  label "medcpus"
-
+  tag           "${sample}"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/kleborate:2.1.0'
+  maxForks      10
+  
   when:
   flag =~ 'found'
 
@@ -9,9 +12,8 @@ process kleborate {
   tuple val(sample), file(contig), val(flag)
 
   output:
-  tuple val(sample), env(kleborate_score)                        , emit: score
-  tuple val(sample), env(kleborate_mlst)                         , emit: mlst
-  path "kleborate/${sample}_results.txt"                         , emit: collect
+  path "kleborate/${sample}_results.csv"                         , emit: collect
+  path "kleborate/${sample}_results.txt"                         , emit: result
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
@@ -31,11 +33,7 @@ process kleborate {
       -a !{contig} \
       | tee -a $log_file
 
-    virulence_column=$(head -n 1 kleborate/!{sample}_results.txt | tr '\\t' '\\n' | grep -n virulence_score | cut -f 1 -d ":" )
-    mlst_column=$(head -n 1 kleborate/!{sample}_results.txt | tr '\\t' '\\n' | grep -n ST | cut -f 1 -d ":" )
-    if [ -n "$virulence_column" ] ; then kleborate_score=$(cut -f $virulence_column kleborate/!{sample}_results.txt | tail -n 1 ) ; fi
-    if [ -n "$mlst_column" ] ; then kleborate_mlst=$(cut -f $mlst_column kleborate/!{sample}_results.txt | tail -n 1 ) ; fi
-    if [ -z "$kleborate_score" ] ; then kleborate_score='NA' ; fi
-    if [ -z "$kleborate_mlst" ] ; then kleborate_mlst='NA' ; fi
+    head -n 1 kleborate/!{sample}_results.txt | tr "\\t" "," | awk '{print "sample," $0}' > kleborate/!{sample}_results.csv
+    tail -n 1 kleborate/!{sample}_results.txt | tr "\\t" "," | awk -v sample=!{sample} '{print sample "," $0}' >> kleborate/!{sample}_results.csv
   '''
 }

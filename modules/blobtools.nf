@@ -1,6 +1,10 @@
 process blobtools_create {
-  tag "${sample}"
-
+  tag           "${sample}"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'chrishah/blobtools:v1.1.1'
+  maxForks      10
+  
   input:
   tuple val(sample), file(contig), file(blastn), file(bam)
 
@@ -31,8 +35,12 @@ process blobtools_create {
 }
 
 process blobtools_view {
-  tag "${sample}"
-
+  tag           "${sample}"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'chrishah/blobtools:v1.1.1'
+  maxForks      10
+  
   input:
   tuple val(sample), file(json)
 
@@ -60,16 +68,19 @@ process blobtools_view {
 }
 
 process blobtools_plot {
-  tag "${sample}"
-
+  tag           "${sample}"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'chrishah/blobtools:v1.1.1'
+  maxForks      10
+  
   input:
   tuple val(sample), file(json)
 
   output:
   path "blobtools/${sample}.*"                                   , emit: files
-  path "blobtools/${sample}_species.txt"                         , emit: results
-  tuple val(sample), env(blobtools_species)                      , emit: species
-  tuple val(sample), env(blobtools_perc)                         , emit: perc
+  tuple val(sample), file("blobtools/${sample}_blobtools.txt")   , emit: results
+  path "blobtools/${sample}_summary.txt"                         , emit: collect
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
@@ -89,24 +100,17 @@ process blobtools_plot {
       -o blobtools/ \
       | tee -a $log_file
 
-    perc='0.0'
-    blobtools_species='missing'
-    grep "^# " blobtools/!{sample}*.stats.txt | sed 's/# //g' | awk '{print "sample\t" $0 }' > blobtools/!{sample}_species.txt
-    while read line
-    do
-      new_perc=$(echo $line | cut -f 13 -d " " | sed 's/%//g')
-      min=$(echo $perc $new_perc | awk '{if ($1 > $2) print $1; else print $2}')
-      if [ "$min" != "$perc" ]
-      then
-        perc=$new_perc
-        blobtools_species=$(echo $line | cut -f 1 -d " " )
-        blobtools_perc=$(echo $line | cut -f 13 -d " " )
-      fi
-      
-      if [ -z "$(echo $line | grep ^# )" ]
-      then
-        echo $line | tr " " "\\t" | awk -v sample=!{sample} '{print sample "\\t" $0 }' >> blobtools/!{sample}_species.txt
-      fi
-    done < <(grep -vw all blobtools/!{sample}*.stats.txt | grep -v "# name" | tr ' ' '_' | grep '%')
+    grep "^# " blobtools/!{sample}*.stats.txt | \
+      sed 's/# //g' | \
+      awk '{print "sample\t" $0 }' > blobtools/!{sample}_summary.txt
+
+    grep -v "^#" blobtools/!{sample}*.stats.txt | \
+      sed 's/%//g' | \
+      tr " " "_" | \
+      awk -v sample=!{sample} '{if ($13 >= 5.0 ) print sample "\\t" $0}' | \
+      tr " " "\\t" | \
+      sort -k 14rn,14 >> blobtools/!{sample}_summary.txt
+
+    grep -vw all blobtools/!{sample}_summary.txt > blobtools/!{sample}_blobtools.txt
   '''
 }

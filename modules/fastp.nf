@@ -1,6 +1,10 @@
 process fastp {
-  tag "${sample}"
-
+  tag           "${sample}"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/fastp:0.23.2'
+  maxForks      10
+  
   input:
   tuple val(sample), file(reads)
 

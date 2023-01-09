@@ -1,13 +1,15 @@
 process fasterqdump {
-  tag "${SRR}"
-  label "maxcpus"
-  errorStrategy { task.exitStatus == 21 ? 'ignore' : 'terminate' }
-
+  tag           "${SRR}"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'ncbi/sra-tools:3.0.1'
+  maxForks      10
+  
   input:
   val(SRR)
 
   output:
-  path "reads/${sample}/*"                                   , emit: reads
+  tuple val(sample), file("reads/${SRR}_*.fastq.gz")            , emit: reads
   path "logs/${task.process}/${SRR}.${workflow.sessionId}.log", emit: log
 
   shell:
@@ -23,10 +25,10 @@ process fasterqdump {
     cat .command.sh >> $log_file
 
     fasterq-dump \
-        -A !{SRR} \
-        --split-files \
-        --threads !{task.cpus} \
-        --outdir reads \
-        | tee -a $log_file
+      -A !{SRR} \
+      --split-files \
+      --threads !{task.cpus} \
+      --outdir reads \
+      tee -a $log_file
   '''
 }

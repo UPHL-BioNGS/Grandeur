@@ -1,14 +1,18 @@
 process kraken2_fastq {
-  tag "${sample}"
-  label "maxcpus"
-
+  tag           "${sample}"
+  label         "maxcpus"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/kraken2:2.1.2-no-db'
+  maxForks      10
+  
   input:
   tuple val(sample), file(file), path(kraken2_db)
 
   output:
-  path "kraken2/${sample}_kraken2_report_reads.txt"              , emit: for_multiqc
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
-  path "kraken2/${sample}_reads_summary.csv"                     , emit: results
+  path "kraken2/${sample}_kraken2_report_reads.txt"                     , emit: for_multiqc
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log"       , emit: log
+  tuple val(sample), file("kraken2/${sample}_reads_summary_kraken2.csv"), emit: results
 
   shell:
   '''
@@ -30,24 +34,28 @@ process kraken2_fastq {
       --report kraken2/!{sample}_kraken2_report_reads.txt \
       | tee -a $log_file
 
-    echo "Sample,Type,Percentage of fragments,Number of fragments,Number of fragments assigned directly to this taxon,Rank code,NCBI taxonomic ID number,Scientific name" > kraken2/!{sample}_reads_summary.csv
+    echo "Sample,Type,Percentage of fragments,Number of fragments,Number of fragments assigned directly to this taxon,Rank code,NCBI taxonomic ID number,Scientific name" > kraken2/!{sample}_reads_summary_kraken2.csv
     cat kraken2/!{sample}_kraken2_report_reads.txt | grep -w S | \
       awk -v sample=!{sample} '{ if ($1 >= 5 ) print sample ",reads," $1 "," $2 "," $3 "," $4 "," $5 "," $6 "_" $7 }' | \
-      sort >> kraken2/!{sample}_reads_summary.csv
+      sort >> kraken2/!{sample}_reads_summary_kraken2.csv
   '''
 }
 
 process kraken2_fasta {
-  tag "${sample}"
-  label "maxcpus"
-
+  tag           "${sample}"
+  label         "maxcpus"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/kraken2:2.1.2-no-db'
+  maxForks      10
+  
   input:
   tuple val(sample), file(file), path(kraken2_db)
 
   output:
-  path "kraken2/${sample}_kraken2_report_contigs.txt"            , emit: for_multiqc
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
-  path "kraken2/${sample}_contigs_summary.csv"                   , emit: results
+  path "kraken2/${sample}_kraken2_report_contigs.txt"                     , emit: for_multiqc
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log"         , emit: log
+  tuple val(sample), file("kraken2/${sample}_contigs_summary_kraken2.csv"), emit: results
 
   shell:
     '''
@@ -67,9 +75,9 @@ process kraken2_fasta {
       --report kraken2/!{sample}_kraken2_report_contigs.txt \
       | tee -a $log_file
 
-    echo "Sample,Type,Percentage of fragments,Number of fragments,Number of fragments assigned directly to this taxon,Rank code,NCBI taxonomic ID number,Scientific name" > kraken2/!{sample}_contigs_summary.csv
+    echo "Sample,Type,Percentage of fragments,Number of fragments,Number of fragments assigned directly to this taxon,Rank code,NCBI taxonomic ID number,Scientific name" > kraken2/!{sample}_contigs_summary_kraken2.csv
     cat kraken2/!{sample}_kraken2_report_contigs.txt | grep -w S | \
       awk -v sample=!{sample} '{ if ($1 >= 5 ) print sample ",contigs," $1 "," $2 "," $3 "," $4 "," $5 "," $6 "_" $7 }' | \
-      sort >> kraken2/!{sample}_contigs_summary.csv
+      sort >> kraken2/!{sample}_contigs_summary_kraken2.csv
   '''
 }

@@ -1,7 +1,11 @@
 process prokka {
-  tag "${sample}"
-  label "maxcpus"
-
+  tag           "${sample}"
+  label         "maxcpus"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/prokka:1.14.5'
+  maxForks      10
+  
   input:
   tuple val(sample), file(contigs), val(genus), val(species)
 

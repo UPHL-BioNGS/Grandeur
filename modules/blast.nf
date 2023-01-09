@@ -1,6 +1,10 @@
 process blastn {
-  tag "${sample}"
-  label "medcpus"
+  tag           "${sample}"
+  label         "medcpus"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/blast:2.13.0'
+  maxForks      10
 
   input:
   tuple val(sample), file(contig), path(blastdb)

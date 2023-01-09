@@ -1,8 +1,8 @@
 include { datasets_summary }    from '../modules/datasets'  addParams(params)
 include { datasets_download }   from '../modules/datasets'  addParams(params)
+include { decompression }       from '../modules/grandeur'  addParams(params)
 include { fastani }             from '../modules/fastani'   addParams(params)
 include { species }             from '../modules/grandeur'  addParams(params)
-include { decompression }       from '../modules/grandeur'  addParams(params)
 
 workflow average_nucleotide_identity {
     take:
@@ -11,7 +11,6 @@ workflow average_nucleotide_identity {
         ch_static_fastani_genomes
   
     main:
-
         if ( params.current_datasets ) {
             species(ch_species)
 
@@ -22,24 +21,35 @@ workflow average_nucleotide_identity {
 
             datasets_summary(ch_species_list)
             datasets_download(datasets_summary.out.genomes.collect())
+            ch_fastani_db = datasets_download.out.genomes
 
-            ch_fastani_db = datasets_download.out.tar
+            datasets_summary.out.genomes
+                .collectFile(
+                   storeDir: "${params.outdir}/datasets/",
+                    keepHeader: true,
+                    sort: { file -> file.text },
+                    name: "datasets_summary.csv")
+                .set { datasets_genomes } 
+
         } else {
-            ch_fastani_db = ch_static_fastani_genomes
+            decompression(ch_static_fastani_genomes)
+            ch_fastani_db = decompression.out.decompressed
+            datasets_genomes = Channel.empty()
         }
 
-        decompression(ch_fastani_db)
-        ch_contigs.combine(decompression.out.decompressed).view()
-        fastani(ch_contigs.combine(decompression.out.decompressed))
+        fastani(ch_contigs.combine(ch_fastani_db))
 
-   fastani.out.results
-       .collectFile(
-           storeDir: "${params.outdir}/fastani/",
-           keepHeader: true,
-           sort: { file -> file.text },
-           name: "fastani_summary.csv")
-       .set { summary }
+        fastani.out.results
+            .map { it -> it [1] }
+            .collectFile(
+                storeDir: "${params.outdir}/fastani/",
+                keepHeader: true,
+                sort: { file -> file.text },
+                name: "fastani_summary.csv")
+            .set { summary }
 
    emit:
-       for_summary = summary
+        for_species = fastani.out.results
+        for_summary = summary
+        for_size    = fastani.out.results.combine(datasets_genomes)
 }

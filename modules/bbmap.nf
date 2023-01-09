@@ -1,5 +1,9 @@
-process bbduk{
-  tag "${sample}"
+process bbduk {
+  tag           "${sample}"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/bbtools:38.98'
+  maxForks      10
 
   input:
   tuple val(sample), file(reads)
@@ -38,9 +42,13 @@ process bbduk{
   '''
 }
 
-process bbmap{
-  tag "${sample}"
-  label "maxcpus"
+process bbmap {
+  tag           "${sample}"
+  label         "maxcpus"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/bbtools:38.98'
+  maxForks      10
 
   input:
   tuple val(sample), file(fastq), file(contigs)
@@ -75,6 +83,6 @@ process bbmap{
       bamscript=bs.sh \
       | tee -a $log_file
       
-      sh bs.sh | tee -a $log_file
+    sh bs.sh | tee -a $log_file
   '''
 }

@@ -1,6 +1,10 @@
 process snp_dists {
   tag "SNP matrix"
-
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/snp-dists:0.8.2'
+  maxForks      10
+  
   input:
   file(contigs)
 

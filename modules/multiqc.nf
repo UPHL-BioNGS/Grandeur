@@ -1,14 +1,12 @@
 process multiqc {
-  tag "multiqc"
-
+  tag           "multiqc"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'quay.io/biocontainers/multiqc:1.12--pyhdfd78af_0'
+  maxForks      10
+  
   input:
-  file(fastp)
-  file(bbduk)
-  file(kraken2_contigs)
-  file(quast)
-  file(fastqc)
-  file(kraken2_fastq)
-  file(prokka)
+  file(input)
 
   output:
   path "multiqc/multiqc_report.html", optional: true                   , emit: report
@@ -27,14 +25,11 @@ process multiqc {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    for quast_file in !{quast}
+    for quast_file in $(ls *_quast_report.tsv)
     do
-      if [ -f "$quast_file" ]
-      then
-        sample=$(echo $quast_file | sed 's/_quast_report.tsv//g' | head -n 1 )
-        mkdir -p quast/$sample
-        mv $quast_file quast/$sample/report.tsv
-      fi
+      sample=$(echo $quast_file | sed 's/_quast_report.tsv//g' | head -n 1 )
+      mkdir -p quast/$sample
+      mv $quast_file quast/$sample/report.tsv
     done
 
     multiqc !{params.multiqc_options} \

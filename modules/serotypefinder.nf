@@ -1,7 +1,11 @@
 process serotypefinder {
-  tag "${sample}"
-  label "medcpus"
-
+  tag           "${sample}"
+  label         "medcpus"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/serotypefinder:2.0.1'
+  maxForks      10
+  
   when:
   flag =~ 'found'
 
@@ -9,10 +13,9 @@ process serotypefinder {
   tuple val(sample), file(file), val(flag)
 
   output:
-  path "serotypefinder/${sample}/*"                              , emit: files
-  tuple val(sample), env(o_type)                                 , emit: ogroup
-  tuple val(sample), env(h_type)                                 , emit: hgroup
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit:  log
+  path "serotypefinder/${sample}/*"                                     , emit: files
+  path "serotypefinder/${sample}_serotypefinder.tsv"                    , emit: collect
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log"       , emit: log
 
   shell:
   '''
@@ -31,9 +34,9 @@ process serotypefinder {
       -x \
       | tee -a $log_file
 
-    h_type=$(cut -f 3 serotypefinder/!{sample}/results_tab.tsv | grep ^H | sort | uniq | tr '\\n' ',' | sed 's/,$//g' )
-    o_type=$(cut -f 3 serotypefinder/!{sample}/results_tab.tsv | grep ^O | sort | uniq | tr '\\n' ',' | sed 's/,$//g' )
-    if [ -z "$h_type" ] ; then h_type="none" ; fi
-    if [ -z "$o_type" ] ; then o_type="none" ; fi
+    cp serotypefinder/!{sample}/results_tab.tsv serotypefinder/!{sample}_serotypefinder.tsv
+
+    head -n 1 serotypefinder/!{sample}/results_tab.tsv | awk '{print "sample\\t" $0 }' > serotypefinder/!{sample}_serotypefinder.tsv
+    tail -n +2 serotypefinder/!{sample}/results_tab.tsv | awk -v sample=!{sample} '{print sample "\\t" $0 }' >> serotypefinder/!{sample}_serotypefinder.tsv
   '''
 }

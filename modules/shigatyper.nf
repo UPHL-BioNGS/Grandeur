@@ -1,18 +1,20 @@
 process shigatyper {
-  tag "${sample}"
-  label "medcpus"
-
+  tag           "${sample}"
+  label         "medcpus"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/shigatyper:2.0.1'
+  maxForks      10
+  
   when:
   flag =~ 'found'
 
   input:
-  tuple val(sample), file(fastq), val(flag)
+  tuple val(sample), file(input), val(flag)
 
   output:
   path "shigatyper/${sample}_shigatyper.tsv"                     , emit: files
-  path "shigatyper/${sample}-hits.tsv", optional: true           , emit: hits
-  tuple val(sample), env(predictions)                            , emit: predictions
-  tuple val(sample), env(lacy_cada)                              , emit: cada
+  path "shigatyper/${sample}_shigatyper-hits.tsv", optional: true, emit: collect
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
@@ -28,17 +30,18 @@ process shigatyper {
     cat .command.sh >> $log_file
 
     shigatyper !{params.shigatyper_options} \
-      --R1 !{fastq[0]} \
-      --R2 !{fastq[1]} \
-      > shigatyper/!{sample}_shigatyper.tsv
+      --SE !{input} \
+      --name !{sample} \
+      | tee -a $log_file
 
-    if [ -f "!{sample}.tsv" ]; then cp !{sample}.tsv shigatyper/!{sample}-hits.tsv ; fi
+    hits=$(find shigatyper -iname "*hits.tsv" | head -n 1)
+    if [ -f "$hits" ]
+    then
+      head -n 1  $hits | awk '{print "sample\\t" $0}' > shigatyper/!{sample}_shigatyper-hits.tsv
+      tail -n +2 $hits | awk -v sample=!{sample} '{print sample "\\t" $0}' >> shigatyper/!{sample}_shigatyper-hits.tsv
+      rm $hits
+    fi
 
-    exit
-
-    predictions=$(grep -v "prediction" shigatyper/!{sample}_shigatyper.tsv | grep -wv "Hit" | cut -f 2 | tr '\\n' ',' | sed 's/,$//g' )
-    lacy_cada="$(grep -ie "lac" -ie "cad" $err_file | head -n 1)"
-    if [ -z "$predictions" ] ; then predictions='none' ; fi
-    if [ -z "$lacy_cada" ] ; then lacy_cada='none' ; fi
+    cat *tsv > shigatyper/!{sample}_shigatyper.tsv
   '''
 }

@@ -1,13 +1,17 @@
 process plasmidfinder {
-  tag "${sample}"
-
+  tag           "${sample}"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/plasmidfinder:2.1.6'
+  maxForks      10
+  
   input:
   tuple val(sample), file(file)
 
   output:
-  path "plasmidfinder/${sample}/*"                               , emit: files
-  tuple val(sample), env(plasmids)                               , emit: plasmids
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
+  path "plasmidfinder/${sample}/*"                                    , emit: files
+  path "plasmidfinder/${sample}_plasmidfinder.tsv"                    , emit: collect
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log"     , emit: log
 
   shell:
   '''
@@ -24,9 +28,10 @@ process plasmidfinder {
     plasmidfinder.py !{params.plasmidfinder_options} \
       -i !{file} \
       -o plasmidfinder/!{sample} \
+      --extented_output \
       | tee -a $log_file
 
-     plasmids=$(cat plasmidfinder/!{sample}/data.json | tr "," "\\n" | tr "{" "\\n" |  grep plasmid | awk '{print $2 }' | sort | uniq | grep \\" | tr "\\n" "," | sed 's/,$//g' | sed 's/\"//g' | sed 's/}//g' | sed 's/{//g')
-     if [ -z "$plasmids" ] ; then plasmids="No hit found" ; fi
+    head -n 1 plasmidfinder/!{sample}/results_tab.tsv | awk '{print "sample\\t" $0 }' > plasmidfinder/!{sample}_plasmidfinder.tsv
+    tail -n +2 plasmidfinder/!{sample}/results_tab.tsv | awk -v sample=!{sample} '{print sample "\\t" $0 }' >> plasmidfinder/!{sample}_plasmidfinder.tsv
   '''
 }

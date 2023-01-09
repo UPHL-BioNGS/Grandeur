@@ -1,7 +1,11 @@
 process roary {
-  tag "Core Genome Alignment"
-  label 'maxcpus'
-
+  tag           "Core Genome Alignment"
+  label         'maxcpus'
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/roary:3.13.0'
+  maxForks      10
+  
   input:
   file(contigs)
 
@@ -31,5 +35,10 @@ process roary {
       -e -n \
       *.gff \
       | tee -a $log_file
+
+    # do something with summary
+    # check number of samples
+    # check number of core genes
+    exit 1
   '''
 }

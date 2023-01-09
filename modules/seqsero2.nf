@@ -1,7 +1,11 @@
 process seqsero2 {
-  tag "${sample}"
-  label "medcpus"
-
+  tag           "${sample}"
+  label         "medcpus"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/seqsero2:1.2.1'
+  maxForks      10
+  
   when:
   flag =~ 'found'
 
@@ -9,9 +13,6 @@ process seqsero2 {
   tuple val(sample), file(file), val(flag)
 
   output:
-  tuple val(sample), env(antigenic_profile)                      , emit: profile
-  tuple val(sample), env(serotype)                               , emit: serotype
-  tuple val(sample), env(contamination)                          , emit: contamination
   path "seqsero2/${sample}/*"                                    , emit: files
   path "seqsero2/${sample}/SeqSero_result.tsv"                   , emit: collect
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
@@ -37,22 +38,22 @@ process seqsero2 {
       -n !{sample} \
       | tee -a $log_file
 
-    serotype=$(cut -f 9 seqsero2/!{sample}/SeqSero_result.tsv | tail -n 1)
-    contamination=$(cut -f 10 seqsero2/!{sample}/SeqSero_result.tsv | tail -n 1)
-    antigenic_profile=$(cut -f 8 seqsero2/!{sample}/SeqSero_result.tsv | tail -n 1)
-    enteritidis_check=$(grep "Enteritidis" seqsero2/!{sample}/SeqSero_result.tsv | head -n 1 )
+    enteritidis_check=$(grep "Enteritidis" seqsero2/!{sample}/SeqSero_result.tsv | head -n 1)
     sdf_check=$(grep "Detected Sdf" seqsero2/!{sample}/SeqSero_result.tsv | head -n 1 )
 
-    if [ -n "$sdf_check" ] && [ -n "$enteritidis_check" ]
+    if [ -n "$enteritidis_check" ] && [ -n "$sdf_check" ]
     then
-      serotype="$serotype (Sdf+)"
-    elif [ -z "$sdf_check" ] && [ -n "$enteritidis_check" ]
+      head -n 1 seqsero2/!{sample}/SeqSero_result.tsv > SeqSero_result.tsv.tmp
+      tail -n 1 seqsero2/!{sample}/SeqSero_result.tsv | awk -F "\\t" -v OFS='\t' '{($9 = $9 " (Sdf+)") ; print $0}' >> SeqSero_result.tsv.tmp
+      mv SeqSero_result.tsv.tmp seqsero2/!{sample}/SeqSero_result.tsv
+    elif [ -n "$enteritidis_check" ] && [ -z "$sdf_check" ]
     then
-      serotype="$serotype (Sdf-)"
+      head -n 1 seqsero2/!{sample}/SeqSero_result.tsv > SeqSero_result.tsv.tmp
+      tail -n 1 seqsero2/!{sample}/SeqSero_result.tsv | awk -F "\\t" -v OFS='\t' '{($9 = $9 " (Sdf-)") ; print $0}' >> SeqSero_result.tsv.tmp
+      mv SeqSero_result.tsv.tmp seqsero2/!{sample}/SeqSero_result.tsv
     fi
 
-    if [ -z "$serotype" ] ; then serotype='NA' ; fi
-    if [ -z "$contamination" ] ; then contamination='NA' ; fi
-    if [ -z "$antigenic_profile" ] ; then antigenic_profile='NA' ; fi
+    cat seqsero2/!{sample}/SeqSero_result.tsv | sed 's/Sample name/sample/g' > seqsero2/!{sample}/SeqSero_result.tsv.tmp
+    mv seqsero2/!{sample}/SeqSero_result.tsv.tmp seqsero2/!{sample}/SeqSero_result.tsv
   '''
 }

@@ -1,6 +1,10 @@
 process datasets_summary {
-  tag "${taxon}"
-
+  tag           "${taxon}"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/ncbi-datasets:14.3.0'
+  maxForks      10
+  
   input:
   val(taxon)
 
@@ -23,22 +27,27 @@ process datasets_summary {
     taxon=$(echo !{taxon} | tr "_" " ")
 
     datasets summary genome taxon "$taxon" --reference  --limit !{params.datasets_max_genomes} --as-json-lines | \
-      dataformat tsv genome --fields accession,assminfo-refseq-category,assminfo-level,organism-name | \
+      dataformat tsv genome --fields accession,assminfo-refseq-category,assminfo-level,organism-name,assmstats-total-ungapped-len | \
       tr '\\t' ',' \
       > datasets/!{taxon}_genomes.csv
   '''
 }
 
 process datasets_download {
-  tag "Downloading Genomes"
+  tag           "Downloading Genomes"
   // because there's no way to specify threads
-  label "medcpus"
-
+  label         "medcpus"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/ncbi-datasets:14.3.0'
+  maxForks      10
+  
   input:
   file(ids)
 
   output:
   path "datasets/fastani_refs.tar.gz"                                    , emit: tar
+  path "genomes"                                                         , emit: genomes
   path "logs/${task.process}/datasets_download.${workflow.sessionId}.log", emit: log
 
   shell:

@@ -1,12 +1,17 @@
 process fastani {
-  tag "${sample}"
-  label "medcpus"
-
+  tag           "${sample}"
+  label         "medcpus"
+  stageInMode   "copy"
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/fastani:1.33'
+  maxForks      10
+  
   input:
-  tuple val(sample), file(contigs), file(genomes)
+  tuple val(sample), file(contigs), path(genomes)
 
   output:
-  path "fastani/${sample}.txt"                   , emit: results
+  tuple val(sample), file("fastani/${sample}_fastani.csv")       , emit: results
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
@@ -21,21 +26,8 @@ process fastani {
     fastANI --version 2>> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
-
-    mkdir db
-
-    cp !{genomes}/* 2>/dev/null db/.
-
-    ls db/{*fna,*fa,*fasta} 2>/dev/null > reference_list.txt
-
-    fastANI \
-      -q !{contigs} \
-      --rl reference_list.txt \
-      -o test
-
-    echo "WTF?"
-
-      exit 1
+    
+    find !{genomes} -iname "*.fna" -o -iname "*.fasta" -o -iname "*.fa" > reference_list.txt
 
     fastANI !{params.fastani_options} \
       --threads !{task.cpus} \
@@ -43,7 +35,8 @@ process fastani {
       --rl reference_list.txt \
       -o fastani/!{sample}.txt \
       | tee -a $log_file
+
+    echo "sample,query,reference,ANI estimate,total query sequence fragments,fragments aligned as orthologous matches" > fastani/!{sample}_fastani.csv
+    cat fastani/!{sample}.txt | tr "\\t" "," | awk -v sample=!{sample} '{ print sample "," $0 }' >> fastani/!{sample}_fastani.csv
   '''
 }
-
-//total=$(sort     -k3,3n -k 4,4n fastani/!{sample}.txt | tail -n 1 | cut -f 5 )

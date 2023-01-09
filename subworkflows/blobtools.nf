@@ -11,21 +11,22 @@ workflow blobtools {
     blast_db
   
   main:
-
     bbmap(clean_reads.join(contigs, by: 0))
     blastn(contigs.combine(blast_db))
     blobtools_create(contigs.join(blastn.out.blastn, by: 0).join(bbmap.out.bam, by: 0))
     blobtools_view(blobtools_create.out.json)
     blobtools_plot(blobtools_create.out.json)
   
-    blobtools_plot.out.results
+    blobtools_plot.out.collect
       .collectFile(
         storeDir: "${params.outdir}/blobtools/",
         keepHeader: true,
         sort: { file -> file.text },
-        name: "blobtools_species.txt")
+        name: "blobtools_summary.txt")
       .set{ summary }
 
   emit:
+    for_species = blobtools_plot.out.results
     for_summary = summary
+    for_multiqc = bbmap.out.stats
 }
