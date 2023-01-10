@@ -25,18 +25,4 @@ workflow report {
         .set { ch_names }
 
         summary(for_summary.mix(ch_names).collect())
-
-    // summary.out.small
-    //     .collectFile(
-    //         storeDir: "${params.outdir}/summary/",
-    //         keepHeader: true,
-    //         sort: { file -> file.text },
-    //         name: "grandeur_summary.csv")
-
-    // summary.out.full
-    //     .collectFile(
-    //         storeDir: "${params.outdir}/summary/",
-    //         keepHeader: true,
-    //         sort: { file -> file.text },
-    //         name: "grandeur_extended_summary.csv")
 }
