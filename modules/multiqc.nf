@@ -4,6 +4,8 @@ process multiqc {
   publishDir    params.outdir, mode: 'copy'
   container     'quay.io/biocontainers/multiqc:1.12--pyhdfd78af_0'
   maxForks      10
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
+  //#UPHLICA cpus   3
   
   input:
   file(input)

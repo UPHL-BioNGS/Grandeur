@@ -5,6 +5,8 @@ process blastn {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/blast:2.13.0'
   maxForks      10
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
+  //#UPHLICA cpus     8
 
   input:
   tuple val(sample), file(contig), path(blastdb)

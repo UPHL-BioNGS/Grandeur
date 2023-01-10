@@ -4,6 +4,7 @@ process snp_dists {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/snp-dists:0.8.2'
   maxForks      10
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
   
   input:
   file(contigs)

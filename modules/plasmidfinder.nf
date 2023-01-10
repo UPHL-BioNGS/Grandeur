@@ -4,6 +4,8 @@ process plasmidfinder {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/plasmidfinder:2.1.6'
   maxForks      10
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
+  //#UPHLICA cpus   3
   
   input:
   tuple val(sample), file(file)

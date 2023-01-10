@@ -6,6 +6,7 @@ process fastani {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/fastani:1.33'
   maxForks      10
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
   
   input:
   tuple val(sample), file(contigs), path(genomes)

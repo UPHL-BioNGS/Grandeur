@@ -5,6 +5,8 @@ process amrfinderplus {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/ncbi-amrfinderplus:3.10.36'
   maxForks      10
+  //#UPHLICA cpus          3
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
 
   input:
   tuple val(sample), file(contigs), val(genus), val(species)

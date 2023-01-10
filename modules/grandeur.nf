@@ -4,6 +4,7 @@ process species {
   publishDir    params.outdir, mode: 'copy'
   container     'quay.io/biocontainers/pandas:1.1.5'
   maxForks      10
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
   
   input:
   file(results)
@@ -48,6 +49,7 @@ process decompression {
   publishDir    params.outdir, mode: 'copy'
   container     'quay.io/biocontainers/pandas:1.1.5'
   maxForks      10
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
   
   input:
   file(compressed)
@@ -84,6 +86,7 @@ process flag {
   publishDir    params.outdir, mode: 'copy'
   container     'quay.io/biocontainers/pandas:1.1.5'
   maxForks      10
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
     
   input:
   tuple val(sample), file(files)
@@ -106,7 +109,7 @@ process flag {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    awk -F "," '{if ($3 > 90) print $0}' *fastani.csv > smaller_fastani.csv
+    awk -F "," '{if ($4 > 90) print $0}' *fastani.csv > smaller_fastani.csv
 
     files=$(ls !{files} | grep -v fastani)
 
@@ -138,6 +141,7 @@ process size {
   publishDir    params.outdir, mode: 'copy'
   container     'quay.io/biocontainers/pandas:1.1.5'
   maxForks      10
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
     
   input:
   tuple val(sample), file(fastani), file(datasets_summary), file(mash_err), file(genome_sizes)

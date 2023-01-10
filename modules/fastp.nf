@@ -4,6 +4,7 @@ process fastp {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/fastp:0.23.2'
   maxForks      10
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
   
   input:
   tuple val(sample), file(reads)

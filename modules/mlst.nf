@@ -4,7 +4,8 @@ process mlst {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/mlst:2.22.1'
   maxForks      10
-  
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
+
   input:
   tuple val(sample), file(contig)
 

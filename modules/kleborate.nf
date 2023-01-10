@@ -4,6 +4,9 @@ process kleborate {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/kleborate:2.1.0'
   maxForks      10
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
+  //#UPHLICA cpus   3
+  
   
   when:
   flag =~ 'found'

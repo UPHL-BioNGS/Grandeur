@@ -5,6 +5,8 @@ process roary {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/roary:3.13.0'
   maxForks      10
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'hicpu-small'
+  //#UPHLICA cpus   12
   
   input:
   file(contigs)

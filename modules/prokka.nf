@@ -5,6 +5,9 @@ process prokka {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/prokka:1.14.5'
   maxForks      10
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'himem-small'
+  //#UPHLICA memory 26.GB
+  //#UPHLICA cpus   12
   
   input:
   tuple val(sample), file(contigs), val(genus), val(species)

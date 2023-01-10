@@ -5,6 +5,8 @@ process spades {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/spades:3.15.5'
   maxForks      10
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
+  //#UPHLICA cpus   8
   
   input:
   tuple val(sample), file(reads)

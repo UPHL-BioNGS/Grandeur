@@ -4,6 +4,7 @@ process fastqc {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/fastqc:0.11.9'
   maxForks      10
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
     
   input:
   tuple val(sample), file(fastq)

@@ -5,6 +5,9 @@ process kraken2_fastq {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/kraken2:2.1.2-no-db'
   maxForks      10
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
+  //#UPHLICA cpus          8
+  //#UPHLICA memory        26.GB
   
   input:
   tuple val(sample), file(file), path(kraken2_db)
@@ -48,6 +51,9 @@ process kraken2_fasta {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/kraken2:2.1.2-no-db'
   maxForks      10
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
+  //#UPHLICA cpus          8
+  //#UPHLICA memory        26.GB
   
   input:
   tuple val(sample), file(file), path(kraken2_db)
