@@ -25,9 +25,6 @@ params.maxcpus                    = 12
 params.medcpus                    = 4
 params.minimum_reads              = 10000
 
-// getting some tests going
-params.test                       = false
-
 // connecting to phoenix
 params.phoenix_wf                 = false
 
@@ -47,6 +44,9 @@ params.plasmidfinder_ref          = ''
 params.fastani_ref                = workflow.projectDir + "/configs/fastani_ref.tar.gz"
 params.genome_sizes               = workflow.projectDir + "/configs/genome_sizes.json"
 
+// for testing
+params.sra_accessions             = []
+
 // tool-specific command line options
 params.amrfinderplus_options      = ''
 params.bbduk_options              = 'k=31 hdist=1'
@@ -61,6 +61,7 @@ params.cg_pipeline_options        = '--qual_offset 33 --minLength 1'
 params.current_datasets           = true
 params.datasets_max_genomes       = 5
 params.fastani_options            = '--matrix'
+params.fasterqdump_options        = ''
 params.fastp_options              = '--detect_adapter_for_pe'
 params.fastqc_options             = ''
 params.fastqscan_options          = ''
@@ -98,6 +99,7 @@ include { kraken2 }                     from './subworkflows/kraken2.nf'        
 include { min_hash_distance }           from './subworkflows/min_hash_distance.nf'            addParams(params)
 include { phylogenetic_analysis }       from './subworkflows/phylogenetic_analysis.nf'        addParams(params)
 include { report }                      from './subworkflows/report.nf'                       addParams(params)
+include { test }                        from './subworkflows/test.nf'                         addParams(params)
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
@@ -135,6 +137,9 @@ Channel.fromPath("${params.gff}/*.gff", type: 'file')
   .view { "gff file : $it" }
   .unique()
   .set { ch_gffs }
+
+// Getting accession for downloading
+ch_sra_accessions = Channel.from( params.sra_accessions )
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
@@ -199,7 +204,14 @@ workflow {
   ch_for_summary   = Channel.empty()
   ch_for_species   = Channel.empty()
 
-  if ( params.test )            { get_test_files() }
+  // getting test files
+  if ( ! params.sra_accessions.isEmpty() ) { 
+    test(ch_sra_accessions)
+    ch_raw_reads = ch_reads.mix(test.out.fastq)
+  } else {
+    ch_raw_reads = ch_reads
+  }
+
   if ( params.phoenix_wf )      { phoenix(input) }
   if ( params.donut_falls_wf )  { donut_falls(input) }
 
@@ -276,6 +288,6 @@ workflow {
 workflow.onComplete {
     println("Pipeline completed at: $workflow.complete")
     println("MultiQC report can be found at ${params.outdir}/multiqc/multiqc_report.html")
-    println("Summary can be found at ${params.outdir}/grandeur_results.tsv")
+    println("Summary can be found at ${params.outdir}/grandeur_summary.tsv")
     println("Execution status: ${ workflow.success ? 'OK' : 'failed' }")
 }
