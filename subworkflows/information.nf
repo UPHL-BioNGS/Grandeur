@@ -126,4 +126,5 @@ workflow information {
   emit:
     for_summary = for_summary.collect()
     for_multiqc = for_multiqc.collect()
+    organism    = size.out.organism
 }
