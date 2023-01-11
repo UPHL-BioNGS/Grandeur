@@ -20,7 +20,7 @@ nextflow.enable.dsl               = 2
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
-params.outdir                     = 'grandeur'
+params.outdir                     = "grandeur"
 params.maxcpus                    = 12
 params.medcpus                    = 4
 params.minimum_reads              = 10000
@@ -32,58 +32,58 @@ params.phoenix_wf                 = false
 params.donut_falls_wf             = false
 
 // input files
-params.reads                      = workflow.launchDir + '/reads'
-params.fastas                     = workflow.launchDir + '/fastas'
-params.gff                        = workflow.launchDir + '/gff'
+params.reads                      = workflow.launchDir + "/reads"
+params.fastas                     = workflow.launchDir + "/fastas"
+params.gff                        = workflow.launchDir + "/gff"
 
 // external files
-params.kraken2_db                 = ''
-params.blast_db                   = ''
-params.mash_db                    = ''
-params.plasmidfinder_ref          = ''
+params.kraken2_db                 = ""
+params.blast_db                   = ""
+params.mash_db                    = ""
 params.fastani_ref                = workflow.projectDir + "/configs/fastani_ref.tar.gz"
 params.genome_sizes               = workflow.projectDir + "/configs/genome_sizes.json"
+params.genome_references          = workflow.projectDir + "/configs/genomes.txt"
 
 // for testing
 params.sra_accessions             = []
 
 // tool-specific command line options
-params.amrfinderplus_options      = ''
-params.bbduk_options              = 'k=31 hdist=1'
-params.bbmap_options              = ''
-params.blast_db_type              = 'nt'
-params.blastn_options             = '-max_target_seqs 10 -max_hsps 1 -evalue 1e-25'
-params.blobtools_create_options   = ''
-params.blobtools_view_options     = ''
-params.blobtools_plot_options     = '--format png -r species'
-params.blobtools_bbmap_options    = ''
-params.cg_pipeline_options        = '--qual_offset 33 --minLength 1'
+params.amrfinderplus_options      = ""
+params.bbduk_options              = "k=31 hdist=1"
+params.bbmap_options              = ""
+params.blast_db_type              = "nt"
+params.blastn_options             = "-max_target_seqs 10 -max_hsps 1 -evalue 1e-25"
+params.blobtools_create_options   = ""
+params.blobtools_view_options     = ""
+params.blobtools_plot_options     = "--format png -r species"
+params.blobtools_bbmap_options    = ""
 params.current_datasets           = true
 params.datasets_max_genomes       = 5
-params.fastani_options            = '--matrix'
-params.fasterqdump_options        = ''
-params.fastp_options              = '--detect_adapter_for_pe'
-params.fastqc_options             = ''
-params.fastqscan_options          = ''
-params.iqtree2_options            = '-t RANDOM -m GTR+F+I -bb 1000 -alrt 1000'
-params.iqtree2_outgroup           = ''
-params.kleborate_options          = '-all'
-params.kraken2_options            = ''
-params.mash_sketch_options        = '-m 2'
-params.mash_dist_options          = '-v 0 -d 0.5'
-params.mash_max_hits              = 100
-params.mlst_options               = ''
-params.multiqc_options            = ''
-params.plasmidfinder_options      = ''
-params.prokka_options             = '--mincontiglen 500 --compliant --locustag locus_tag --centre STAPHB'
-params.quast_options              = ''
-params.roary_options              = ''
+params.fastani_options            = "--matrix"
+params.fasterqdump_options        = ""
+params.fastp_options              = "--detect_adapter_for_pe"
+params.fastqc_options             = ""
+params.fastqscan_options          = ""
+params.iqtree2_options            = "-t RANDOM -m GTR+F+I -bb 1000 -alrt 1000"
+params.iqtree2_outgroup           = ""
+params.kleborate_options          = "-all"
+params.kraken2_options            = ""
+params.mash_sketch_options        = "-m 2"
+params.mash_dist_options          = "-v 0 -d 0.5"
+params.mash_max_hits              = 25
+params.msa                        = false
+params.mlst_options               = ""
+params.multiqc_options            = ""
+params.plasmidfinder_options      = ""
+params.prokka_options             = "--mincontiglen 500 --compliant --locustag locus_tag --centre STAPHB"
+params.quast_options              = ""
+params.roary_options              = ""
 params.roary_min_genes            = 1500
-params.seqsero2_options           = '-m a -b mem'
-params.serotypefinder_options     = ''
-params.shigatyper_options         = ''
-params.snp_dists_options          = '-c'
-params.spades_options             = '--isolate'
+params.seqsero2_options           = "-m a -b mem"
+params.serotypefinder_options     = ""
+params.shigatyper_options         = ""
+params.snp_dists_options          = "-c"
+params.spades_options             = "--isolate"
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
@@ -91,15 +91,15 @@ params.spades_options             = '--isolate'
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
-include { average_nucleotide_identity } from './subworkflows/average_nucleotide_identity.nf'  addParams(params)
-include { blobtools }                   from './subworkflows/blobtools.nf'                    addParams(params)
-include { de_novo_alignment }           from './subworkflows/de_novo_alignment.nf'            addParams(params)
-include { information }                 from './subworkflows/information.nf'                  addParams(params)
-include { kraken2 }                     from './subworkflows/kraken2.nf'                      addParams(params)
-include { min_hash_distance }           from './subworkflows/min_hash_distance.nf'            addParams(params)
-include { phylogenetic_analysis }       from './subworkflows/phylogenetic_analysis.nf'        addParams(params)
-include { report }                      from './subworkflows/report.nf'                       addParams(params)
-include { test }                        from './subworkflows/test.nf'                         addParams(params)
+include { average_nucleotide_identity } from "./subworkflows/average_nucleotide_identity"  addParams(params)
+include { blobtools }                   from "./subworkflows/blobtools"                    addParams(params)
+include { de_novo_alignment }           from "./subworkflows/de_novo_alignment"            addParams(params)
+include { information }                 from "./subworkflows/information"                  addParams(params)
+include { kraken2 }                     from "./subworkflows/kraken2"                      addParams(params)
+include { min_hash_distance }           from "./subworkflows/min_hash_distance"            addParams(params)
+include { phylogenetic_analysis }       from "./subworkflows/phylogenetic_analysis"        addParams(params)
+include { report }                      from "./subworkflows/report"                       addParams(params)
+include { test }                        from "./subworkflows/test"                         addParams(params)
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
@@ -108,7 +108,7 @@ include { test }                        from './subworkflows/test.nf'           
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
 // Creating the summary files
-summary_script = Channel.fromPath(workflow.projectDir + "/bin/summary.py", type:'file')
+summary_script = Channel.fromPath(workflow.projectDir + "/bin/summary.py", type: "file")
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
@@ -133,7 +133,7 @@ Channel
   .set { ch_fastas }
 
 // Getting fasta files that have been annotated with prokka
-Channel.fromPath("${params.gff}/*.gff", type: 'file')
+Channel.fromPath("${params.gff}/*.gff", type: "file")
   .view { "gff file : $it" }
   .unique()
   .set { ch_gffs }
@@ -147,16 +147,27 @@ ch_sra_accessions = Channel.from( params.sra_accessions )
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
-// Getting the file with genome sizes of common organisms for cg-pipeline. The End User can use their own file and set with a param
-ch_genome_sizes    = Channel.fromPath(params.genome_sizes, type:'file')
+// Getting the file with genome sizes of common organisms for fastqcscan. The End User can use their own file and set with a param
+Channel.fromPath(params.genome_sizes, type: "file")
+.ifEmpty{
+    println("The genome sizes file for this workflow are missing!")
+    exit 1}
+  .set { ch_genome_sizes }
+
+// Getting the file with genomes to include for every run
+Channel.fromPath(params.genome_references, type: "file")
+  .ifEmpty{
+    println("The genome references for this workflow are missing!")
+    exit 1}
+  .set { ch_genome_ref }
 
 // Getting the reference genomes for fastANI
-ch_fastani_genomes = Channel.fromPath("${params.fastani_ref}", type:'file')
+ch_fastani_genomes = Channel.fromPath("${params.fastani_ref}", type: "file")
 
 // Getting the database for blobtools
 ch_blast_db = params.blast_db
               ? Channel
-                  .fromPath(params.blast_db, type:'dir')
+                  .fromPath(params.blast_db, type: "dir")
                   .ifEmpty{
                     println("No blast database was found at ${params.blast_db}")
                     println("Set 'params.blast_db' to directory with blast database")
@@ -168,7 +179,7 @@ ch_blast_db = params.blast_db
 // Getting the kraken2 database
 ch_kraken2_db = params.kraken2_db
               ? Channel
-                  .fromPath(params.kraken2_db, type:'dir')
+                  .fromPath(params.kraken2_db, type: "dir")
                   .ifEmpty{
                     println("No kraken2 database was found at ${params.kraken2_db}")
                     println("Set 'params.kraken2_db' to directory with kraken2 database")
@@ -179,7 +190,7 @@ ch_kraken2_db = params.kraken2_db
 
 ch_mash_db = params.mash_db 
             ? Channel
-              .fromPath(params.mash_db, type: 'file')
+              .fromPath(params.mash_db, type: "file")
               .ifEmpty{
                 println("No mash database was found at ${params.mash_db}")
                 println("Set 'params.mash_db' to file of pre-sketched mash reference")
@@ -216,7 +227,7 @@ workflow {
   if ( params.donut_falls_wf )  { donut_falls(input) }
 
   // either phoenix or de_novo_alignment is required
-  de_novo_alignment(ch_reads)
+  de_novo_alignment(ch_raw_reads)
   
   ch_contigs       = ch_fastas.mix(de_novo_alignment.out.contigs)
   ch_clean_reads   = de_novo_alignment.out.clean_reads
@@ -239,25 +250,34 @@ workflow {
 
   // subworkflow mash for species determination
   min_hash_distance(ch_clean_reads, ch_contigs, ch_mash_db)
+  ch_for_summary = ch_for_summary.mix(min_hash_distance.out.for_summary)
 
   // determining organisms in sample
   average_nucleotide_identity(
     ch_for_summary.collect(),
     ch_contigs,
-    ch_fastani_genomes
+    ch_fastani_genomes,
+    ch_genome_ref
   )
   ch_for_species   = ch_for_species.mix(min_hash_distance.out.for_species).mix(average_nucleotide_identity.out.for_species)
   
   // getting all the other information
   ch_for_size      = average_nucleotide_identity.out.for_size.join(min_hash_distance.out.for_size, by: 0)
-  information(ch_reads, 
+  information(ch_raw_reads, 
     ch_contigs, 
     ch_for_species, 
     ch_for_size.combine(ch_genome_sizes))
   ch_for_multiqc   = ch_for_multiqc.mix(information.out.for_multiqc)
 
   // optional subworkflow for comparing shared genes
-  // phylogenetic_analysis(contigs, mash_species, mash_genus, gffs )
+  if ( params.msa ) { 
+    phylogenetic_analysis(ch_contigs.ifEmpty([]), 
+      ch_gffs.ifEmpty([]), 
+      information.out.organism.map { it -> tuple(it[0] , [it[1], it[2], it[3]] )}, 
+      average_nucleotide_identity.out.for_genomes)
+    
+    ch_for_multiqc   = ch_for_multiqc.mix(phylogenetic_analysis.out.for_multiqc)
+  }
 
   // getting a summary of everything
   ch_for_multiqc   = ch_for_multiqc.mix(de_novo_alignment.out.for_multiqc)
@@ -271,7 +291,7 @@ workflow {
     .set { for_summary }
 
   report(
-    ch_reads, 
+    ch_raw_reads, 
     ch_fastas, 
     ch_for_multiqc.collect(), 
     for_summary.collect(), 
