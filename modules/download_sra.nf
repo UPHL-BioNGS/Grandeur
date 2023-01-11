@@ -1,16 +1,16 @@
 process download_sra {
   tag           "${SRR}"
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   publishDir    params.outdir, mode: 'copy'
-  container     'staphb/sratoolkit:2.9.2'
+  container     'quay.io/biocontainers/sra-tools:2.11.0--pl5321ha49a11a_3'
   maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
   
   input:
   val(SRR)
 
   output:
-  tuple val(sample), file("reads/${SRR}_*.fastq.gz")          , emit: fastq
+  tuple val(SRR), file("reads/${SRR}_{1,2}.fastq.gz")         , emit: fastq
   path "logs/${task.process}/${SRR}.${workflow.sessionId}.log", emit: log
 
   shell:
@@ -25,12 +25,15 @@ process download_sra {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    fasterq-dump \
-      -A !{SRR} \
+    fasterq-dump !{params.fasterqdump_options} \
+      !{SRR} \
       --split-files \
       --threads !{task.cpus} \
-      --outdir reads \
+      --outdir reads | \
       tee -a $log_file
+
+    gzip reads/!{SRR}_1.fastq
+    gzip reads/!{SRR}_2.fastq
   '''
 }
 

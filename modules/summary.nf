@@ -1,9 +1,9 @@
 process summary {
   tag           "Creating summary files"
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   publishDir    params.outdir, mode: 'copy'
   container     'quay.io/biocontainers/pandas:1.1.5'
   maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
   
   input:
@@ -26,7 +26,9 @@ process summary {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    python summary.py
+    touch grandeur_summary.{tsv,txt} grandeur_extended_summary.{tsv,txt}
+
+    python summary.py | tee -a $log_file
 
     mv *extended* summary/.
   '''
@@ -34,10 +36,10 @@ process summary {
 
 process names {
   tag           "${sample}"
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   publishDir    params.outdir, mode: 'copy'
   container     'quay.io/biocontainers/pandas:1.1.5'
   maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
   
   input:

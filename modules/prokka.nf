@@ -1,16 +1,16 @@
 process prokka {
   tag           "${sample}"
   label         "maxcpus"
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/prokka:1.14.5'
   maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'himem-small'
   //#UPHLICA memory 26.GB
   //#UPHLICA cpus   12
   
   input:
-  tuple val(sample), file(contigs), val(genus), val(species)
+  tuple val(sample), file(contigs), val(organism)
 
   output:
   path "prokka/${sample}/*"                                      , emit: prokka_files
@@ -34,8 +34,8 @@ process prokka {
       --cpu !{task.cpus} \
       --outdir prokka/!{sample} \
       --prefix !{sample} \
-      --genus !{genus} \
-      --species !{species} \
+      --genus !{organism[0]} \
+      --species !{organism[1]} \
       --force !{contigs} \
       | tee -a $log_file
 

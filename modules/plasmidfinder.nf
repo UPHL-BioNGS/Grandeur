@@ -1,9 +1,9 @@
 process plasmidfinder {
   tag           "${sample}"
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/plasmidfinder:2.1.6'
   maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
   //#UPHLICA cpus   3
   

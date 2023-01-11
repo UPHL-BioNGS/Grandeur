@@ -1,10 +1,10 @@
 process blastn {
   tag           "${sample}"
   label         "medcpus"
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/blast:2.13.0'
   maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
   //#UPHLICA cpus     8
 

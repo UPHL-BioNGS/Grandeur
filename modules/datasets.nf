@@ -1,9 +1,9 @@
 process datasets_summary {
   tag           "${taxon}"
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/ncbi-datasets:14.3.0'
   maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
   
   input:
@@ -38,14 +38,15 @@ process datasets_download {
   tag           "Downloading Genomes"
   // because there's no way to specify threads
   label         "medcpus"
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/ncbi-datasets:14.3.0'
   maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
   
   input:
   file(ids)
+  file(genomes)
 
   output:
   path "datasets/fastani_refs.tar.gz"                                    , emit: tar
@@ -64,7 +65,10 @@ process datasets_download {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    grep -h -v Accession !{ids} | cut -f 1 -d , | sort | uniq > id_list.txt
+    cut -f 1 !{genomes} > all_runs.txt
+    grep -h -v Accession !{ids} | cut -f 1 -d , | sort | uniq > this_run.txt
+
+    cat all_runs.txt this_run.txt | sort | uniq > id_list.txt
 
     datasets download genome accession --inputfile id_list.txt --filename ncbi_dataset.zip
 
@@ -75,7 +79,7 @@ process datasets_download {
     for fasta in ${fastas[@]}
     do
       accession=$(echo $fasta | cut -f 3 -d / )
-      organism=$(grep -h $accession !{ids} | cut -f 4 -d , | sed 's/ /_/g' )
+      organism=$(head -n 1 $fasta | awk '{print $2 "_" $3 }' )
       cat $fasta | sed 's/ /_/g' | sed 's/,//g' > genomes/${organism}_${accession}.fna
     done
 

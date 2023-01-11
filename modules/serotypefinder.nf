@@ -1,10 +1,10 @@
 process serotypefinder {
   tag           "${sample}"
   label         "medcpus"
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/serotypefinder:2.0.1'
   maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
   
   when:

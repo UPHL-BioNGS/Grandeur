@@ -1,10 +1,10 @@
 process amrfinderplus {
   tag           "${sample}"
   label         "medcpus"
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/ncbi-amrfinderplus:3.10.36'
   maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA cpus          3
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
 

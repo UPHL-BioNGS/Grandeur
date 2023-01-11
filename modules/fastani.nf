@@ -2,10 +2,10 @@ process fastani {
   tag           "${sample}"
   label         "medcpus"
   stageInMode   "copy"
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/fastani:1.33'
   maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
   
   input:

@@ -1,9 +1,9 @@
 process species {
   tag           "Creating list of species"
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   publishDir    params.outdir, mode: 'copy'
   container     'quay.io/biocontainers/pandas:1.1.5'
   maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
   
   input:
@@ -45,10 +45,10 @@ process species {
 
 process decompression {
   tag           "Decompressing genome file"
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   publishDir    params.outdir, mode: 'copy'
   container     'quay.io/biocontainers/pandas:1.1.5'
   maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
   
   input:
@@ -82,10 +82,10 @@ process decompression {
 
 process flag {
   tag           "${sample}"
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   publishDir    params.outdir, mode: 'copy'
   container     'quay.io/biocontainers/pandas:1.1.5'
   maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
     
   input:
@@ -137,10 +137,10 @@ process flag {
 
 process size {
   tag           "${sample}"
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   publishDir    params.outdir, mode: 'copy'
   container     'quay.io/biocontainers/pandas:1.1.5'
   maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
     
   input:
@@ -148,6 +148,7 @@ process size {
 
   output:
   tuple val(sample), env(size)                                   , emit: size
+  tuple val(sample), env(genus), env(species), env(accession)    , emit: organism
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log_files
 
   shell:
@@ -161,13 +162,14 @@ process size {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    top_hit=$(head -n 2 !{fastani} | tail -n 1 | cut -f 2 -d ',' | cut -f 2 -d '/')
+    top_hit=$(head -n 2 !{fastani} | tail -n 1 | cut -f 3 -d ',' | cut -f 2 -d '/')
+    echo $top_hit
 
     genus=$(echo $top_hit     | cut -f 1 -d "_")
     species=$(echo $top_hit   | cut -f 2 -d "_")
-    accession=$(echo $top_hit | sed 's/.*_GC/GC/g' | cut -f 1 -d '.')
+    accession=$(echo $top_hit | sed 's/.*_GC/GC/g' | cut -f 1,2 -d '.')
 
-    echo "This is put as a placeholder. Sometimes when contmination occurs, the genome size from mash is very different than the expectation." >> $log_file
+    echo "This is put as a placeholder. Sometimes when contamination occurs, the genome size from mash is very different than the expectation." >> $log_file
 
     size=''
 
@@ -202,5 +204,38 @@ process size {
     fi
 
     if [ -z "$size" ] ; then size=$mash_size ; fi
+  '''
+}
+
+process representative {
+  tag           "${accession}"
+  container     'quay.io/biocontainers/pandas:1.1.5'
+  maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
+    
+  input:
+  tuple val(accession), path(genomes)
+
+  output:
+  tuple path("representative/*"), env(genus), env(species), val(accession), emit: representative
+  path "logs/${task.process}/${accession}.${workflow.sessionId}.log"      , emit: log_files
+
+  shell:
+  '''
+    mkdir -p representative logs/!{task.process}
+    log_file=logs/!{task.process}/!{accession}.!{workflow.sessionId}.log
+
+    # time stamp + capturing tool versions
+    date > $log_file
+    echo "container : !{task.container}" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
+
+    fasta=$(ls !{genomes}/*!{accession}* | head -n 1 | cut -f 2 -d "/")
+    genus=$(echo $fasta | cut -f 1 -d "_" )
+    species=$(echo $fasta | cut -f 2 -d "_" )
+
+    cp !{genomes}/*!{accession}* representative/.
   '''
 }

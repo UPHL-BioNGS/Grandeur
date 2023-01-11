@@ -1,10 +1,10 @@
 process kraken2_fastq {
   tag           "${sample}"
   label         "maxcpus"
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/kraken2:2.1.2-no-db'
   maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
   //#UPHLICA cpus          8
   //#UPHLICA memory        26.GB
@@ -47,10 +47,10 @@ process kraken2_fastq {
 process kraken2_fasta {
   tag           "${sample}"
   label         "maxcpus"
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/kraken2:2.1.2-no-db'
   maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
   //#UPHLICA cpus          8
   //#UPHLICA memory        26.GB

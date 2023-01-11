@@ -1,9 +1,9 @@
 process bbduk {
   tag           "${sample}"
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/bbtools:38.98'
   maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA cpus          3
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
 
@@ -47,10 +47,10 @@ process bbduk {
 process bbmap {
   tag           "${sample}"
   label         "maxcpus"
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/bbtools:38.98'
   maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA cpus          3
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
 
