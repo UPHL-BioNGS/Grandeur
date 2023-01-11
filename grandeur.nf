@@ -283,7 +283,6 @@ workflow {
   ch_for_multiqc   = ch_for_multiqc.mix(de_novo_alignment.out.for_multiqc)
 
   ch_for_summary
-    .mix(min_hash_distance.out.for_summary)
     .mix(information.out.for_summary)
     .mix(average_nucleotide_identity.out.for_summary)
     .concat(summary_script)
