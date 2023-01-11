@@ -16,8 +16,6 @@ workflow de_novo_alignment {
 
     spades(read_check)
 
-    // add fastqc here (since phoenix does it)
-
   emit:
     // for summary
     fastp_reads = fastp.out.fastp_results
