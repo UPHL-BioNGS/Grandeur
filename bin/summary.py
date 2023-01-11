@@ -41,7 +41,7 @@ extended       = 'grandeur_extended_summary'
 csv_files = [ fastqscan, kleborate, mlst ]
 tsv_files = [ quast, seqsero2 ]
 
-top_hit    = [ mash, fastani ]
+top_hit    = [ fastani ]
 
 ##########################################
 # creating the summary dataframe         #
@@ -157,7 +157,19 @@ if exists(kraken2) :
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_Sample", how = 'left')
     summary_df.drop(analysis + "_Sample", axis=1, inplace=True)
 
-# plasmidfinder : mergine relevant rows into one
+# mash : top hit of potentially two different files
+if exists(mash) :
+    file = mash
+    print("Adding results for " + file)
+    analysis = "mash"
+    new_df = pd.read_csv(file, dtype = str, index_col= False)
+    new_df.sort_values(by = ['P-value', 'mash-distance'], ascending = [True, True], inplace=True)
+    new_df = new_df.drop_duplicates(subset=['sample'], keep='first')
+    new_df = new_df.add_prefix(analysis + "_")
+    summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
+    summary_df.drop(analysis + "_sample", axis=1, inplace=True)
+
+# plasmidfinder : merging relevant rows into one
 if exists(plasmidfinder) :
     file = plasmidfinder
     print("Adding results for " + file)
@@ -177,13 +189,12 @@ if exists(serotypefinder) :
     analysis = "serotypefinder"
     new_df = pd.read_table(file, dtype = str, index_col= False)
     new_df = new_df.sort_values(by='Identity', ascending=False)
-    new_df = new_df.drop_duplicates(subset='Database', keep="first")
+    new_df = new_df.drop_duplicates(subset=['sample', 'Database'], keep="first")
     new_df = new_df.add_prefix(analysis + '_')
-    H_df   = new_df[new_df[analysis + '_Database'] == 'H_type']
-    H_df   = new_df.add_suffix('_H')
-    O_df   = new_df[new_df[analysis + '_Database'] == 'O_type']
-    O_df   = new_df.add_suffix('_O')
-
+    H_df   = new_df[new_df[analysis + '_Database' ] == 'H_type']
+    H_df   = H_df.add_suffix('_H')
+    O_df   = new_df[new_df[analysis + '_Database' ] == 'O_type']
+    O_df   = O_df.add_suffix('_O')
     summary_df = pd.merge(summary_df, O_df, left_on="sample", right_on=analysis + "_sample_O", how = 'left')
     summary_df.drop(analysis + "_sample_O", axis=1, inplace=True)
     summary_df = pd.merge(summary_df, H_df, left_on="sample", right_on=analysis + "_sample_H", how = 'left')
@@ -217,7 +228,6 @@ final_columns = [
 'mlst_ST',
 'quast_#_contigs',
 'quast_GC_(%)',
-'seqsero2_Predicted_identification',
 'seqsero2_Predicted_antigenic_profile',
 'seqsero2_Predicted_serotype',
 'mash_reference',
