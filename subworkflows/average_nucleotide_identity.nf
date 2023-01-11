@@ -9,6 +9,7 @@ workflow average_nucleotide_identity {
         ch_species
         ch_contigs
         ch_static_fastani_genomes
+        ch_genome_ref
   
     main:
         if ( params.current_datasets ) {
@@ -20,7 +21,7 @@ workflow average_nucleotide_identity {
                 .set{ ch_species_list }
 
             datasets_summary(ch_species_list)
-            datasets_download(datasets_summary.out.genomes.collect())
+            datasets_download(datasets_summary.out.genomes.collect(), ch_genome_ref)
             ch_fastani_db = datasets_download.out.genomes
 
             datasets_summary.out.genomes
@@ -52,4 +53,5 @@ workflow average_nucleotide_identity {
         for_species = fastani.out.results
         for_summary = summary
         for_size    = fastani.out.results.combine(datasets_genomes)
+        for_genomes = ch_fastani_db
 }
