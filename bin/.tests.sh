@@ -21,7 +21,7 @@ nextflow run /home/eriny/sandbox/Grandeur \
 
 # default with reads and fastas
 nextflow run /home/eriny/sandbox/Grandeur \
-  -profile uphl \
+  -profile singularity \
   --reads  /home/eriny/sandbox/test_files/grandeur/reads \
   --fastas /home/eriny/sandbox/test_files/grandeur/fastas \
   --outdir fastq_fasta_channel \
