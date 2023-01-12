@@ -85,6 +85,10 @@
             "type": "string",
             "description": "additional options for editing for process"
         },
+        "genome_references": {
+            "type": "string",
+            "description": "file containing list of genomes to always download"
+        },
         "genome_sizes": {
             "type": "string",
             "description": "file with pre-prepared genome sizes"
