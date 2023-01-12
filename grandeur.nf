@@ -16,6 +16,21 @@ nextflow.enable.dsl               = 2
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
+// Getting config file
+
+// ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
+params.config_file                          = false
+if (params.config_file) {
+  def src = new File("${workflow.projectDir}/configs/grandeur_template.config")
+  def dst = new File("${workflow.launchDir}/edit_me.config")
+  dst << src.text
+  println("A config file can be found at ${workflow.launchDir}/edit_me.config")
+  exit 0
+}
+
+// ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
 // Defining params
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####

@@ -45,6 +45,10 @@
             "type": "string",
             "description": "additional options for editing for process"
         },
+        "config_file":{
+            "type": "boolean",
+            "description": "if true, copies template and exits"
+        },
         "current_datasets": {
             "type": "boolean",
             "description": "toggles whether or not genomes are downloaded from NCBI"
