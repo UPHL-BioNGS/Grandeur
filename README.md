@@ -10,10 +10,13 @@ Location:  40.707, -111.76, 8,299 ft (2,421 m) summit
 
 More information about the trail leading up to this landmark can be found at [https://utah.com/hiking/grandeur-peak](https://utah.com/hiking/grandeur-peak)
 
-Grandeur is a [Nextflow](https://www.nextflow.io/) workflow developed by [@erinyoung](https://github.com/erinyoung) at the [Utah Public Health Laborotory](https://uphl.utah.gov/). "Grandeur" is intended to be a species agnostic sequencing analysis workflow to paired-end Illumina sequencing quality control and assurance (QC) and serotyping in a local public health laboratory. "Grandeur" takes paired-end Illumina reads, removes adaptors with [fastp](https://github.com/OpenGene/fastp) and PHIX with [bbduk](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/bb-tools-user-guide/bbduk-guide/), and creates contigs through _de novo_ alignment of the reads with [spades](https://cab.spbu.ru/software/spades/). Then a variety of QC and serotyping tools are employed. This workflow is similar to multiple workflows and tools such as [Cutshaw](https://staph-b.github.io/staphb_toolkit/workflow_docs/cutshaw/), [Dryad](https://staph-b.github.io/staphb_toolkit/workflow_docs/dryad/), [Foushee](https://staph-b.github.io/staphb_toolkit/workflow_docs/foushee/), [Tredegar](https://staph-b.github.io/staphb_toolkit/workflow_docs/tredegar/), [Spriggan](https://github.com/wslh-bio/spriggan), other potential workflows in the [staphB toolkit](https://github.com/StaPH-B/staphb_toolkit), or [Bactopia](https://github.com/bactopia/bactopia), and the authors or maintainers of this workflow will not be offended if an alternative is used.
+Grandeur is a [Nextflow](https://www.nextflow.io/) workflow developed by [@erinyoung](https://github.com/erinyoung) at the [Utah Public Health Laborotory](https://uphl.utah.gov/). "Grandeur" is intended to be a species agnostic sequencing analysis workflow to paired-end Illumina sequencing quality control and assurance (QC) and serotyping in a local public health laboratory. 
 
-"Grandeur" can also take in fastas and [prokka](https://github.com/tseemann/prokka)-annotated gff files to create a phylogenetic tree. Additional fastas includes genomes downloaded from NCBI or contigs generated from another workflow, such as the ones listed above or [Donut Falls](https://github.com/UPHL-BioNGS/Donut_Falls). Fasta files can be serotyped and QCed in the processes that accept fasta/contig files. The gff files created via [prokka](https://github.com/tseemann/prokka), are used by [roary](https://sanger-pathogens.github.io/Roary/) to define and align a core genome (a core genome is the genes that all the provided isolates share, also known as a [pan-genome](https://en.wikipedia.org/wiki/Pan-genome)). This multiple sequence alignment is used to create a tree with [iqtree2](http://www.iqtree.org/) and SNP matrix with [snp-dists](https://github.com/tseemann/snp-dists). As this workflow is dependent on the core genome, all of the fasta files put into this sub-workflow must be the _same species_ (or predicted to have some sort of similar origin, so related plasmids will work as well). [@erinyoung](https://github.com/erinyoung) strongy recommends that the end user checks `'grandeur/roary/summary_statistics.txt'` after running to ensure that the number of genes in the core genome makes sense.
+"Grandeur" is meant to augment CDC's [PHOENIX](https://github.com/CDCgov/phoenix) nextflow workflow, which is the recommended usage. In principle, the cleaned reads and contigs from PHOENIX undergo additional quality metric and serotyping steps, with a heavy emphasis on [fastANI](https://github.com/ParBLiSS/FastANI) and [AMRFinderPlus](https://github.com/ncbi/amr).
 
+"Grandeur" can be a standalone workflow that takes paired-end Illumina reads, removes adaptors with [fastp](https://github.com/OpenGene/fastp) and PHIX with [bbduk](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/bb-tools-user-guide/bbduk-guide/), and creates contigs through _de novo_ alignment of the reads with [spades](https://cab.spbu.ru/software/spades/).
+
+"Grandeur" can also take in fastas. Additional fastas includes genomes downloaded from NCBI or contigs generated from another workflow, such as [Donut Falls](https://github.com/UPHL-BioNGS/Donut_Falls). The gff files created via [prokka](https://github.com/tseemann/prokka), are used by [roary](https://sanger-pathogens.github.io/Roary/) to define and align a core genome (a core genome is the genes that all the provided isolates share, also known as a [pan-genome](https://en.wikipedia.org/wiki/Pan-genome)). This multiple sequence alignment is used to create a tree with [iqtree2](http://www.iqtree.org/) and SNP matrix with [snp-dists](https://github.com/tseemann/snp-dists). As this workflow is dependent on the core genome, all of the fasta files put into this sub-workflow must be the _same species_ (or predicted to have some sort of similar origin, so related plasmids will work as well). [@erinyoung](https://github.com/erinyoung) strongy recommends that the end user checks `'grandeur/roary/summary_statistics.txt'` after running to ensure that the number of genes in the core genome makes sense.
 
 "Grandeur" is also a workflow of the [staphb-toolkit](https://github.com/StaPH-B/staphb_toolkit)
 
@@ -28,26 +31,21 @@ Grandeur is a [Nextflow](https://www.nextflow.io/) workflow developed by [@eriny
 Default workflow that takes fastq files, runs them through QC/serotyping/etc, creates contig files
 ```
 # using singularity
-nextflow run UPHL-BioNGS/Grandeur -profile singularity
+nextflow run UPHL-BioNGS/Grandeur -profile singularity --reads <path to reads>
 # using docker
-nextflow run UPHL-BioNGS/Grandeur -profile docker
+nextflow run UPHL-BioNGS/Grandeur -profile docker --reads <path to reads>
 ```
 
 ### Choosing the right profile
-For simplificity for the **End User**, Grandeur has some profiles which _should_ fit the majority of uses. A profile is not required, but will hopefully makes things easier. The workflow is meant to work with containers and has basic profiles for both docker and singularity, which are in the example above. Otherwise, *ALL* the commands used in the workflow will need to be present PATH. 
+For simplificity, Grandeur has some profiles which _should_ fit the majority of uses. The workflow is meant to work with containers and has basic profiles for both docker and singularity, which are in the example above. Otherwise, *ALL* the commands used in the workflow will need to be present PATH. 
 
 #### Choose a container manager
 - singularity : use singularity to manage containers
 - docker : use docker to manage containers
 
 ### Choose the start and end point
-- fastq_to_consensus     : (Default) for starting with paired-end fastq files and continuing in the workflow to contigs in a fasta file
 - msa                    : for multiple sequence alignment with roary (all inputs should be related) of input files
-- just_fastq             : starting with paired-end fastq files and continuing in the workflow to contigs and ignores all processes for fasta/contig files
-- just_fasta             : starting with fasta files and ignores all processes for fastq files
-- fastq_to_msa           : for starting with paired-end fastq files and continuing in the workflow to a phylogenetic tree and snp matrix
-- fasta_to_msa           : for starting with fasta/contig files and continuing in the workflow to a phylogenetic tree and snp matrix
-- extras_off             : turns off all processes other than fastp, bbduk, and spades (msa subworkflow is not affected)
+- just_msa               : for multiple sequence alignment with roary (all inputs should be related) of input files, and turns off processes not directly used
 - uphl                   : the profile used at UPHL (is not intended to work on other systems)
 
 WARNING: All input files for `*msa*` profiles must all be somewhat related (i.e. same species) because they need to share enough genes in their core genome.
@@ -97,11 +95,6 @@ grandeur/
 │   ├── sample.blobDB.json.bestsum.species.p8.span.100.blobplot.read_cov.bam0.png
 │   ├── sample.blobDB.json.bestsum.species.p8.span.100.blobplot.stats.txt          # Genus and species of the reads
 │   └── sample.blobDB.table.txt
-├── bwa
-│   └── sample.sam
-├── cg_pipeline
-│   ├── sample_cg_pipeline_report.txt                                              # QC metrics of Illumina reads
-│   └── cg_pipeline_report.txt
 ├── contigs
 │   └── sample_contigs.fa                                                          # fasta file of contigs
 ├── sample
@@ -455,7 +448,7 @@ grandeur/
 ## Finding contamination
 Additionally, "Grandeur" can use two optional tools to find cross-species contamination : [kraken2](https://ccb.jhu.edu/software/kraken2/) or [blobtools](https://blobtools.readme.io/docs) (or both!). These both use large databases that should be downloaded separately.
 
-### If the **End User** would like to use [kraken2](https://ccb.jhu.edu/software/kraken2/) to identify contamination:
+### If the **End User** would like to use [kraken2](https://ccb.jhu.edu/software/kraken2/) to identify contamination (optional):
 
 First, there needs to be a kraken2 database.
 
@@ -472,7 +465,7 @@ Then the corresponding kraken2_db param needs to be updated. `params.kraken2_db`
 params.kraken2_db = 'kraken2_db/minikraken2_v2_8GB_201904_UPDATE'
 ```
 
-### If the **End User** would like to use [blobtools](https://blobtools.readme.io/docs) to identify contamination:
+### If the **End User** would like to use [blobtools](https://blobtools.readme.io/docs) to identify contamination (optional):
 
 [Blobtools](https://blobtools.readme.io/docs) uses a blast database, so there needs to be a blast database:
 
@@ -491,17 +484,28 @@ This downloads NCBI's NT database into 'blast_db'.
 WARNING: The download and decompressing can take a long time.
 
 - `params.blast_db` must be set to the directory with the blast database
-
-- `params.local_db_type` must be set to the type of blast database that is being used
+- `params.blast_db_type` must be set to the type of blast database that is being used
 
 The config file lines for the above example (can be copied and pasted into a config file):
 ```
 params.blast_db = 'blast_db'
-params.local_db_type = 'nt'
+params.blast_db_type = 'nt'
 ```
 
 * at UPHL, we use the 'ref_prok_rep_genomes' blast database instead of 'nt'
 
+## Updating the mash reference file (optional)
+
+The mash reference file in the staphb/mash container is from RefSeq77. The most current RefSeq version for January 11, 2023 (the time of updating this readme) is 215. Many organism names and even some species defintions have changed. As such, the **End User** can create a custom, more-current mash database to use with this workflow. UPHL has created an '*.msh' from RefSeq version 215 and is available for download at []().
+
+```
+wget URL
+```
+
+The config file lines for the above example (can be copied and pasted into a config file):
+```
+params.mash_db = "rep-genomes.msh"
+```
 
 
 ![alt text](./configs/grandeur_lucidchart.png)
@@ -509,38 +513,30 @@ params.local_db_type = 'nt'
 
 ## Suggested inputs
 
-Although not required, [@erinyoung](https://github.com/erinyoung) suggests changing `params.outgroup` when creating a phylogenetic tree with iqtree2. For a file with a name like 'GCF_000006765.1_ASM676v1_genomic.gff', the outgroup would be 'GCF_000006765.1_ASM676v1_genomic'.
+Although not required, [@erinyoung](https://github.com/erinyoung) suggests changing `params.iqtree2_outgroup` when creating a phylogenetic tree with iqtree2. For a file with a name like 'GCF_000006765.1_ASM676v1_genomic.gff', the outgroup would be 'GCF_000006765.1_ASM676v1_genomic'.
 
 Example lines for a config file:
 ```
-params.outgroup = 'GCF_000006765.1_ASM676v1_genomic'
+iqtree2_outgroup = 'GCF_000006765.1_ASM676v1_genomic'
 ```
+
 ## Examples of command line usage
 Phew! With all of that out of the way, what does it look like on the command line?
+
 ```
-# vanilla
-nextflow run UPHL-BioNGS/Grandeur -profile singularity
+# vanilla (uses refseq 77 with mash, downloads genomes from NCBI)
+nextflow run UPHL-BioNGS/Grandeur -profile singularity --read <path to reads>
 
-# specifying directory with reads
-nextflow run UPHL-BioNGS/Grandeur -profile singularity --reads <path to reads>
-nextflow run UPHL-BioNGS/Grandeur -profile singularity --reads reads
+# without downloading genomes from NCBI (uses refseq 77 with mash)
+nextflow run UPHL-BioNGS/Grandeur -profile singularity --read reads --current_datasets false
 
-# running on reads and fasta files
-nextflow run UPHL-BioNGS/Grandeur -profile singularity --reads reads --fastas fastas
-
-# running on a collection of fastq files that will be placed in a phylogenetic tree
-nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa --reads reads --outgroup outgroup
-
-# running on a collection of fastq files AND fasta files that will be placed in a phylogenetic tree
-nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa --reads reads --fastas fastas --outgroup outgroup
+# running on a collection of fastq files and fasta files that will be placed in a phylogenetic tree
+# (will download genomes from NCBI and add the FastANI top hit to tree building)
+nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa --reads reads --fastas fastas
 
 # only wanting to create a tree for some fastas
-nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa,extras_off --fasta fastas --outgroup outgroup
-
-# only wanting to create a tree for some fastas with a different outdir
-nextflow run UPHL-BioNGS/Grandeur -profile singularity,msa,extras_off --fasta fastas --outgroup outgroup --outdir attempt2
+nextflow run UPHL-BioNGS/Grandeur -profile singularity,just_msa --fasta fastas --iqtree2_outgroup outgroup
 ```
-
 
 # Visualizing the tree
 
@@ -550,31 +546,33 @@ It would be nice if an image of tree was automatically generated from this. Real
 
 # Grandeur wouldn't be possible without:
 
-- [fastp](https://github.com/OpenGene/fastp) - cleaning reads
+- [amrfinderplus](https://www.ncbi.nlm.nih.gov/pathogens/antimicrobial-resistance/AMRFinder/) - identification of genes associated with antimicrobial resistence
 - [bbduk](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/bb-tools-user-guide/bbduk-guide/) - removal of PhiX
-- [spades](https://cab.spbu.ru/software/spades/) - _de novo_ alignment
-- [prokka](https://github.com/tseemann/prokka) - gene annotation - used for core genome alignment
-- [roary](https://sanger-pathogens.github.io/Roary/) - core genome alignment - optional
-- [iqtree2](http://www.iqtree.org/) - phylogenetic tree creation - used after core genome alignment
-- [snp-dists](https://github.com/tseemann/snp-dists) - SNP matrix - used after core genome aligment
-- [mash](https://github.com/marbl/Mash) - species identifier
+- [bbmap](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/bb-tools-user-guide/bbduk-guide/) - maps reads to contigs for blobtools
+- [blastn](https://www.ncbi.nlm.nih.gov/books/NBK279684/) - read identification with blobtools
+- [blobtools](https://blobtools.readme.io/docs) - contamination
+- [datasets](https://github.com/ncbi/datasets) - downloads genomes from NCBI
 - [fastani](https://github.com/ParBLiSS/FastANI) - species evaluator
+- [fastp](https://github.com/OpenGene/fastp) - cleaning reads
 - [fastqc](https://github.com/s-andrews/FastQC) - fastq file QC
-- [quast](http://quast.sourceforge.net/quast) - contig QC
-- [cg-pipeline](https://github.com/lskatz/lyve-SET) - fastq file QC
+- [fastq-scan](https://github.com/rpetit3/fastq-scan) - quality metrics for fastq files in json format
+- [iqtree2](http://www.iqtree.org/) - phylogenetic tree creation - used after core genome alignment
+- [kleborate](https://github.com/katholt/Kleborate) - Klebsiella serotyping
+- [kraken2](https://ccb.jhu.edu/software/kraken2/) - contamination
+- [mash](https://github.com/marbl/Mash) - species identifier
+- [mlst](https://github.com/tseemann/mlst) - identification of MLST subtype
 - [multiqc](https://multiqc.info/) - summarizes QC efforts
 - [plasmidfinder](https://bitbucket.org/genomicepidemiology/plasmidfinder/) - MLST typing for plasmids
+- [prokka](https://github.com/tseemann/prokka) - gene annotation - used for core genome alignment
+- [quast](http://quast.sourceforge.net/quast) - contig QC
+- [roary](https://sanger-pathogens.github.io/Roary/) - core genome alignment - optional
 - [seqsero2](https://github.com/denglab/SeqSero2) - Salmonella serotyping
-- [shigatyper](https://github.com/CFSAN-Biostatistics/shigatyper) - Shigella serotyping
-- [kleborate](https://github.com/katholt/Kleborate) - Klebsiella serotyping
 - [serotypefinder](https://cge.cbs.dtu.dk/services/SerotypeFinder/) - E. coli serotyping
-- [mlst](https://github.com/tseemann/mlst) - identification of MLST subtype
-- [ncbi-amrfinderplus](https://www.ncbi.nlm.nih.gov/pathogens/antimicrobial-resistance/AMRFinder/) - identification of genes associated with antimicrobial resistence
-- [blobtools](https://blobtools.readme.io/docs) - contamination
-- [kraken2](https://ccb.jhu.edu/software/kraken2/) - contamination
-- [blastn](https://www.ncbi.nlm.nih.gov/books/NBK279684/) - read identification with blobtools
-- [bwa](http://bio-bwa.sourceforge.net/) - alignment for blobtools
-- [samtools](https://github.com/samtools) - sorting and bam creation for blobtools
+- [shigatyper](https://github.com/CFSAN-Biostatistics/shigatyper) - Shigella serotyping
+- [snp-dists](https://github.com/tseemann/snp-dists) - SNP matrix - used after core genome aligment
+- [spades](https://cab.spbu.ru/software/spades/) - _de novo_ alignment
+- [sra toolkit](https://hpc.nih.gov/apps/sratoolkit.html) - for downloading fastq files for testing
+
 
 ## Frequently Asked Questions (aka FAQ)
 ### What do I do if I encounter an error?
@@ -591,6 +589,10 @@ There is a template file with all the variables in this repo at [configs/grandeu
 
 There's also a config file what we use here at UPHL, [UPHL.config](./configs/UPHL.config).
 
+To get a copy of this config file (will not run workflow)
+```
+nextflow run UPHL-BioNGS/Grandeur --config_file true
+```
 
 To use the config file created by the **End User**, simply specify the path with `-c`
 ```
@@ -598,21 +600,15 @@ nextflow run UPHL-BioNGS/Grandeur -profile singularity -c <path to user edited c
 ```
 
 ### Do you have test data?
-Yes, actually, but also not quite. Fastq files can be rather large and github is not the best place to store them. Instead, some sample fastq files from the [SRA](https://www.ncbi.nlm.nih.gov/sra) have gone through the "Grandeur" workflow and the results are included in this repo for your comparison.
 
-- [SRR11725329](https://www.ncbi.nlm.nih.gov/sra/?term=SRR11725329) : _Escherichia coli_
-- [SRR13643280](https://www.ncbi.nlm.nih.gov/sra/?term=SRR13643280) : _Acinetobacter baumannii_
-- [SRR14436834](https://www.ncbi.nlm.nih.gov/sra/?term=SRR14436834) : _Stenotrophomonas maltophilia_
-- [SRR14634837](https://www.ncbi.nlm.nih.gov/sra/?term=SRR14634837) : _Klebsiella pneumoniae_
-- [SRR7738178](https://www.ncbi.nlm.nih.gov/sra/?term=SRR7738178) : _Shigella sonnei_
-- [SRR7889058](https://www.ncbi.nlm.nih.gov/sra/?term=SRR7889058) : _Salmonella enterica_
+There are three test profiles for "Grandeur", they download reads from the SRA using the [sra-toolkit](https://hpc.nih.gov/apps/sratoolkit.html). 
 
-These can be downloaded using [fasterq-dump](https://github.com/ncbi/sra-tools/wiki/HowTo:-fasterq-dump) (part of the [SRA](https://github.com/ncbi/sra-tools) toolkit) as follows:
+- `test` downloads six samples from the SRA to run through the workflow with default settings
+- `test1` uses those same samples, but does not download genomes from NCBI
+- `test2` downloads some CRPA and creates a multiple sequence alignment
+
 ```
-for sra in SRR11725329 SRR13643280 SRR14436834 SRR14634837 SRR7738178 SRR7889058
-do
-   fasterq-dump -A $sra --split-files --outdir reads
-done
+nextflow run UPHL-BioNGS/Grandeur -profile test,singularity
 ```
 
 There are also 6 genomes from NCBI genome that are in this repository under data/fasta:
@@ -628,42 +624,20 @@ And then run with
 nextflow run UPHL-BioNGS/Grandeur -profile singularity --fastas data/fasta
 ```
 
-Summary files from running these through the default workflow ([grandeur_results.tsv](./data/grandeur_results.tsv)) as well as with UPHL's config file ([UPHL_grandeur_results.tsv](./data/UPHL_grandeur_results.tsv)) are also available.
-
 The directory `data/msa` contains one gff file and 6 fasta files of _Stenotrophomonas maltophilia_ that can be used to test multiple sequence alignment. A resulting treefile ([iqtree.treefile](./data/msa/iqtree.treefile)), snp_matrix ([snp_matrix.txt](./data/msa/snp_matrix.txt)), and roary summary file ([summary_statistics.txt](./data/msa/summary_statistics.txt)) are included for comparison.
 
 Testing creating a phylogenetic tree from a core gene comparison:
 ```
-nextflow run UPHL-BioNGS/Grandeur -profile singularity,fasta_to_msa --fastas data/msa --gff data/msa --outgroup GCF_900475405.1_44087_C01_genomic
+nextflow run UPHL-BioNGS/Grandeur -profile singularity,just_msa --fastas data/msa --gff data/msa --iqtree2_outgroup GCF_900475405.1_44087_C01_genomic
 ```
 
 ### How do I turn processes off?
-Most of the processes in this workflow can be turned off. To turn off all "extra" processes, the simplist option is to use the 'extras_off' profile. If a limited number of processes are to be turned off, there are three editable parameters. These parameters contain an array of which proccesses are used. `params.fastq_processes` are all the processes that run on fastq files. `params.contig_processes` are those that are run on fasta/contig files. `params.phylogenetic_processes` are those that are run when doing core genome alignment. 
 
-```
-params.fastq_processes        = ['fastp', 'bbduk', 'spades', 'fastqc', 'cg_pipeline', 'mash', 'kraken2', 'summary', 'multiqc', 'shigatyper']
-params.contig_processes       = ['amrfinderplus', 'kleborate', 'fastani', 'mlst', 'quast', 'serotypefinder', 'blobtools', 'summary', 'multiqc', 'plasmidfinder', 'seqsero2', 'kraken2', 'mash']
-params.phylogenetic_processes = ['prokka', 'roary', 'iqtree2', 'snpdists']
-```
+Prior versions allowed more flexibility about which analyses were run. This was difficult to maintain. There are some processes that can be turned off:
 
-To turn off a process, simply copy the line into the config file of the **End User** with the unwanted process deleted.
-
-For example turning off kleborate, fastani, mlst, quast, serotypefinder, and blobtools
-```
-params.contig_processes       = ['amrfinderplus', 'summary', 'multiqc', 'plasmidfinder', 'seqsero2', 'kraken2', 'mash']
-```
-
-### Can I adjust which genomes fastANI uses?
-
-There is a collection of genomes included in "Grandeur" based off of frequently encountered organisms used in outbreak investigations locally. The **End User** can specify their own collection of fasta files by
-
-1) putting all relevant genomes in a directory named 'genomes'
-2) ensuring that all files end in '.fna' (instead of .fa or .fasta)
-3) compressing this directory into a tar file
-```
-tar -czvf fastani_refs.tar.gz genomes/
-```
-4) specifying the directory of this tar file at runtime with `params.fastani_refs` on the command line or in a config file
+- `params.msa = false` is the default, but this skips multiple sequence alignment.
+- `params.current_datasets = false` will skip downloading genomes from NCBI and will instead use the genomes in the workflow
+- `params.information = false` will skip the information subworkflow
 
 ### What about CLIA validation?
 
@@ -693,6 +667,22 @@ As of the time of writing this README, reference-based alignment of SARS-CoV-2 i
 ### What is genome_sizes.json used for?
 [genome_sizes.json](./configs/genome_sizes.json) has a list of commonly sequenced organisms and the approximate expected genome size for each organism. This is only used for the "cg-pipeline" process to estimate coverage. A file from the **End User** can be used instead and specified with `params.genome_sizes`.
 
+### Can I create my custom FastANI database?
+
+The default of "Grandeur" is to use the most current genomes from NCBI. This is mainly due to email chains relating to old organism names. There is a defined list of genomes included in "Grandeur", but the **End User** can create their own custom FastANI reference.
+
+Things to consider:
+- fastas need to be names $genus_$species_$id.fna
+- fasta headers should have spaces replaced with '_'
+- fastas should be a directory called genomes (depth = 1)
+- the genomes directory should be compressed using tar (`tar -czvf fastani_refs.tar.gz genomes/`)
+
+The config file lines for the above example (can be copied and pasted into a config file):
+```
+params.fastani_ref = "fastani_refs.tar.gz"
+params.current_datasets = false
+```
+
 ### How do I cite this workflow?
 
 This workflow stands on the shoulders of giants. As such, please cite the individual tools that were useful for your manuscript so that those developers can continue to get funding. They are listed above. Mentioning this workflow in the text as "The Grandeur workflow v.VERSION (www.github.com/UPHL-BioNGS/Grandeur)" is good enough for [@erinyoung](https://github.com/erinyoung)'s ego.
@@ -709,13 +699,13 @@ The process at UPHL goes as follows:
 1) Run "Grandeur" on all the paired-end sequencing reads from a MiSeq run to get fasta files (located at `/grandeur/contigs`) with the `uphl` profile
 2) Gather the fasta files from their respective sequencing runs and put them in a new directory
 3) Add a representative genome from NCBI to this new directory
-4) Run "Grandeur" on the collected fasta files with the profile `fasta_to_msa` and specify the representative genome from NCBI as an outgroup
+4) Run "Grandeur" on the collected fasta files with the profile `just_msa` and specify the representative genome from NCBI as an outgroup
 
 A real use case from UPHL with a _Pseudomonas aeruginosa_
 ```
 nextflow run UPHL-BioNGS/Grandeur \
   -with-tower \
-  -profile singularity,fasta_to_msa \
+  -profile singularity,just_msa \
   --outgroup GCF_000006765.1_ASM676v1_genomic \
   --fastas fastas
 ```
@@ -724,11 +714,9 @@ nextflow run UPHL-BioNGS/Grandeur \
 
 Yes, although this is now a more-hidden option because several **End Users** were trying to use gff files downloaded from NCBI instead of re-using gff files created from prokka.
 
-### Prokka annotated gff files (ending with 'gff') as follows or designate directory with 'params.gff' or '--gff'
+Prokka annotated gff files (ending with 'gff') as follows or designate directory with 'params.gff' or '--gff'
 ```
 directory
 └── gff
      └── *gff
 ```
-
-There is also a `gff_to_msa` to msa profile.

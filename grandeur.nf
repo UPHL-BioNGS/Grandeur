@@ -20,7 +20,7 @@ nextflow.enable.dsl               = 2
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
-params.config_file                          = false
+params.config_file                = false
 if (params.config_file) {
   def src = new File("${workflow.projectDir}/configs/grandeur_template.config")
   def dst = new File("${workflow.launchDir}/edit_me.config")
@@ -40,8 +40,10 @@ params.maxcpus                    = 12
 params.medcpus                    = 4
 params.minimum_reads              = 10000
 
-// connecting to phoenix
-params.phoenix_wf                 = false
+// connecting to phoenix (in development)
+// params.phoenix_wf                 = false
+// params.phoenix_dir                = workflow.projectDir + "/../phoenix/workflows/phoenix.nf"
+// params.input                      = ""
 
 // connecting to Donut Falls
 params.donut_falls_wf             = false
@@ -99,6 +101,16 @@ params.serotypefinder_options     = ""
 params.shigatyper_options         = ""
 params.snp_dists_options          = "-c"
 params.spades_options             = "--isolate"
+
+// if (params.phoenix_wf) {
+//   println "cp ${workflow.projectDir}/../phoenix/bin/* ${workflow.projectDir}/bin/."
+//   command = ["sh", "-c", "cp ${workflow.projectDir}/../phoenix/bin/* ${workflow.projectDir}/bin/."]
+//   Runtime.getRuntime().exec((String[]) command.toArray())
+//   command = ["sh", "-c", "cp ${workflow.projectDir}/../phoenix/lib/* ${workflow.projectDir}/lib/."]
+//   Runtime.getRuntime().exec((String[]) command.toArray())
+//   include { PHOENIX_EXTERNAL } from workflow.projectDir + "/../phoenix/main" addParams(input: params.input)
+//   For my future self, this doesn't work because of some of the nf-core scripts
+// }
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
@@ -238,7 +250,9 @@ workflow {
     ch_raw_reads = ch_reads
   }
 
-  if ( params.phoenix_wf )      { phoenix(input) }
+  // running PHOENIX first
+  if ( params.phoenix_wf )      { PHOENIX(input) }
+  // running DONUT FALLS first
   if ( params.donut_falls_wf )  { donut_falls(input) }
 
   // either phoenix or de_novo_alignment is required
