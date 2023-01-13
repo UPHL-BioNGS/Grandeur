@@ -28,7 +28,7 @@ process iqtree2 {
     cat .command.sh >> $log_file
 
     outgroup=''
-    if [ -n "!{params.outgroup}" ] ; then outgroup="-o !{params.outgroup}" ; fi
+    if [ -n "!{params.iqtree2_outgroup}" ] ; then outgroup="-o !{params.iqtree2_outgroup}" ; fi
 
     iqtree2 !{params.iqtree2_options} \
       -s !{msa} \
