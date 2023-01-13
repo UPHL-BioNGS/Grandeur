@@ -52,6 +52,7 @@ params.donut_falls_wf             = false
 params.reads                      = workflow.launchDir + "/reads"
 params.fastas                     = workflow.launchDir + "/fastas"
 params.gff                        = workflow.launchDir + "/gff"
+params.sample_sheet               = ""
 
 // external files
 params.kraken2_db                 = ""
@@ -76,6 +77,8 @@ params.blobtools_plot_options     = "--format png -r species"
 params.blobtools_bbmap_options    = ""
 params.current_datasets           = true
 params.datasets_max_genomes       = 5
+params.extras                     = true
+params.fastani_include            = true
 params.fastani_options            = "--matrix"
 params.fasterqdump_options        = ""
 params.fastp_options              = "--detect_adapter_for_pe"
@@ -142,6 +145,16 @@ summary_script = Channel.fromPath(workflow.projectDir + "/bin/summary.py", type:
 // Channels for input files
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
+// Getting fastq files from sample sheet
+if (params.sample_sheet) {
+  Channel
+    .from(params.sample_sheet)
+        .splitCsv ( header:true, sep:',' )
+        .map {  }
+        .view { "Paired-end fastq files from sample sheet : ${it[0]}" }
+        .set { reads }
+}
 
 // Getting the fastq files
 Channel
@@ -250,19 +263,19 @@ workflow {
     ch_raw_reads = ch_reads
   }
 
-  // running PHOENIX first
-  if ( params.phoenix_wf )      { PHOENIX(input) }
-  // running DONUT FALLS first
-  if ( params.donut_falls_wf )  { donut_falls(input) }
+  // running PHOENIX first (under development)
+  // if ( params.phoenix_wf )      { PHOENIX(input) }
+  // running DONUT FALLS first (under development)
+  // if ( params.donut_falls_wf )  { donut_falls(input) }
 
   // either phoenix or de_novo_alignment is required
   de_novo_alignment(ch_raw_reads)
-  
+  ch_for_multiqc   = ch_for_multiqc.mix(de_novo_alignment.out.for_multiqc)
   ch_contigs       = ch_fastas.mix(de_novo_alignment.out.contigs)
   ch_clean_reads   = de_novo_alignment.out.clean_reads
 
   // optional subworkflow blobtools (useful for interspecies contamination)
-  if (params.blast_db) {
+  if (params.blast_db) and (params.extras) {
     blobtools(ch_clean_reads, ch_contigs, ch_blast_db)
     ch_for_multiqc = ch_for_multiqc.mix(blobtools.out.for_multiqc)
     ch_for_summary = ch_for_summary.mix(blobtools.out.for_summary)
@@ -270,7 +283,7 @@ workflow {
   }
 
   // optional subworkflow kraken2 (useful for interspecies contamination)
-  if (params.kraken2_db) {
+  if (params.kraken2_db) and (params.extras) {
     kraken2(ch_clean_reads, ch_contigs, ch_kraken2_db)
     ch_for_multiqc = ch_for_multiqc.mix(kraken2.out.for_multiqc)
     ch_for_summary = ch_for_summary.mix(kraken2.out.for_summary)
@@ -278,53 +291,66 @@ workflow {
   } 
 
   // subworkflow mash for species determination
-  min_hash_distance(ch_clean_reads, ch_contigs, ch_mash_db)
-  ch_for_summary = ch_for_summary.mix(min_hash_distance.out.for_summary)
+  if (params.extras) {
+    min_hash_distance(ch_clean_reads, ch_contigs, ch_mash_db)
+    ch_for_summary = ch_for_summary.mix(min_hash_distance.out.for_summary)
+  }
 
   // determining organisms in sample
-  average_nucleotide_identity(
-    ch_for_summary.collect(),
-    ch_contigs,
-    ch_fastani_genomes,
-    ch_genome_ref
-  )
-  ch_for_species   = ch_for_species.mix(min_hash_distance.out.for_species).mix(average_nucleotide_identity.out.for_species)
-  
+  if (params.extras) {
+    average_nucleotide_identity(
+      ch_for_summary.collect(),
+      ch_contigs,
+      ch_fastani_genomes,
+      ch_genome_ref
+    )
+    ch_for_species   = ch_for_species.mix(min_hash_distance.out.for_species).mix(average_nucleotide_identity.out.for_species)
+    ch_for_size      = average_nucleotide_identity.out.for_size.join(min_hash_distance.out.for_size, by: 0)
+    ch_for_genomes   = average_nucleotide_identity.out.for_genomes
+  } else {
+    ch_for_genomes   = Channel.empty()
+  }
+
   // getting all the other information
-  ch_for_size      = average_nucleotide_identity.out.for_size.join(min_hash_distance.out.for_size, by: 0)
-  information(ch_raw_reads, 
-    ch_contigs, 
-    ch_for_species, 
-    ch_for_size.combine(ch_genome_sizes))
-  ch_for_multiqc   = ch_for_multiqc.mix(information.out.for_multiqc)
+  if (params.extras) {
+    information(ch_raw_reads, 
+      ch_contigs, 
+      ch_for_species, 
+      ch_for_size.combine(ch_genome_sizes))
+    ch_for_multiqc   = ch_for_multiqc.mix(information.out.for_multiqc)
+    ch_organism      = information.out.organism.map { it -> tuple(it[0] , [it[1], it[2], it[3]] )}
+  } else {
+    ch_organism      = Channel.empty()
+  }
 
   // optional subworkflow for comparing shared genes
   if ( params.msa ) { 
     phylogenetic_analysis(ch_contigs.ifEmpty([]), 
       ch_gffs.ifEmpty([]), 
-      information.out.organism.map { it -> tuple(it[0] , [it[1], it[2], it[3]] )}, 
-      average_nucleotide_identity.out.for_genomes)
+      ch_organism.ifEmpty([]), 
+      ch_for_genomes.ifEmpty([]))
     
     ch_for_multiqc   = ch_for_multiqc.mix(phylogenetic_analysis.out.for_multiqc)
   }
 
   // getting a summary of everything
-  ch_for_multiqc   = ch_for_multiqc.mix(de_novo_alignment.out.for_multiqc)
-
-  ch_for_summary
-    .mix(information.out.for_summary)
-    .mix(average_nucleotide_identity.out.for_summary)
-    .concat(summary_script)
-    .flatten()
-    .set { for_summary }
-
-  report(
-    ch_raw_reads, 
-    ch_fastas, 
-    ch_for_multiqc.collect(), 
-    for_summary.collect(), 
-    de_novo_alignment.out.fastp_reads, 
-    de_novo_alignment.out.phix_reads)
+  
+  if (params.extras) {
+    ch_for_summary
+      .mix(information.out.for_summary)
+      .mix(average_nucleotide_identity.out.for_summary)
+      .concat(summary_script)
+      .flatten()
+      .set { for_summary }
+  
+    report(
+      ch_raw_reads, 
+      ch_fastas, 
+      ch_for_multiqc.collect(), 
+      for_summary.collect(), 
+      de_novo_alignment.out.fastp_reads, 
+      de_novo_alignment.out.phix_reads)
+  }
 }
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
