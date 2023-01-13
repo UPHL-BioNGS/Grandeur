@@ -48,6 +48,7 @@ process decompression {
   publishDir    params.outdir, mode: 'copy'
   container     'quay.io/biocontainers/pandas:1.1.5'
   maxForks      10
+  stageInMode   'copy'
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
   
