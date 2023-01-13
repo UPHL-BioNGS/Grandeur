@@ -277,6 +277,18 @@
                     <pd:stringType/>
                     <pd:value>--isolate</pd:value>
                 </pd:parameter>
+                <pd:parameter code="extras" minValues="1" maxValues="1" classification="USER">
+                    <pd:label>extras</pd:label>
+                    <pd:description locked="false"></pd:description>
+                    <pd:stringType/>
+                    <pd:value>true</pd:value>
+                </pd:parameter>
+                <pd:parameter code="fastani_include" minValues="1" maxValues="1" classification="USER">
+                    <pd:label>fastani_include</pd:label>
+                    <pd:description locked="false"></pd:description>
+                    <pd:stringType/>
+                    <pd:value>true</pd:value>
+                </pd:parameter>
             </pd:tool>
         </pd:step>
     </pd:steps>

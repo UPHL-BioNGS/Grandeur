@@ -61,6 +61,14 @@
             "type": "string",
             "description": "directory of donut falls nextflow workflow"
         },
+        "extras": {
+            "type": "boolean",
+            "description": "turns off blobtools, kraken2, fastani, mash, and report generation subworkflows"
+        },
+        "fastani_include": {
+            "type": "string",
+            "description": "adds fastani top hit to msa"
+        },
         "fastani_options": {
             "type": "string",
             "description": "additional options for editing for process"
@@ -195,6 +203,10 @@
         "roary_options": {
             "type": "string",
             "description": "additional options for editing for process"
+        },
+        "sample_sheet": {
+            "type": "string",
+            "description": "csv with sample,read1,read2"
         },
         "seqsero2_options": {
             "type": "string",
