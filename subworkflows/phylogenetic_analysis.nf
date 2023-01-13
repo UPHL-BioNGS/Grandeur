@@ -12,14 +12,22 @@ workflow phylogenetic_analysis {
     ch_genomes
 
   main:
-    representative(ch_organism.map{ it -> it[1][2]}.unique().combine(ch_genomes))
+    if (params.extras) {
+      representative(ch_organism.map{ it -> it[1][2]}.unique().combine(ch_genomes))
 
-    ch_representative = representative.out.representative.map{ it -> tuple(it[3], it[0] , [it[1], it[2], it[3]] )}
+      if ( params.fastani_include ) {
+        ch_representative = representative.out.representative.map{ it -> tuple(it[3], it[0] , [it[1], it[2], it[3]] )}
 
-    ch_contigs
-      .join(ch_organism, by: 0, remainder: true)
-      .mix(ch_representative)
-      .set { for_prokka }
+        ch_contigs
+          .join(ch_organism, by: 0, remainder: true)
+          .mix(ch_representative)
+          .set { for_prokka }
+      } else {
+        for_prokka = ch_contigs.join(ch_organism, by: 0, remainder: true)
+      }
+    } else {
+      for_prokka = ch_contigs.map{ it -> tuple(it[0], it[1], 'null')}
+    }
 
     prokka( for_prokka )
     roary(prokka.out.gffs.concat(ch_gff).collect())
