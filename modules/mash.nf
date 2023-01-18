@@ -12,17 +12,17 @@ process mash {
   tuple val(sample), file(input), file(reference)
 
   output:
-  path "mash/${input[0]}.mashdist.txt"                               , emit: mashdist
-  tuple val(sample), file("mash/${input[0]}.summary.mash.csv")       , emit: results
-  tuple val(sample), file("mash/${sample}.${workflow.sessionId}.err"), emit: err
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log"    , emit: log
+  path "mash/${input[0]}.mashdist.txt"                                 , emit: mashdist
+  tuple val(sample), file("mash/${input[0]}.summary.mash.csv")         , emit: results
+  tuple val(sample), file("mash/${input[0]}.${workflow.sessionId}.err"), emit: err
+  path "logs/${task.process}/${input[0]}.${workflow.sessionId}.log"    , emit: log
 
   shell:
   if (params.mash_db) {
     '''
       mkdir -p mash logs/!{task.process}
-      log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-      err_file=mash/!{sample}.!{workflow.sessionId}.err
+      log_file=logs/!{task.process}/!{input[0]}.!{workflow.sessionId}.log
+      err_file=mash/!{input[0]}.!{workflow.sessionId}.err
 
       # time stamp + capturing tool versions
       date > $log_file
@@ -46,14 +46,14 @@ process mash {
       while read line
       do
         organism=$(echo $line | cut -f 3,4 -d "_")
-        echo $line | awk -v sample=!{sample} -v org=$organism '{print sample "," $1 "," $2 "," $3 "," $4 "," $5 "," org}' >> mash/!{input[0]}.summary.mash.csv
+        echo $line | sed 's/,//g' | awk -v sample=!{sample} -v org=$organism '{print sample "," $1 "," $2 "," $3 "," $4 "," $5 "," org}' >> mash/!{input[0]}.summary.mash.csv
       done < mash/!{input[0]}.mashdist.txt
     '''
   } else {
     '''
       mkdir -p mash logs/!{task.process}
-      log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-      err_file=mash/!{sample}.!{workflow.sessionId}.err
+      log_file=logs/!{task.process}/!{input[0]}.!{workflow.sessionId}.log
+      err_file=mash/!{input[0]}.!{workflow.sessionId}.err
 
       # time stamp + capturing tool versions
       date > $log_file
@@ -77,7 +77,7 @@ process mash {
       while read line
       do
         organism=$(echo $line | cut -f 8 -d "-" | cut -f 1,2 -d "_" | cut -f 1 -d ".")
-        echo $line | awk -v sample=!{sample} -v org=$organism '{print sample "," $1 "," $2 "," $3 "," $4 "," $5 "," org}' >> mash/!{input[0]}.summary.mash.csv
+        echo $line | sed 's/,//g' | awk -v sample=!{sample} -v org=$organism '{print sample "," $1 "," $2 "," $3 "," $4 "," $5 "," org}' >> mash/!{input[0]}.summary.mash.csv
       done < mash/!{input[0]}.mashdist.txt
     '''
   }

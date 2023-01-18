@@ -15,7 +15,7 @@ process kleborate {
   tuple val(sample), file(contig), val(flag)
 
   output:
-  path "kleborate/${sample}_results.csv"                         , emit: collect
+  path "kleborate/${sample}_results.tsv"                         , emit: collect
   path "kleborate/${sample}_results.txt"                         , emit: result
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
@@ -36,7 +36,7 @@ process kleborate {
       -a !{contig} \
       | tee -a $log_file
 
-    head -n 1 kleborate/!{sample}_results.txt | tr "\\t" "," | awk '{print "sample," $0}' > kleborate/!{sample}_results.csv
-    tail -n 1 kleborate/!{sample}_results.txt | tr "\\t" "," | awk -v sample=!{sample} '{print sample "," $0}' >> kleborate/!{sample}_results.csv
+    head -n 1 kleborate/!{sample}_results.txt | awk '{print "sample\\t" $0}' > kleborate/!{sample}_results.tsv
+    tail -n 1 kleborate/!{sample}_results.txt | awk -v sample=!{sample} '{print sample "\\t" $0}' >> kleborate/!{sample}_results.tsv
   '''
 }
