@@ -3,11 +3,19 @@
 # just a bunch of tests with local directories
 # /home/eriny/sandbox/Grandeur/bin/.tests.sh
 
+# default with input
+nextflow run /home/eriny/sandbox/Grandeur \
+  -profile singularity \
+  --sample_sheet /home/eriny/sandbox/Grandeur/bin/sample_sheet.csv \
+  --outdir grandeur_sample_sheet \
+  -resume  \
+  -with-tower
+
 # default with reads
 nextflow run /home/eriny/sandbox/Grandeur \
   -profile singularity \
   --reads  /home/eriny/sandbox/test_files/grandeur/reads \
-  --outdir fastq_channel \
+  --outdir grandeur_fastq_channel \
   -resume  \
   -with-tower
 
@@ -15,7 +23,7 @@ nextflow run /home/eriny/sandbox/Grandeur \
 nextflow run /home/eriny/sandbox/Grandeur \
   -profile singularity \
   --fastas /home/eriny/sandbox/test_files/grandeur/fastas \
-  --outdir fasta_channel \
+  --outdir grandeur_fasta_channel \
   -resume  \
   -with-tower
 
@@ -24,7 +32,7 @@ nextflow run /home/eriny/sandbox/Grandeur \
   -profile singularity \
   --reads  /home/eriny/sandbox/test_files/grandeur/reads \
   --fastas /home/eriny/sandbox/test_files/grandeur/fastas \
-  --outdir fastq_fasta_channel \
+  --outdir grandeur_fastq_fasta_channel \
   -resume  \
   -with-tower
 
@@ -34,32 +42,20 @@ nextflow run /home/eriny/sandbox/Grandeur \
   --gff    /home/eriny/sandbox/test_files/grandeur/msa \
   --fastas /home/eriny/sandbox/test_files/grandeur/msa \
   --reads  /home/eriny/sandbox/test_files/grandeur/msa \
-  --outdir msa \
+  --outdir grandeur_msa_fastani \
   -resume  \
   -with-tower
 
 for profile in "singularity" "uphl"
 do
-  # test
-  nextflow run /home/eriny/sandbox/Grandeur \
-    -profile $profile,test \
-    --outdir test_$profile \
-    -resume  \
-    -with-tower
-
-  # test1
-  nextflow run /home/eriny/sandbox/Grandeur \
-    -profile $profile,test1 \
-    --outdir test1_$profile \
-    -resume  \
-    -with-tower
-
-  # test2
-  nextflow run /home/eriny/sandbox/Grandeur \
-    -profile $profile,test2 \
-    --outdir test2_$profile \
-    -resume  \
-    -with-tower
+  for ver in "test0" "test1" "test2" "test3" "test4" "test5" "test6"
+  do
+    nextflow run /home/eriny/sandbox/Grandeur \
+      -profile $profile,$ver \
+      --outdir grandeur_${ver}_$profile \
+      -resume  \
+      -with-tower
+  done
 done
 
 # with nothing
@@ -68,6 +64,6 @@ nextflow run /home/eriny/sandbox/Grandeur \
   --gff    wontexist \
   --fastas shouldntexit \
   --reads  doesntexist \
-  --outdir empty \
+  --outdir grandeur_empty \
   -resume  \
   -with-tower
