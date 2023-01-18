@@ -15,27 +15,28 @@ workflow information {
   take:
     ch_reads
     ch_contigs
-    ch_species
+    ch_flag
     ch_size
 
   main:
+    //ch_size.groupTuple(by:0).view()
+    // fastq files
+    size(ch_size)
+    fastqscan(ch_reads.join(size.out.size, by: 0))
     fastqc(ch_reads)
-    
+
+    // contigs
     mlst(ch_contigs)
     quast(ch_contigs)
     plasmidfinder(ch_contigs)
 
-    flag(ch_species.groupTuple(by: 0))
-
-    size(ch_size)
-    fastqscan(ch_reads.join(size.out.size, by: 0))
-    
+    // species specific
+    flag(ch_flag.groupTuple(by: 0))
+    amrfinderplus(ch_contigs.join(flag.out.organism,    by:0))       
     kleborate(ch_contigs.join(flag.out.klebsiella_flag, by:0))
     seqsero2(ch_contigs.join(flag.out.salmonella_flag,  by:0))
     serotypefinder(ch_contigs.join(flag.out.ecoli_flag, by:0))
     shigatyper(ch_contigs.join(flag.out.ecoli_flag,     by:0))
-    
-    amrfinderplus(ch_contigs.join(flag.out.organism,    by:0))
     
     fastqc.out.collect
       .collectFile(name: "fastqc_summary.csv",
@@ -73,7 +74,7 @@ workflow information {
       .set{ plasmidfinder_summary }
 
     kleborate.out.collect
-      .collectFile(name: "kleborate_results.txt",
+      .collectFile(name: "kleborate_results.tsv",
         keepHeader: true,
         sort: { file -> file.text },
         storeDir: "${params.outdir}/kleborate")
@@ -126,5 +127,4 @@ workflow information {
   emit:
     for_summary = for_summary.collect()
     for_multiqc = for_multiqc.collect()
-    organism    = size.out.organism
 }
