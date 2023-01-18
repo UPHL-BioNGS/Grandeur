@@ -20,7 +20,7 @@ datasets       = 'datasets_summary.csv'
 fastani        = 'fastani_summary.csv'
 fastqc         = 'fastqc_summary.csv'
 fastqscan      = 'fastqscan_summary.csv'
-kleborate      = 'kleborate_results.txt'
+kleborate      = 'kleborate_results.tsv'
 kraken2        = 'kraken2_summary.csv'
 mash           = 'mash_summary.csv'
 mlst           = 'mlst_summary.csv'
@@ -38,8 +38,8 @@ extended       = 'grandeur_extended_summary'
 # grouping similar files                 #
 ##########################################
 
-csv_files = [ fastqscan, kleborate, mlst ]
-tsv_files = [ quast, seqsero2 ]
+csv_files = [ fastqscan, mlst ]
+tsv_files = [ quast, seqsero2, kleborate ]
 
 top_hit    = [ fastani ]
 
@@ -222,14 +222,17 @@ summary_df.to_csv(extended + '.txt', index=False, sep=";")
 
 # reducing to the top 1 or 2 results for each analysis
 final_columns = [
+# general information
+'fastqc_total_sequences',
+'fastqc_flagged_sequences',
 'fastqscan_coverage',
-'kleborate_virulence_score',
-'mlst_matching_PubMLST_scheme',
-'mlst_ST',
 'quast_#_contigs',
 'quast_GC_(%)',
-'seqsero2_Predicted_antigenic_profile',
-'seqsero2_Predicted_serotype',
+'amrfinder_genes_(per_cov/per_ident)',
+
+# species
+'mlst_matching_PubMLST_scheme',
+'mlst_ST',
 'mash_reference',
 'mash_mash-distance',
 'mash_P-value',
@@ -239,23 +242,24 @@ final_columns = [
 'fastani_ANI_estimate',
 'fastani_total_query_sequence_fragments',
 'fastani_fragments_aligned_as_orthologous_matches',
-'amrfinder_genes_(per_cov/per_ident)',
-'blobtools_organism_(per_mapped_reads)',
-'fastani_genome_(ANI_estimate)',
-'fastqc_total_sequences',
-'fastqc_flagged_sequences',
-'kraken2_organism_(per_fragment)',
 'plasmidfinder_plasmid_(identity)',
+
+# contamination
+'blobtools_organism_(per_mapped_reads)',
+'kraken2_organism_(per_fragment)',
+
+# species specific information
+'seqsero2_Predicted_antigenic_profile',
+'seqsero2_Predicted_serotype',
+'kleborate_virulence_score',
 'serotypefinder_Serotype_O',
 'serotypefinder_Serotype_H',
 'shigatyper_Hit']
 
 set_columns = []
-for new_column in summary_df.columns :
-    if new_column in final_columns :
+for new_column in final_columns :
+    if new_column in summary_df.columns :
         set_columns.append(new_column)
 
-sorted_columns = sorted(set(set_columns))
-
-summary_df.to_csv(final + '.tsv', columns = ['sample','file','version','reads','phix_reads'] + sorted_columns, index=False, sep="\t")
-summary_df.to_csv(final + '.txt', columns = ['sample','file','version','reads','phix_reads'] + sorted_columns, index=False, sep=";")
+summary_df.to_csv(final + '.tsv', columns = ['sample','file','version','reads','phix_reads'] + set_columns, index=False, sep="\t")
+summary_df.to_csv(final + '.txt', columns = ['sample','file','version','reads','phix_reads'] + set_columns, index=False, sep=";")
