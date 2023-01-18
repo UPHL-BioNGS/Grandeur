@@ -30,12 +30,12 @@ workflow average_nucleotide_identity {
                     keepHeader: true,
                     sort: { file -> file.text },
                     name: "datasets_summary.csv")
-                .set { datasets_genomes } 
+                .set { datasets_summary } 
 
         } else {
             decompression(ch_static_fastani_genomes)
-            ch_fastani_db = decompression.out.decompressed
-            datasets_genomes = Channel.empty()
+            ch_fastani_db    = decompression.out.decompressed
+            datasets_summary = Channel.empty()
         }
 
         fastani(ch_contigs.combine(ch_fastani_db))
@@ -50,8 +50,8 @@ workflow average_nucleotide_identity {
             .set { summary }
 
    emit:
-        for_species = fastani.out.results
-        for_summary = summary
-        for_size    = fastani.out.results.combine(datasets_genomes)
-        for_genomes = ch_fastani_db
+        for_flag         = fastani.out.results
+        for_summary      = summary
+        top_hit          = fastani.out.top_hit
+        datasets_summary = datasets_summary
 }
