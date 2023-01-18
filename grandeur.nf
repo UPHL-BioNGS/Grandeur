@@ -45,7 +45,7 @@ params.minimum_reads              = 10000
 // params.phoenix_dir                = workflow.projectDir + "/../phoenix/workflows/phoenix.nf"
 // params.input                      = ""
 
-// connecting to Donut Falls
+// connecting to Donut Falls (in development)
 params.donut_falls_wf             = false
 
 // input files
@@ -58,9 +58,9 @@ params.sample_sheet               = ""
 params.kraken2_db                 = ""
 params.blast_db                   = ""
 params.mash_db                    = ""
-params.fastani_ref                = workflow.projectDir + "/configs/fastani_ref.tar.gz"
-params.genome_sizes               = workflow.projectDir + "/configs/genome_sizes.json"
-params.genome_references          = workflow.projectDir + "/configs/genomes.txt"
+params.fastani_ref                = workflow.projectDir + "/db/fastani_refs.tar.gz"
+params.genome_sizes               = workflow.projectDir + "/assets/genome_sizes.json"
+params.genome_references          = workflow.projectDir + "/assets/genomes.txt"
 
 // for testing
 params.sra_accessions             = []
@@ -146,15 +146,14 @@ summary_script = Channel.fromPath(workflow.projectDir + "/bin/summary.py", type:
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
-// Getting fastq files from sample sheet
-if (params.sample_sheet) {
-  Channel
-    .from(params.sample_sheet)
-        .splitCsv ( header:true, sep:',' )
-        .map {  }
-        .view { "Paired-end fastq files from sample sheet : ${it[0]}" }
-        .set { reads }
-}
+// using a sample sheet with the column header pf 'sample,fastq_1,fastq_2'
+ch_input_reads = params.sample_sheet
+  ? Channel
+    .fromPath("${params.sample_sheet}", type: "file")
+      .view { "Sample sheet found : ${it}" }
+      .splitCsv( header: true, sep: ',' )
+      .map { row -> tuple( "${row.sample}", [ file("${row.fastq_1}"), file("${row.fastq_2}") ]) }
+  : Channel.empty()
 
 // Getting the fastq files
 Channel
@@ -173,7 +172,8 @@ Channel
   .set { ch_fastas }
 
 // Getting fasta files that have been annotated with prokka
-Channel.fromPath("${params.gff}/*.gff", type: "file")
+Channel
+  .fromPath("${params.gff}/*.gff", type: "file")
   .view { "gff file : $it" }
   .unique()
   .set { ch_gffs }
@@ -188,14 +188,16 @@ ch_sra_accessions = Channel.from( params.sra_accessions )
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
 // Getting the file with genome sizes of common organisms for fastqcscan. The End User can use their own file and set with a param
-Channel.fromPath(params.genome_sizes, type: "file")
-.ifEmpty{
+Channel
+  .fromPath(params.genome_sizes, type: "file")
+  .ifEmpty{
     println("The genome sizes file for this workflow are missing!")
     exit 1}
   .set { ch_genome_sizes }
 
 // Getting the file with genomes to include for every run
-Channel.fromPath(params.genome_references, type: "file")
+Channel
+  .fromPath(params.genome_references, type: "file")
   .ifEmpty{
     println("The genome references for this workflow are missing!")
     exit 1}
@@ -206,38 +208,39 @@ ch_fastani_genomes = Channel.fromPath("${params.fastani_ref}", type: "file")
 
 // Getting the database for blobtools
 ch_blast_db = params.blast_db
-              ? Channel
-                  .fromPath(params.blast_db, type: "dir")
-                  .ifEmpty{
-                    println("No blast database was found at ${params.blast_db}")
-                    println("Set 'params.blast_db' to directory with blast database")
-                    exit 1
-                  }
-                  .view { "Local Blast Database for Blobtools : $it" }
-              : Channel.empty()
+  ? Channel
+    .fromPath(params.blast_db, type: "dir")
+    .ifEmpty{
+      println("No blast database was found at ${params.blast_db}")
+      println("Set 'params.blast_db' to directory with blast database")
+      exit 1
+      }
+      .view { "Local Blast Database for Blobtools : $it" }
+    : Channel.empty()
 
 // Getting the kraken2 database
 ch_kraken2_db = params.kraken2_db
-              ? Channel
-                  .fromPath(params.kraken2_db, type: "dir")
-                  .ifEmpty{
-                    println("No kraken2 database was found at ${params.kraken2_db}")
-                    println("Set 'params.kraken2_db' to directory with kraken2 database")
-                    exit 1
-                  }
-                  .view { "Local kraken2 database : $it" }
-              : Channel.empty()
+  ? Channel
+    .fromPath(params.kraken2_db, type: "dir")
+    .ifEmpty{
+      println("No kraken2 database was found at ${params.kraken2_db}")
+      println("Set 'params.kraken2_db' to directory with kraken2 database")
+      exit 1
+      }
+      .view { "Local kraken2 database : $it" }
+  : Channel.empty()
 
+// Getting the mash reference
 ch_mash_db = params.mash_db 
-            ? Channel
-              .fromPath(params.mash_db, type: "file")
-              .ifEmpty{
-                println("No mash database was found at ${params.mash_db}")
-                println("Set 'params.mash_db' to file of pre-sketched mash reference")
-                exit 1
-              }
-              .view { "Mash reference : $it" }
-            : Channel.empty()
+  ? Channel
+    .fromPath(params.mash_db, type: "file")
+    .ifEmpty{
+      println("No mash database was found at ${params.mash_db}")
+      println("Set 'params.mash_db' to file of pre-sketched mash reference")
+      exit 1
+      }
+    .view { "Mash reference : $it" }
+  : Channel.empty()
 
 println("The files and directory for results is " + params.outdir)
 println("The maximum number of CPUS for any one process is ${params.maxcpus}")
@@ -248,19 +251,19 @@ println("The maximum number of CPUS for any one process is ${params.maxcpus}")
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
-
 workflow {
 
   ch_for_multiqc   = Channel.empty()
   ch_for_summary   = Channel.empty()
-  ch_for_species   = Channel.empty()
+  ch_for_flag      = Channel.empty()
+  ch_top_hit       = Channel.empty()
 
   // getting test files
   if ( ! params.sra_accessions.isEmpty() ) { 
     test(ch_sra_accessions)
-    ch_raw_reads = ch_reads.mix(test.out.fastq)
+    ch_raw_reads = ch_reads.mix(test.out.fastq).mix(ch_input_reads)
   } else {
-    ch_raw_reads = ch_reads
+    ch_raw_reads = ch_reads.mix(ch_input_reads)
   }
 
   // running PHOENIX first (under development)
@@ -270,84 +273,88 @@ workflow {
 
   // either phoenix or de_novo_alignment is required
   de_novo_alignment(ch_raw_reads)
-  ch_for_multiqc   = ch_for_multiqc.mix(de_novo_alignment.out.for_multiqc)
+  
   ch_contigs       = ch_fastas.mix(de_novo_alignment.out.contigs)
   ch_clean_reads   = de_novo_alignment.out.clean_reads
 
+  ch_for_multiqc   = ch_for_multiqc.mix(de_novo_alignment.out.for_multiqc)
+
   // optional subworkflow blobtools (useful for interspecies contamination)
-  if (params.blast_db) and (params.extras) {
+  if (params.blast_db) {
     blobtools(ch_clean_reads, ch_contigs, ch_blast_db)
+
     ch_for_multiqc = ch_for_multiqc.mix(blobtools.out.for_multiqc)
     ch_for_summary = ch_for_summary.mix(blobtools.out.for_summary)
-    ch_for_species = ch_for_species.mix(blobtools.out.for_species)
+    ch_for_flag    = ch_for_flag.mix(blobtools.out.for_flag)
   }
 
   // optional subworkflow kraken2 (useful for interspecies contamination)
-  if (params.kraken2_db) and (params.extras) {
+  if (params.kraken2_db) {
     kraken2(ch_clean_reads, ch_contigs, ch_kraken2_db)
+
     ch_for_multiqc = ch_for_multiqc.mix(kraken2.out.for_multiqc)
     ch_for_summary = ch_for_summary.mix(kraken2.out.for_summary)
-    ch_for_species = ch_for_species.mix(kraken2.out.for_species)
+    ch_for_flag    = ch_for_flag.mix(kraken2.out.for_flag)
   } 
-
-  // subworkflow mash for species determination
+  
   if (params.extras) {
+    // subworkflow mash for species determination
     min_hash_distance(ch_clean_reads, ch_contigs, ch_mash_db)
+
     ch_for_summary = ch_for_summary.mix(min_hash_distance.out.for_summary)
-  }
+    ch_for_flag    = ch_for_flag.mix(min_hash_distance.out.for_flag)
 
-  // determining organisms in sample
-  if (params.extras) {
-    average_nucleotide_identity(
-      ch_for_summary.collect(),
-      ch_contigs,
-      ch_fastani_genomes,
-      ch_genome_ref
-    )
-    ch_for_species   = ch_for_species.mix(min_hash_distance.out.for_species).mix(average_nucleotide_identity.out.for_species)
-    ch_for_size      = average_nucleotide_identity.out.for_size.join(min_hash_distance.out.for_size, by: 0)
-    ch_for_genomes   = average_nucleotide_identity.out.for_genomes
-  } else {
-    ch_for_genomes   = Channel.empty()
-  }
+    // determining organisms in sample
+      average_nucleotide_identity(
+        ch_for_summary.collect(),
+        ch_contigs,
+        ch_fastani_genomes,
+        ch_genome_ref)
 
-  // getting all the other information
-  if (params.extras) {
-    information(ch_raw_reads, 
+    ch_for_summary = ch_for_summary.mix(average_nucleotide_identity.out.for_summary)
+    ch_for_flag    = ch_for_flag.mix(average_nucleotide_identity.out.for_flag)
+    ch_top_hit     = ch_top_hit.mix(average_nucleotide_identity.out.top_hit)
+    ch_datasets    = average_nucleotide_identity.out.datasets_summary.ifEmpty('none')
+
+    ch_top_hit_files = ch_top_hit.map {it -> tuple(it[0], it[1])}
+    ch_top_hit_hit   = ch_top_hit.map {it -> tuple(it[0], it[2])}
+
+    min_hash_distance.out.mash_err
+      .groupTuple(by:0)
+      .join(ch_top_hit_hit, by: 0, remainder: true)
+      .join(ch_top_hit_files, by: 0, remainder: true)
+      .combine(ch_genome_sizes)
+      .combine(ch_datasets)
+      .set{ ch_size }
+
+    // getting all the other information
+    information(
+      ch_raw_reads, 
       ch_contigs, 
-      ch_for_species, 
-      ch_for_size.combine(ch_genome_sizes))
-    ch_for_multiqc   = ch_for_multiqc.mix(information.out.for_multiqc)
-    ch_organism      = information.out.organism.map { it -> tuple(it[0] , [it[1], it[2], it[3]] )}
-  } else {
-    ch_organism      = Channel.empty()
-  }
+      ch_for_flag, 
+      ch_size)
+
+    ch_for_summary = ch_for_summary.mix(information.out.for_summary)
+    ch_for_multiqc = ch_for_multiqc.mix(information.out.for_multiqc)
+  } 
 
   // optional subworkflow for comparing shared genes
   if ( params.msa ) { 
-    phylogenetic_analysis(ch_contigs.ifEmpty([]), 
+    phylogenetic_analysis(
+      ch_contigs.ifEmpty([]), 
       ch_gffs.ifEmpty([]), 
-      ch_organism.ifEmpty([]), 
-      ch_for_genomes.ifEmpty([]))
+      ch_top_hit.ifEmpty([]))
     
     ch_for_multiqc   = ch_for_multiqc.mix(phylogenetic_analysis.out.for_multiqc)
   }
 
   // getting a summary of everything
-  
-  if (params.extras) {
-    ch_for_summary
-      .mix(information.out.for_summary)
-      .mix(average_nucleotide_identity.out.for_summary)
-      .concat(summary_script)
-      .flatten()
-      .set { for_summary }
-  
+  if (params.extras) { 
     report(
       ch_raw_reads, 
       ch_fastas, 
       ch_for_multiqc.collect(), 
-      for_summary.collect(), 
+      ch_for_summary.concat(summary_script).collect(), 
       de_novo_alignment.out.fastp_reads, 
       de_novo_alignment.out.phix_reads)
   }
