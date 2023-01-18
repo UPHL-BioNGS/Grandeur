@@ -25,6 +25,6 @@ workflow min_hash_distance {
 
     emit:
         for_summary = summary
-        for_species = mash.out.results
-        for_size    = mash.out.err
+        for_flag    = mash.out.results
+        mash_err    = mash.out.err
 }

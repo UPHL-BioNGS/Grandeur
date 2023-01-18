@@ -22,7 +22,7 @@ workflow kraken2 {
         .set { summary }
 
     emit:
-        for_species = fastqs.out.results.mix(contigs.out.results)
+        for_flag    = fastqs.out.results.mix(contigs.out.results)
         for_summary = summary
         for_multiqc = fastqs.out.for_multiqc.mix(contigs.out.for_multiqc)
 }

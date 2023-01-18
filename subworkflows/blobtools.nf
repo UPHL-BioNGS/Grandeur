@@ -26,7 +26,7 @@ workflow blobtools {
       .set{ summary }
 
   emit:
-    for_species = blobtools_plot.out.results
+    for_flag    = blobtools_plot.out.results
     for_summary = summary
     for_multiqc = bbmap.out.stats
 }
