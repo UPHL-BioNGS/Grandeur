@@ -23,10 +23,13 @@ if [ -z "$(which datasets)" ]   ; then echo "$(date): FATAL : datasets not found
 if [ -z "$(which dataformat)" ] ; then echo "$(date): FATAL : dataformat not found" ; exit 1 ; fi
 if [ -z "$(which mash)" ]       ; then echo "$(date): FATAL : mash not found"       ; exit 1 ; fi
 
+# Setting final directory
+if [ -z "$1" ] ; then out=new_mash ; else out=$1 ; fi
+
 echo "$(date): Getting ids for representative genomes"
 
-mkdir new_mash
-cd new_mash
+mkdir $out
+cd $out
 
 datasets summary genome taxon bacteria --reference --as-json-lines | \
   dataformat tsv genome --fields accession,assminfo-refseq-category,organism-name --elide-header | \
