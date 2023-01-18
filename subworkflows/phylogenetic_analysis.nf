@@ -8,26 +8,32 @@ workflow phylogenetic_analysis {
   take:
     ch_contigs
     ch_gff
-    ch_organism
-    ch_genomes
+    ch_top_hit
 
   main:
+    for_prokka = Channel.empty()
     if (params.extras) {
-      representative(ch_organism.map{ it -> it[1][2]}.unique().combine(ch_genomes))
+      ch_top_hit
+        .map { it -> tuple( it[0] , [ it[1].split("/")[1].split("_")[0], it[1].split("/")[1].split("_")[1]] )}
+        .set { ch_organism }
 
       if ( params.fastani_include ) {
-        ch_representative = representative.out.representative.map{ it -> tuple(it[3], it[0] , [it[1], it[2], it[3]] )}
+        ch_top_hit
+          .map { it -> tuple( it[1].split("/")[1].split("_", 3)[2].replaceAll(~/.fna/,""), it[2], it[1].split("/")[1].split("_")[0, 1]) }
+          .groupTuple(by: 0)
+          .map { it -> tuple( it[0], it[1][0], it[2][0] ) }
+          .unique()
+          .set { ch_representative }
 
-        ch_contigs
-          .join(ch_organism, by: 0, remainder: true)
-          .mix(ch_representative)
-          .set { for_prokka }
-      } else {
-        for_prokka = ch_contigs.join(ch_organism, by: 0, remainder: true)
+        for_prokka = for_prokka.mix(ch_representative)
       }
     } else {
-      for_prokka = ch_contigs.map{ it -> tuple(it[0], it[1], 'null')}
+      ch_organism = Channel.empty()
     }
+
+    ch_contig_organism = ch_contigs.join( ch_organism, by: 0, remainder: true)
+
+    for_prokka = for_prokka.mix(ch_contig_organism)
 
     prokka( for_prokka )
     roary(prokka.out.gffs.concat(ch_gff).collect())
