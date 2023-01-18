@@ -70,7 +70,7 @@ process decompression {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    tar -xvf !{compressed}
+    zcat !{compressed} | tar -xvf -
     rm !{compressed}
 
     if [ ! -d "genomes" ]
@@ -110,7 +110,16 @@ process flag {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    awk -F "," '{if ($4 > 90) print $0}' *fastani.csv > smaller_fastani.csv
+    if [ -f "!{sample}_fastani.csv" ]
+    then 
+      awk -F "," '{if ($4 > 90) print $0}' !{sample}_fastani.csv > smaller_fastani.csv
+      genus=$(head   -n 2 !{sample}_fastani.csv | tail -n 1 | cut -f 2 -d , | cut -f 2 -d '/' | cut -f 1 -d "_")
+      species=$(head -n 2 !{sample}_fastani.csv | tail -n 1 | cut -f 2 -d , | cut -f 2 -d '/' | cut -f 2 -d "_")
+    else
+      touch smaller_fastani.csv
+      genus="unknown"
+      species="unknown"
+    fi
 
     files=$(ls !{files} | grep -v fastani)
 
@@ -129,8 +138,6 @@ process flag {
     find_klebsiella=$(head -n 10 $files smaller_fastani.csv | grep -e "Klebsiella" -e "Enterobacter" -e "Serratia" | tee -a $log_file | head -n 1 )
     if [ -n "$find_klebsiella" ] ; then klebsiella_flag="found" ; else klebsiella_flag="not" ; fi
 
-    genus=$(head   -n 2 !{sample}_fastani.csv | tail -n 1 | cut -f 2 -d , | cut -f 2 -d '/' | cut -f 1 -d "_")
-    species=$(head -n 2 !{sample}_fastani.csv | tail -n 1 | cut -f 2 -d , | cut -f 2 -d '/' | cut -f 2 -d "_")
     if [ -z "$genus" ]   ; then genus=unknown ; fi
     if [ -z "$species" ] ; then species=unknown ; fi
   '''
@@ -145,7 +152,7 @@ process size {
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
     
   input:
-  tuple val(sample), file(fastani), file(datasets_summary), file(mash_err), file(genome_sizes)
+  tuple val(sample), file(mash_err), val(top_hit), file(fastani), file(genome_sizes), file(datasets_summary)
 
   output:
   tuple val(sample), env(size)                                   , emit: size
@@ -154,7 +161,7 @@ process size {
 
   shell:
   '''
-    mkdir -p logs/!{task.process}
+    mkdir -p size logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
 
     # time stamp + capturing tool versions
@@ -163,16 +170,20 @@ process size {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    top_hit=$(head -n 2 !{fastani} | tail -n 1 | cut -f 3 -d ',' | cut -f 2 -d '/')
-    echo $top_hit
+    echo "This process is still here for a placeholder. Sometimes when contamination occurs, the genome size from mash is very different than the expectation. TBC" >> $log_file
 
-    genus=$(echo $top_hit     | cut -f 1 -d "_")
-    species=$(echo $top_hit   | cut -f 2 -d "_")
-    accession=$(echo $top_hit | sed 's/.*_GC/GC/g' | cut -f 1,2 -d '.')
-
-    echo "This is put as a placeholder. Sometimes when contamination occurs, the genome size from mash is very different than the expectation." >> $log_file
-
+    mash_size="NA"
+    expected_size="NA"
+    top_hit_size="NA"
+    ncbi_size="NA"
     size=''
+
+    genus=$(echo !{top_hit} | cut -f 2 -d "/" | cut -f 1 -d "_" )
+    species=$(echo !{top_hit} | cut -f 2 -d "_" )
+    accession=$(echo !{top_hit} | sed 's/.*_GC/GC/g' | cut -f 1,2 -d '.' )
+
+    top_hit_size=$(grep -v ">" !{fastani} | wc -c )
+    size=$top_hit_size
 
     genus_check=$(grep -v '#' !{genome_sizes} | grep $genus | head -n 1)
     if [ -n "$genus_check" ]
@@ -182,7 +193,7 @@ process size {
       if [ -n "$species_check" ]
       then
         expected_size=$(grep -v '#' !{genome_sizes} | grep $genus | grep $species | awk '{print $3}' | sed 's/,$//g' | head -n 1)
-        echo "The expected size based on the $genus and $species is $expected_size" | tee -a $log_file
+        echo "The expected size based on $genus and $species is $expected_size" | tee -a $log_file
         size=$expected_size
       else
         expected_size=$(grep -v '#' !{genome_sizes} | grep $genus | awk '{print $3}' | sed 's/,$//g' | head -n 1)
@@ -191,20 +202,25 @@ process size {
       fi
     else
       expected_size="not found"
-      echo "The expected size based on the $genus and $species was not found" | tee -a $log_file
+      echo "The expected size based on $genus and $species was not found" | tee -a $log_file
     fi
 
-    mash_size=$(grep "Estimated genome size" !{mash_err} | awk '{print $4 }')
+    mash_size="$(grep "Estimated genome size" !{mash_err} | awk '{print $4 }' | sort -r | tr '\\n' ' ' )"
     echo "The expected size based on kmers from mash is $mash_size" | tee -a $log_file
     
     if [ -f "datasets_summary.csv" ]
     then
-      datasets_size=$(grep $accession datasets_summary.csv | cut -f 5 -d ",")
+      datasets_size=$(grep $accession datasets_summary.csv | cut -f 5 -d "," )
       echo "The expected size based on the fastANI top hit is $datasets_size" | tee -a $log_file
       size=$datasets_size
     fi
 
-    if [ -z "$size" ] ; then size=$mash_size ; fi
+    echo "sample,expected,top_hit,ncbi,mash" > size/!{sample}_size.csv
+    echo "!{sample},$expected_size,$top_hit_size,$ncbi_size,$mash_size" >> size/!{sample}_size.csv
+
+    if [ -z "$size" ] ; then size=$(echo $mash_size | cut -f 1 -d " " ) ; fi
+    
+    echo "The final size is $size" | tee -a $log_file
   '''
 }
 
