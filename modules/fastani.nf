@@ -2,7 +2,8 @@ process fastani {
   tag           "${sample}"
   label         "medcpus"
   stageInMode   "copy"
-  publishDir    params.outdir, mode: 'copy'
+  publishDir    path: params.outdir, mode: 'copy', pattern: 'logs/*/*log'
+  publishDir    path: params.outdir, mode: 'copy', pattern: 'fastani/*' 
   container     'staphb/fastani:1.33'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
@@ -12,8 +13,10 @@ process fastani {
   tuple val(sample), file(contigs), path(genomes)
 
   output:
-  tuple val(sample), file("fastani/${sample}_fastani.csv")       , emit: results
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
+  tuple val(sample), file("fastani/${sample}_fastani.csv")          , emit: results
+  tuple val(sample), env(top_hit), file("top_hit/*"), optional: true, emit: top_hit
+  path "fastani/*"                                                  , emit: everything
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log"   , emit: log
 
   shell:
   '''
@@ -38,6 +41,9 @@ process fastani {
       | tee -a $log_file
 
     echo "sample,query,reference,ANI estimate,total query sequence fragments,fragments aligned as orthologous matches" > fastani/!{sample}_fastani.csv
-    cat fastani/!{sample}.txt | tr "\\t" "," | awk -v sample=!{sample} '{ print sample "," $0 }' >> fastani/!{sample}_fastani.csv
+    cat fastani/!{sample}.txt | sed 's/,//g' | tr "\\t" "," | awk -v sample=!{sample} '{ print sample "," $0 }' >> fastani/!{sample}_fastani.csv
+
+    top_hit=$(head -n 2 fastani/!{sample}_fastani.csv | tail -n 1 | cut -f 3 -d , )
+    if [ -f "$top_hit" ]; then mkdir -p top_hit ; cp $top_hit top_hit/. ; fi
   '''
 }
