@@ -320,7 +320,6 @@ workflow {
     ch_top_hit_hit   = ch_top_hit.map {it -> tuple(it[0], it[2])}
 
     min_hash_distance.out.mash_err
-      .groupTuple(by:0)
       .join(ch_top_hit_hit, by: 0, remainder: true)
       .join(ch_top_hit_files, by: 0, remainder: true)
       .combine(ch_genome_sizes)
