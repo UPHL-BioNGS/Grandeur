@@ -34,7 +34,7 @@ process fastqscan {
       -g !{size} \
       | tee -a fastq-scan/!{sample}_fastqscan.json
 
-    head -n 19 fastq-scan/!{sample}_fastqscan.json | tail -n 17 | awk '{print $1}' | sed 's/://g' | tr "\\n" "," | sed 's/,$/\\n/g' | awk '{print "sample," $0 }'                      >  fastq-scan/!{sample}_fastqscan.csv
-    head -n 19 fastq-scan/!{sample}_fastqscan.json | tail -n 17 | awk '{print $2}' | sed 's/,//g' | tr "\\n" "," | sed 's/,$/\\n/g' | awk -v sample=!{sample} '{print sample "," $0 }' >> fastq-scan/!{sample}_fastqscan.csv
+    head -n 19 fastq-scan/!{sample}_fastqscan.json | tail -n 17 | awk '{print $1}' | sed 's/://g' | tr "\\n" "," | sed 's/,$/\\n/g' | awk '{print "sample,expected_size," $0 }' >  fastq-scan/!{sample}_fastqscan.csv
+    head -n 19 fastq-scan/!{sample}_fastqscan.json | tail -n 17 | awk '{print $2}' | sed 's/,//g' | tr "\\n" "," | sed 's/,$/\\n/g' | awk -v sample=!{sample} -v size=!{size} '{print sample "," size "," $0 }' >> fastq-scan/!{sample}_fastqscan.csv
   '''
 }
