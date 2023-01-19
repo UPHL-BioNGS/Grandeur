@@ -97,11 +97,12 @@ process flag {
   tuple val(sample), env(klebsiella_flag)                        , emit: klebsiella_flag
   tuple val(sample), env(ecoli_flag)                             , emit: ecoli_flag
   tuple val(sample), env(genus), env(species)                    , emit: organism
+  path "flag/${sample}_flag.csv"                                 , emit: collect
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log_files
 
   shell:
   '''
-    mkdir -p logs/!{task.process}
+    mkdir -p flag logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
 
     # time stamp + capturing tool versions
@@ -140,6 +141,9 @@ process flag {
 
     if [ -z "$genus" ]   ; then genus=unknown ; fi
     if [ -z "$species" ] ; then species=unknown ; fi
+
+    echo "sample,genus,species,salmonella_flag,ecoli_flag,klebsiella_flag" > flag/!{sample}_flag.csv
+    echo "!{sample},$genus,$species,$salmonella_flag,$ecoli_flag,$klebsiella_flag" >> flag/!{sample}_flag.csv
   '''
 }
 
@@ -152,11 +156,12 @@ process size {
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
     
   input:
-  tuple val(sample), file(mash_err), val(top_hit), file(fastani), file(genome_sizes), file(datasets_summary)
+  tuple val(sample), file(mash_err), file(fastani), val(top_hit), file(genome_sizes), file(datasets_summary)
 
   output:
   tuple val(sample), env(size)                                   , emit: size
   tuple val(sample), env(genus), env(species), env(accession)    , emit: organism
+  path "size/${sample}_size.csv"                                 , emit: collect
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log_files
 
   shell:
@@ -205,18 +210,21 @@ process size {
       echo "The expected size based on $genus and $species was not found" | tee -a $log_file
     fi
 
-    mash_size="$(grep "Estimated genome size" !{mash_err} | awk '{print $4 }' | sort -r | tr '\\n' ' ' )"
+    mash_size="$(grep "Estimated genome size" !{mash_err} | awk '{print $4 }' | sort -gr | tr '\\n' ' ' )"
     echo "The expected size based on kmers from mash is $mash_size" | tee -a $log_file
     
     if [ -f "datasets_summary.csv" ]
     then
-      datasets_size=$(grep $accession datasets_summary.csv | cut -f 5 -d "," )
-      echo "The expected size based on the fastANI top hit is $datasets_size" | tee -a $log_file
-      size=$datasets_size
+      ncbi_size=$(grep $accession datasets_summary.csv | cut -f 5 -d "," )
+      echo "The expected size based on the fastANI top hit is $ncbi_size" | tee -a $log_file
+      size=$ncbi_size
+    else
+      echo "datasets wasn't there!"
+      exit 1
     fi
 
-    echo "sample,expected,top_hit,ncbi,mash" > size/!{sample}_size.csv
-    echo "!{sample},$expected_size,$top_hit_size,$ncbi_size,$mash_size" >> size/!{sample}_size.csv
+    echo "sample,genus,species,accession,size,expected,top_hit,ncbi,mash" > size/!{sample}_size.csv
+    echo "!{sample},$genus,$species,$accession,$size,$expected_size,$top_hit_size,$ncbi_size,$mash_size" >> size/!{sample}_size.csv
 
     if [ -z "$size" ] ; then size=$(echo $mash_size | cut -f 1 -d " " ) ; fi
     
