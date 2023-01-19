@@ -7,11 +7,10 @@ workflow min_hash_distance {
         ch_mash_db
   
     main:
-
         if (params.mash_db) {
-            mash(ch_reads.mix(ch_contigs).combine(ch_mash_db.ifEmpty([])))
+            mash(ch_contigs.join(ch_reads, by: 0, remainder: true).combine(ch_mash_db.ifEmpty([])))
         } else {
-            mash(ch_reads.mix(ch_contigs).map{it -> tuple(it[0], it[1], '/db/RefSeqSketchesDefaults.msh')})
+            mash(ch_contigs.join(ch_reads, by: 0, remainder: true).map{it -> tuple(it[0], it[1], it[2], '/db/RefSeqSketchesDefaults.msh')})
         }
 
         mash.out.results
