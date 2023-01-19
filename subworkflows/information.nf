@@ -19,7 +19,6 @@ workflow information {
     ch_size
 
   main:
-    //ch_size.groupTuple(by:0).view()
     // fastq files
     size(ch_size)
     fastqscan(ch_reads.join(size.out.size, by: 0))
@@ -31,7 +30,7 @@ workflow information {
     plasmidfinder(ch_contigs)
 
     // species specific
-    flag(ch_flag.groupTuple(by: 0))
+    flag(ch_flag.groupTuple())
     amrfinderplus(ch_contigs.join(flag.out.organism,    by:0))       
     kleborate(ch_contigs.join(flag.out.klebsiella_flag, by:0))
     seqsero2(ch_contigs.join(flag.out.salmonella_flag,  by:0))
@@ -51,6 +50,13 @@ workflow information {
         sort: { file -> file.text },
         storeDir: "${params.outdir}/fastq-scan")
       .set{ fastqscan_summary }
+
+    flag.out.collect
+      .collectFile(name: "flag_summary.csv",
+        keepHeader: true,
+        sort: {file -> file.text },
+        storeDir: "${params.outdir}/flag")
+      .set { flag_summary }
 
     mlst.out.collect
       .collectFile(name: "mlst_summary.csv",
@@ -100,6 +106,14 @@ workflow information {
         sort: { file -> file.text },
         storeDir: "${params.outdir}/shigatyper")
       .set{ shigatyper_summary }
+
+    size.out.collect
+      .collectFile(name: "size_results.csv",
+        keepHeader: true,
+        sort: { file ->file.text },
+        storeDir: "${params.outdir}/size")
+      .set{ size_summary }
+
 
     amrfinderplus.out.collect
       .collectFile(name: "amrfinderplus.txt",
