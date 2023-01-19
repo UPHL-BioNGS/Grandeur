@@ -3,6 +3,7 @@ process shigatyper {
   label         "medcpus"
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/shigatyper:2.0.1'
+  stageInMode   'copy'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA cpus   4
@@ -36,7 +37,7 @@ process shigatyper {
       --name !{sample} \
       | tee -a $log_file
 
-    hits=$(find shigatyper -iname "*hits.tsv" | head -n 1)
+    hits=$(find . -iname "*hits.tsv" | head -n 1)
     if [ -f "$hits" ]
     then
       head -n 1  $hits | awk '{print "sample\\t" $0}' > shigatyper/!{sample}_shigatyper-hits.tsv
