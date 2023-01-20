@@ -305,11 +305,11 @@ workflow {
     ch_for_flag    = ch_for_flag.mix(min_hash_distance.out.for_flag)
 
     // determining organisms in sample
-      average_nucleotide_identity(
-        ch_for_summary.collect(),
-        ch_contigs,
-        ch_fastani_genomes,
-        ch_genome_ref)
+    average_nucleotide_identity(
+      ch_for_summary.collect(),
+      ch_contigs,
+      ch_fastani_genomes,
+      ch_genome_ref)
 
     ch_for_summary = ch_for_summary.mix(average_nucleotide_identity.out.for_summary)
     ch_for_flag    = ch_for_flag.mix(average_nucleotide_identity.out.for_flag)
