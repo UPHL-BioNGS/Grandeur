@@ -29,6 +29,7 @@ process datasets_summary {
 
     datasets summary genome taxon "$taxon" --reference  --limit !{params.datasets_max_genomes} --as-json-lines | \
       dataformat tsv genome --fields accession,assminfo-refseq-category,assminfo-level,organism-name,assmstats-total-ungapped-len | \
+      grep -v Homo | \
       tr '\\t' ',' \
       > datasets/!{taxon}_genomes.csv
   '''
