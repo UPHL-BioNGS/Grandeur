@@ -74,7 +74,7 @@ process mash {
 
     while read line
     do
-      organism=$(echo $line | cut -f 8 -d "-" | cut -f 1,2 -d "_" | cut -f 1 -d ".")
+      organism=$(echo $line | cut -f 3,4 -d "_" )
       echo $line | sed 's/,//g' | awk -v sample=!{sample} -v org=$organism '{print sample "," $1 "," $2 "," $3 "," $4 "," $5 "," org}' >> mash/!{sample}.summary.mash.csv
     done < mash/!{sample}.mashdist.txt
     '''
