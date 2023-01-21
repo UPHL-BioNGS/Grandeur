@@ -38,7 +38,7 @@ process kraken2_fastq {
       | tee -a $log_file
 
     echo "Sample,Type,Percentage of fragments,Number of fragments,Number of fragments assigned directly to this taxon,Rank code,NCBI taxonomic ID number,Scientific name" > kraken2/!{sample}_reads_summary_kraken2.csv
-    cat kraken2/!{sample}_kraken2_report_reads.txt | grep -w S | \
+    cat kraken2/!{sample}_kraken2_report_reads.txt | grep -w S | sed 's/,//g' | \
       awk -v sample=!{sample} '{ if ($1 >= 5 ) print sample ",reads," $1 "," $2 "," $3 "," $4 "," $5 "," $6 "_" $7 }' | \
       sort >> kraken2/!{sample}_reads_summary_kraken2.csv
   '''
