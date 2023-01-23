@@ -4,7 +4,9 @@ process blobtools_create {
   container     'chrishah/blobtools:v1.1.1'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
+  //#UPHLICA cpus 3
+  //#UPHLICA memory 2.GB
   
   input:
   tuple val(sample), file(contig), file(blastn), file(bam)
@@ -41,7 +43,9 @@ process blobtools_view {
   container     'chrishah/blobtools:v1.1.1'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
+  //#UPHLICA cpus 3
+  //#UPHLICA memory 1.GB
   
   input:
   tuple val(sample), file(json)
@@ -75,7 +79,9 @@ process blobtools_plot {
   container     'chrishah/blobtools:v1.1.1'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
+  //#UPHLICA cpus 3
+  //#UPHLICA memory 1.GB
   
   input:
   tuple val(sample), file(json)

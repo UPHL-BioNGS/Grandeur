@@ -5,6 +5,8 @@ process species {
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
+  //#UPHLICA memory 1.GB
+  //#UPHLICA cpus 3
   
   input:
   file(results)
@@ -51,7 +53,9 @@ process decompression {
   stageInMode   'copy'
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
-  
+  //#UPHLICA memory 1.GB
+  //#UPHLICA cpus 3
+
   input:
   file(compressed)
 
@@ -88,7 +92,9 @@ process flag {
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
-    
+  //#UPHLICA memory 1.GB
+  //#UPHLICA cpus 3
+
   input:
   tuple val(sample), file(files)
 
@@ -154,6 +160,8 @@ process size {
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
+  //#UPHLICA memory 1.GB
+  //#UPHLICA cpus 3
     
   input:
   tuple val(sample), file(mash_err), file(fastani), val(top_hit), file(genome_sizes), file(datasets_summary)
@@ -190,18 +198,25 @@ process size {
     top_hit_size=$(grep -v ">" !{fastani} | wc -c )
     size=$top_hit_size
 
+    if [ -f "datasets_summary.csv" ]
+    then
+      ncbi_size=$(grep $accession datasets_summary.csv | cut -f 5 -d "," | head -n 1 )
+      echo "The expected size based on the fastANI top hit is $ncbi_size" | tee -a $log_file
+      size=$ncbi_size
+    fi
+
     genus_check=$(grep -v '#' !{genome_sizes} | grep $genus | head -n 1)
     if [ -n "$genus_check" ]
     then
-      species_check=$(grep -v '#' !{genome_sizes} | grep $genus | grep $species | head -n 1)
+      species_check=$(grep -v '#' !{genome_sizes} | grep $genus | grep $species | head -n 1 )
       
       if [ -n "$species_check" ]
       then
-        expected_size=$(grep -v '#' !{genome_sizes} | grep $genus | grep $species | awk '{print $3}' | sed 's/,$//g' | head -n 1)
+        expected_size=$(grep -v '#' !{genome_sizes} | grep $genus | grep $species | awk '{print $3}' | sed 's/,$//g' | head -n 1 )
         echo "The expected size based on $genus and $species is $expected_size" | tee -a $log_file
         size=$expected_size
       else
-        expected_size=$(grep -v '#' !{genome_sizes} | grep $genus | awk '{print $3}' | sed 's/,$//g' | head -n 1)
+        expected_size=$(grep -v '#' !{genome_sizes} | grep $genus | awk '{print $3}' | sed 's/,$//g' | head -n 1 )
         echo "The expected size based on using $genus is $expected_size" | tee -a $log_file
         size=$expected_size
       fi
@@ -213,16 +228,6 @@ process size {
     mash_size="$(grep "Estimated genome size" !{mash_err} | awk '{print $4 }' | sort -gr | tr '\\n' ' ' )"
     echo "The expected size based on kmers from mash is $mash_size" | tee -a $log_file
     
-    if [ -f "datasets_summary.csv" ]
-    then
-      ncbi_size=$(grep $accession datasets_summary.csv | cut -f 5 -d "," )
-      echo "The expected size based on the fastANI top hit is $ncbi_size" | tee -a $log_file
-      size=$ncbi_size
-    else
-      echo "datasets wasn't there!"
-      exit 1
-    fi
-
     echo "sample,genus,species,accession,size,expected,top_hit,ncbi,mash" > size/!{sample}_size.csv
     echo "!{sample},$genus,$species,$accession,$size,$expected_size,$top_hit_size,$ncbi_size,$mash_size" >> size/!{sample}_size.csv
 
@@ -238,7 +243,9 @@ process representative {
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
-    
+  //#UPHLICA memory 1.GB
+  //#UPHLICA cpus 3
+
   input:
   tuple val(accession), path(genomes)
 

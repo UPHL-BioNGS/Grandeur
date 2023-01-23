@@ -5,8 +5,9 @@ process plasmidfinder {
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
-  //#UPHLICA cpus   3
-  
+  //#UPHLICA memory 1.GB
+  //#UPHLICA cpus 3
+
   input:
   tuple val(sample), file(file)
 

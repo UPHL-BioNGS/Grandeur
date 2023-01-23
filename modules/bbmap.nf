@@ -4,8 +4,9 @@ process bbduk {
   container     'staphb/bbtools:38.98'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  //#UPHLICA cpus          3
-  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
+  //#UPHLICA cpus 3
+  //#UPHLICA memory 5.GB
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
 
   input:
   tuple val(sample), file(reads)
@@ -51,8 +52,9 @@ process bbmap {
   container     'staphb/bbtools:38.98'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  //#UPHLICA cpus          3
-  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
+  //#UPHLICA cpus 6
+  //#UPHLICA memory 16.GB
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
 
   input:
   tuple val(sample), file(fastq), file(contigs)
