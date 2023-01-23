@@ -41,25 +41,25 @@
                     <pd:label>kraken2_db</pd:label>
                     <pd:description locked="false"></pd:description>
                     <pd:stringType/>
-                    <pd:value>TO BE REPLACED ASK JOHN</pd:value>
+                    <pd:value>kraken2_db</pd:value>
                 </pd:parameter>
                 <pd:parameter code="blast_db" minValues="1" maxValues="1" classification="USER">
                     <pd:label>blast_db</pd:label>
                     <pd:description locked="false"></pd:description>
                     <pd:stringType/>
-                    <pd:value>TO BE REPLACED ASK JOHN</pd:value>
+                    <pd:value>blast_db</pd:value>
                 </pd:parameter>
                 <pd:parameter code="mash_db" minValues="1" maxValues="1" classification="USER">
                     <pd:label>mash_db</pd:label>
                     <pd:description locked="false"></pd:description>
                     <pd:stringType/>
-                    <pd:value>TO BE REPLACED ASK JOHN</pd:value>
+                    <pd:value>new_mash</pd:value>
                 </pd:parameter>
                 <pd:parameter code="sra_accessions" minValues="1" maxValues="1" classification="USER">
                     <pd:label>sra_accessions</pd:label>
                     <pd:description locked="false"></pd:description>
                     <pd:stringType/>
-                    <pd:value>""</pd:value>
+                    <pd:value></pd:value>
                 </pd:parameter>
                 <pd:parameter code="blast_db_type" minValues="1" maxValues="1" classification="USER">
                     <pd:label>blast_db_type</pd:label>
@@ -83,7 +83,7 @@
                     <pd:label>iqtree2_outgroup</pd:label>
                     <pd:description locked="false"></pd:description>
                     <pd:stringType/>
-                    <pd:value>""</pd:value>
+                    <pd:value></pd:value>
                 </pd:parameter>
                 <pd:parameter code="mash_max_hits" minValues="1" maxValues="1" classification="USER">
                     <pd:label>mash_max_hits</pd:label>
@@ -107,7 +107,7 @@
                     <pd:label>amrfinderplus_options</pd:label>
                     <pd:description locked="false"></pd:description>
                     <pd:stringType/>
-                    <pd:value>""</pd:value>
+                    <pd:value></pd:value>
                 </pd:parameter>
                 <pd:parameter code="bbduk_options" minValues="1" maxValues="1" classification="USER">
                     <pd:label>bbduk_options</pd:label>
@@ -119,7 +119,7 @@
                     <pd:label>bbmap_options</pd:label>
                     <pd:description locked="false"></pd:description>
                     <pd:stringType/>
-                    <pd:value>""</pd:value>
+                    <pd:value></pd:value>
                 </pd:parameter>
                 <pd:parameter code="blastn_options" minValues="1" maxValues="1" classification="USER">
                     <pd:label>blastn_options</pd:label>
@@ -131,13 +131,13 @@
                     <pd:label>blobtools_create_options</pd:label>
                     <pd:description locked="false"></pd:description>
                     <pd:stringType/>
-                    <pd:value>""</pd:value>
+                    <pd:value></pd:value>
                 </pd:parameter>
                 <pd:parameter code="blobtools_view_options" minValues="1" maxValues="1" classification="USER">
                     <pd:label>blobtools_view_options</pd:label>
                     <pd:description locked="false"></pd:description>
                     <pd:stringType/>
-                    <pd:value>""</pd:value>
+                    <pd:value></pd:value>
                 </pd:parameter>
                 <pd:parameter code="blobtools_plot_options" minValues="1" maxValues="1" classification="USER">
                     <pd:label>blobtools_plot_options</pd:label>
@@ -149,7 +149,7 @@
                     <pd:label>blobtools_bbmap_options</pd:label>
                     <pd:description locked="false"></pd:description>
                     <pd:stringType/>
-                    <pd:value>""</pd:value>
+                    <pd:value></pd:value>
                 </pd:parameter>
                 <pd:parameter code="fastani_options" minValues="1" maxValues="1" classification="USER">
                     <pd:label>fastani_options</pd:label>
@@ -161,7 +161,7 @@
                     <pd:label>fasterqdump_options</pd:label>
                     <pd:description locked="false"></pd:description>
                     <pd:stringType/>
-                    <pd:value>""</pd:value>
+                    <pd:value></pd:value>
                 </pd:parameter>
                 <pd:parameter code="fastp_options" minValues="1" maxValues="1" classification="USER">
                     <pd:label>fastp_options</pd:label>
@@ -173,13 +173,13 @@
                     <pd:label>fastqc_options</pd:label>
                     <pd:description locked="false"></pd:description>
                     <pd:stringType/>
-                    <pd:value>""</pd:value>
+                    <pd:value></pd:value>
                 </pd:parameter>
                 <pd:parameter code="fastqscan_options" minValues="1" maxValues="1" classification="USER">
                     <pd:label>fastqscan_options</pd:label>
                     <pd:description locked="false"></pd:description>
                     <pd:stringType/>
-                    <pd:value>""</pd:value>
+                    <pd:value></pd:value>
                 </pd:parameter>
                 <pd:parameter code="iqtree2_options" minValues="1" maxValues="1" classification="USER">
                     <pd:label>iqtree2_options</pd:label>
@@ -197,7 +197,7 @@
                     <pd:label>kraken2_options</pd:label>
                     <pd:description locked="false"></pd:description>
                     <pd:stringType/>
-                    <pd:value>""</pd:value>
+                    <pd:value></pd:value>
                 </pd:parameter>
                 <pd:parameter code="mash_sketch_options" minValues="1" maxValues="1" classification="USER">
                     <pd:label>mash_sketch_options</pd:label>
@@ -215,19 +215,19 @@
                     <pd:label>mlst_options</pd:label>
                     <pd:description locked="false"></pd:description>
                     <pd:stringType/>
-                    <pd:value>""</pd:value>
+                    <pd:value></pd:value>
                 </pd:parameter>
                 <pd:parameter code="multiqc_options" minValues="1" maxValues="1" classification="USER">
                     <pd:label>multiqc_options</pd:label>
                     <pd:description locked="false"></pd:description>
                     <pd:stringType/>
-                    <pd:value>""</pd:value>
+                    <pd:value></pd:value>
                 </pd:parameter>
                 <pd:parameter code="plasmidfinder_options" minValues="1" maxValues="1" classification="USER">
                     <pd:label>plasmidfinder_options</pd:label>
                     <pd:description locked="false"></pd:description>
                     <pd:stringType/>
-                    <pd:value>""</pd:value>
+                    <pd:value></pd:value>
                 </pd:parameter>
                 <pd:parameter code="prokka_options" minValues="1" maxValues="1" classification="USER">
                     <pd:label>prokka_options</pd:label>
@@ -239,13 +239,13 @@
                     <pd:label>quast_options</pd:label>
                     <pd:description locked="false"></pd:description>
                     <pd:stringType/>
-                    <pd:value>""</pd:value>
+                    <pd:value></pd:value>
                 </pd:parameter>
                 <pd:parameter code="roary_options" minValues="1" maxValues="1" classification="USER">
                     <pd:label>roary_options</pd:label>
                     <pd:description locked="false"></pd:description>
                     <pd:stringType/>
-                    <pd:value>""</pd:value>
+                    <pd:value></pd:value>
                 </pd:parameter>
                 <pd:parameter code="seqsero2_options" minValues="1" maxValues="1" classification="USER">
                     <pd:label>seqsero2_options</pd:label>
@@ -257,13 +257,13 @@
                     <pd:label>serotypefinder_options</pd:label>
                     <pd:description locked="false"></pd:description>
                     <pd:stringType/>
-                    <pd:value>""</pd:value>
+                    <pd:value></pd:value>
                 </pd:parameter>
                 <pd:parameter code="shigatyper_options" minValues="1" maxValues="1" classification="USER">
                     <pd:label>shigatyper_options</pd:label>
                     <pd:description locked="false"></pd:description>
                     <pd:stringType/>
-                    <pd:value>""</pd:value>
+                    <pd:value></pd:value>
                 </pd:parameter>
                 <pd:parameter code="snp_dists_options" minValues="1" maxValues="1" classification="USER">
                     <pd:label>snp_dists_options</pd:label>
