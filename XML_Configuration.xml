@@ -53,7 +53,7 @@
                     <pd:label>mash_db</pd:label>
                     <pd:description locked="false"></pd:description>
                     <pd:stringType/>
-                    <pd:value>new_mash</pd:value>
+                    <pd:value>new_mash/rep-genomes.msh</pd:value>
                 </pd:parameter>
                 <pd:parameter code="sra_accessions" minValues="1" maxValues="1" classification="USER">
                     <pd:label>sra_accessions</pd:label>
