@@ -38,5 +38,7 @@ process iqtree2 {
       -ntmax !{task.cpus} \
       $outgroup \
       | tee -a $log_file
+
+    if [ -f "iqtree2/iqtree.treefile" ]; then cp iqtree2/iqtree.treefile iqtree2/iqtree.treefile.nwk ; fi
   '''
 }
