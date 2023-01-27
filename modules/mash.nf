@@ -64,9 +64,9 @@ process mash {
     then
       echo "!{sample} had no mash results with '!{params.mash_dist_options}'. Trying again without those parameters." | tee -a $log_file
         
-      if [ -f "!{sample}.fastq.msh" ] ; then mash dist -p !{task.cpus} $reference !{sample}.fastq.msh >> mash/!{sample}.mashdist.txt.tmp ; fi
+      if [ -s "!{sample}.fastq.msh" ] ; then mash dist -p !{task.cpus} $reference !{sample}.fastq.msh >> mash/!{sample}.mashdist.txt.tmp ; fi
 
-      if [ -f "!{sample}.fasta.msh" ] ; then mash dist -p !{task.cpus} $reference !{sample}.fasta.msh >> mash/!{sample}.mashdist.txt.tmp ; fi
+      if [ -s "!{sample}.fasta.msh" ] ; then mash dist -p !{task.cpus} $reference !{sample}.fasta.msh >> mash/!{sample}.mashdist.txt.tmp ; fi
     fi
 
     sort -gk3 mash/!{sample}.mashdist.txt.tmp | head -n !{params.mash_max_hits} > mash/!{sample}.mashdist.txt
@@ -124,9 +124,9 @@ process mash {
     then
       echo "!{sample} had no mash results with '!{params.mash_dist_options}'. Trying again without those parameters." | tee -a $log_file
         
-      if [ -f "!{sample}.fastq.msh" ] ; then mash dist -p !{task.cpus} $reference !{sample}.fastq.msh >> mash/!{sample}.mashdist.txt.tmp ; fi
+      if [ -s "!{sample}.fastq.msh" ] ; then mash dist -p !{task.cpus} $reference !{sample}.fastq.msh >> mash/!{sample}.mashdist.txt.tmp ; fi
 
-      if [ -f "!{sample}.fasta.msh" ] ; then mash dist -p !{task.cpus} $reference !{sample}.fasta.msh >> mash/!{sample}.mashdist.txt.tmp ; fi
+      if [ -s "!{sample}.fasta.msh" ] ; then mash dist -p !{task.cpus} $reference !{sample}.fasta.msh >> mash/!{sample}.mashdist.txt.tmp ; fi
     fi
 
     sort -gk3 mash/!{sample}.mashdist.txt.tmp | head -n !{params.mash_max_hits} > mash/!{sample}.mashdist.txt
