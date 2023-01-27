@@ -66,7 +66,7 @@
             "description": "turns off blobtools, kraken2, fastani, mash, and report generation subworkflows"
         },
         "fastani_include": {
-            "type": "string",
+            "type": "boolean",
             "description": "adds fastani top hit to msa"
         },
         "fastani_options": {
