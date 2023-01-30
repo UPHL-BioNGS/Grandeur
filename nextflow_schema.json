@@ -5,26 +5,7 @@
     "description": "Grandeur is short-read de novo assembly pipeline with serotyping.",
     "type": "object",
     "properties": {
-<<<<<<< HEAD
         "amrfinderplus_options": {
-=======
-        "outdir": {
-            "type": "string",
-            "description": "result output directory",
-            "default": "grandeur"
-        },
-        "maxcpus": {
-            "type": "number",
-            "default": 12,
-            "description": "the maximum amount of CPUs given to any one process"
-        },
-        "medcpus": {
-            "type": "number",
-            "default": 4,
-            "description": "a medium level of cpus for processes that do not seem to benefit from large amounts of CPUs"
-        },
-        "fastp_options": {
->>>>>>> main
             "type": "string",
             "description": "additional options for editing for process"
         },
