@@ -5,9 +5,9 @@ process amrfinderplus {
   container     'staphb/ncbi-amrfinderplus:3.10.36'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  //#UPHLICA cpus 3
-  //#UPHLICA memory 1.GB
-  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
+  //#UPHLICA cpus 7
+  //#UPHLICA memory 26.GB
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
 
   input:
   tuple val(sample), file(contigs), val(genus), val(species)

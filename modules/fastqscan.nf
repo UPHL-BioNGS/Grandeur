@@ -5,9 +5,9 @@ process fastqscan {
   container     'staphb/fastq-scan:1.0.1'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
-  //#UPHLICA memory 1.GB
-  //#UPHLICA cpus 3
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
+  //#UPHLICA memory 26.GB
+  //#UPHLICA cpus 7
     
   input:
   tuple val(sample), file(fastq), val(size)

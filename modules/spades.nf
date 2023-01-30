@@ -5,9 +5,9 @@ process spades {
   container     'staphb/spades:3.15.5'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
-  //#UPHLICA memory 26.GB
-  //#UPHLICA cpus 7
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-xlarge'
+  //#UPHLICA memory 60.GB
+  //#UPHLICA cpus 14
   
   input:
   tuple val(sample), file(reads)

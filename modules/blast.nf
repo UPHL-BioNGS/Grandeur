@@ -5,9 +5,9 @@ process blastn {
   container     'staphb/blast:2.13.0'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
-  //#UPHLICA cpus 7
-  //#UPHLICA memory 25.GB
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-xlarge'
+  //#UPHLICA cpus 14
+  //#UPHLICA memory 60.GB
 
   input:
   tuple val(sample), file(contig), path(blastdb)

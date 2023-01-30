@@ -7,9 +7,9 @@ process fastani {
   container     'staphb/fastani:1.33'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
-  //#UPHLICA memory 12.GB
-  //#UPHLICA cpus 3
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
+  //#UPHLICA memory 26.GB
+  //#UPHLICA cpus 7
   
   input:
   tuple val(sample), file(contigs), path(genomes)
