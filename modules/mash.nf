@@ -15,7 +15,7 @@ process mash {
   output:
   path "mash/${sample}.mashdist.txt"                                 , emit: mashdist
   tuple val(sample), file("mash/${sample}.summary.mash.csv")         , emit: results
-  tuple val(sample), file("mash/${sample}.${workflow.sessionId}.err"), emit: err
+  tuple val(sample), file("mash/${sample}.${workflow.sessionId}.err"), optional: true, emit: err
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log"    , emit: log
 
   shell:
