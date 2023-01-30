@@ -1,302 +1,375 @@
 #!/usr/bin/env nextflow
 
+// ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
+// Welcome to this workflow! Issues and contributions are gladly accepted at https://github.com/UPHL-BioNGS/Grandeur .
+
+// ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
 println("Currently using the Grandeur workflow for use with microbial sequencing. The view is great from 8299 feet (2530 meters) above sea level.\n")
 println("Author: Erin Young")
 println("email: eriny@utah.gov")
-println("Version: v2.0.20220825")
+println("Version: ${workflow.manifest.version}")
 println("")
 
 nextflow.enable.dsl               = 2
 
-params.outdir                     = workflow.launchDir + '/grandeur'
+// ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
+// Getting config file
+
+// ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
+params.config_file                = false
+if (params.config_file) {
+  def src = new File("${workflow.projectDir}/configs/grandeur_template.config")
+  def dst = new File("${workflow.launchDir}/edit_me.config")
+  dst << src.text
+  println("A config file can be found at ${workflow.launchDir}/edit_me.config")
+  exit 0
+}
+
+// ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
+// Defining params
+
+// ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
+params.outdir                     = "grandeur"
 params.maxcpus                    = 12
 params.medcpus                    = 4
+params.minimum_reads              = 10000
 
-// core workflow of fastq to contig
-params.fastp_options              = "--detect_adapter_for_pe"
+// connecting to phoenix (in development)
+// params.phoenix_wf                 = false
+// params.phoenix_dir                = workflow.projectDir + "/../phoenix/workflows/phoenix.nf"
+// params.input                      = ""
+
+// connecting to Donut Falls (in development)
+params.donut_falls_wf             = false
+
+// input files
+params.reads                      = workflow.launchDir + "/reads"
+params.fastas                     = workflow.launchDir + "/fastas"
+params.gff                        = workflow.launchDir + "/gff"
+params.sample_sheet               = ""
+
+// external files
+params.kraken2_db                 = ""
+params.blast_db                   = ""
+params.mash_db                    = ""
+params.fastani_ref                = workflow.projectDir + "/db/fastani_refs.tar.gz"
+params.genome_sizes               = workflow.projectDir + "/assets/genome_sizes.json"
+params.genome_references          = workflow.projectDir + "/assets/genomes.txt"
+
+// for testing
+params.sra_accessions             = []
+
+// tool-specific command line options
+params.amrfinderplus_options      = ""
 params.bbduk_options              = "k=31 hdist=1"
-params.spades_options             = '--isolate'
+params.bbmap_options              = ""
+params.blast_db_type              = "nt"
+params.blastn_options             = "-max_target_seqs 10 -max_hsps 1 -evalue 1e-25"
+params.blobtools_create_options   = ""
+params.blobtools_view_options     = ""
+params.blobtools_plot_options     = "--format png -r species"
+params.blobtools_bbmap_options    = ""
+params.current_datasets           = true
+params.datasets_max_genomes       = 5
+params.extras                     = true
+params.fastani_include            = true
+params.fastani_options            = "--matrix"
+params.fasterqdump_options        = ""
+params.fastp_options              = "--detect_adapter_for_pe"
+params.fastqc_options             = ""
+params.fastqscan_options          = ""
+params.iqtree2_options            = "-t RANDOM -m GTR+F+I -bb 1000 -alrt 1000"
+params.iqtree2_outgroup           = ""
+params.kleborate_options          = "-all"
+params.kraken2_options            = ""
+params.mash_sketch_options        = "-m 2"
+params.mash_dist_options          = "-v 0 -d 0.5"
+params.mash_max_hits              = 25
+params.msa                        = false
+params.mlst_options               = ""
+params.multiqc_options            = ""
+params.plasmidfinder_options      = ""
+params.prokka_options             = "--mincontiglen 500 --compliant --locustag locus_tag --centre STAPHB"
+params.quast_options              = ""
+params.roary_options              = ""
+params.roary_min_genes            = 1500
+params.seqsero2_options           = "-m a -b mem"
+params.serotypefinder_options     = ""
+params.shigatyper_options         = ""
+params.snp_dists_options          = "-c"
+params.spades_options             = "--isolate"
 
-// fastq information
-params.fastq_processes            = ['fastp', 'bbduk', 'spades', 'fastqc', 'cg_pipeline', 'mash', 'kraken2', 'summary', 'multiqc', 'shigatyper']
-params.fastqc_options             = ''
-params.cg_pipeline_options        = '--qual_offset 33 --minLength 1'
-params.shigatyper_options         = ''
-params.plasmidfinder_options      = ''
-params.kraken2_db                 = false
-params.kraken2_options            = ''
-// WARNING : DO NOT CHANGE params.mash_reference UNLESS YOU ARE USING A DIFFERENT MASH CONTAINER
-params.mash_reference             = '/db/RefSeqSketchesDefaults.msh'
-params.mash_options               = '-v 0 -d 0.5'
-// duplicates as seqsero2 and serotypefinder defaults are for contigs
-// params.seqsero2_options        = '-t 2 -m a -b mem'
-// params.serotypefinder_options  = ''
+// if (params.phoenix_wf) {
+//   println "cp ${workflow.projectDir}/../phoenix/bin/* ${workflow.projectDir}/bin/."
+//   command = ["sh", "-c", "cp ${workflow.projectDir}/../phoenix/bin/* ${workflow.projectDir}/bin/."]
+//   Runtime.getRuntime().exec((String[]) command.toArray())
+//   command = ["sh", "-c", "cp ${workflow.projectDir}/../phoenix/lib/* ${workflow.projectDir}/lib/."]
+//   Runtime.getRuntime().exec((String[]) command.toArray())
+//   include { PHOENIX_EXTERNAL } from workflow.projectDir + "/../phoenix/main" addParams(input: params.input)
+//   For my future self, this doesn't work because of some of the nf-core scripts
+// }
 
-// contig information
-params.contig_processes           = ['amrfinderplus', 'kleborate', 'fastani', 'mlst', 'quast', 'serotypefinder', 'blobtools', 'summary', 'multiqc', 'plasmidfinder', 'seqsero2', 'kraken2', 'mash']
-params.amrfinderplus_options      = ''
-params.fastani_options            = ''
-params.kleborate_options          = '-all'
-params.mlst_options               = ''
-params.quast_options              = ''
-params.serotypefinder_options     = ''
-params.seqsero2_options           = '-m a -b mem'
-// // duplicate as kraken2 with fastq reads is default
-// // params.kraken2_options         = ''
+// ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
-// for blobtools
-params.blast_db                   = false
-params.local_db_type              = 'nt'
-params.blobtools_create_options   = ''
-params.blobtools_view_options     = ''
-params.blobtools_plot_options     = '--format png -r species'
-params.bwa_options                = ''
-params.samtools_sort_options      = ''
+// Sharing params with subworkflows
 
-// summary
-params.multiqc_options            = ''
+// ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
-// phylogenetic analysis
-params.phylogenetic_processes     = []
-params.iqtree2_options            = '-t RANDOM -m GTR+F+I -bb 1000 -alrt 1000'
-params.outgroup                   = ''
-params.prokka_options             = '--mincontiglen 500 --compliant --locustag locus_tag --centre STAPHB'
-params.roary_options              = ''
-params.snp_dists_options          = '-c'
+include { average_nucleotide_identity } from "./subworkflows/average_nucleotide_identity"  addParams(params)
+include { blobtools }                   from "./subworkflows/blobtools"                    addParams(params)
+include { de_novo_alignment }           from "./subworkflows/de_novo_alignment"            addParams(params)
+include { information }                 from "./subworkflows/information"                  addParams(params)
+include { kraken2 }                     from "./subworkflows/kraken2"                      addParams(params)
+include { min_hash_distance }           from "./subworkflows/min_hash_distance"            addParams(params)
+include { phylogenetic_analysis }       from "./subworkflows/phylogenetic_analysis"        addParams(params)
+include { report }                      from "./subworkflows/report"                       addParams(params)
+include { test }                        from "./subworkflows/test"                         addParams(params)
 
-include { de_novo_alignment }     from './subworkflows/de_novo_alignment.nf'     addParams( outdir:                     params.outdir,
-                                                                                            fastq_processes:            params.fastq_processes,
-                                                                                            spades_options:             params.spades_options,
-                                                                                            bbduk_optons:               params.bbduk_options,
-                                                                                            fastp_options:              params.fastp_options)
-include { fastq_information }     from './subworkflows/fastq_information.nf'     addParams( outdir:                     params.outdir,
-                                                                                            fastq_processes:            params.fastq_processes,
-                                                                                            fastqc_options:             params.fastqc_options,
-                                                                                            cg_pipeline_options:        params.cg_pipeline_options,
-                                                                                            shigatyper_options:         params.shigatyper_options,
-                                                                                            kraken2_options:            params.kraken2_options,
-                                                                                            mash_reference:             params.mash_reference,
-                                                                                            mash_options:               params.mash_options,
-                                                                                            serotypefinder_options:     params.serotypefinder_options,
-                                                                                            plasmidfinder_options:      params.plasmidfinder_options,
-                                                                                            seqsero2_options:           params.seqsero2_options)
-include { contig_information }    from './subworkflows/contig_information.nf'    addParams( outdir:                     params.outdir,
-                                                                                            contig_processes:           params.contig_processes,
-                                                                                            amrfinderplus_options:      params.amrfinderplus_options,
-                                                                                            fastani_options:            params.fastani_options,
-                                                                                            kleborate_options:          params.kleborate_options,
-                                                                                            mlst_options:               params.mlst_options,
-                                                                                            quast_options:              params.quast_options,
-                                                                                            serotypefinder_options:     params.serotypefinder_options,
-                                                                                            seqsero2_options:           params.seqsero2_options,
-                                                                                            plasmidfinder_options:      params.plasmidfinder_options,
-                                                                                            kraken2_options:            params.kraken2_options)
-include { blobtools }             from './subworkflows/blobtools.nf'             addParams( local_db_type:              params.local_db_type,
-                                                                                            blobtools_create_options:   params.blobtools_create_options,
-                                                                                            blobtools_view_options:     params.blobtools_view_options,
-                                                                                            blobtools_plot_options:     params.blobtools_plot_options,
-                                                                                            bwa_options:                params.bwa_options,
-                                                                                            samtools_sort_options:      params.samtools_sort_options)
-include { phylogenetic_analysis } from './subworkflows/phylogenetic_analysis.nf' addParams( outdir:                     params.outdir,
-                                                                                            phylogenetic_processes:     params.phylogenetic_processes,
-                                                                                            iqtree2_options:            params.iqtree2_options,
-                                                                                            outgroup:                   params.outgroup,
-                                                                                            prokka_options:             params.prokka_options,
-                                                                                            roary_options:              params.roary_options,
-                                                                                            snp_dists_options:          params.snp_dists_options)
-include { mash_dist as mash }     from './modules/mash'                          addParams( fastq_processes:            params.fastq_processes,
-                                                                                            mash_reference:             params.mash_reference,
-                                                                                            mash_options:               params.mash_options)
-include { summary }               from './modules/summary'                       addParams( fastq_processes:            params.fastq_processes,
-                                                                                            contig_processes:           params.contig_processes,
-                                                                                            phylogenetic_processes:     params.phylogenetic_processes)
-include { multiqc }               from './modules/multiqc'                       addParams( multiqc_options:            params.multiqc_options,
-                                                                                            fastq_processes:            params.fastq_processes,
-                                                                                            contig_processes:           params.contig_processes,
-                                                                                            phylogenetic_processes:     params.phylogenetic_processes)
+// ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
-// TODO : frp_plasmid
-// TODO : pointfinder
-// TODO : mubsuite
-// TODO : sistr
-// TODO : plasmidseeker
-// TODO : socru?
-// TODO : kaptive
-// TODO : ngmaster
+// Channels for scripts
+
+// ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
+// Creating the summary files
+summary_script = Channel.fromPath(workflow.projectDir + "/bin/summary.py", type: "file")
+
+// ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
+// Channels for input files
+
+// ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
+// using a sample sheet with the column header pf 'sample,fastq_1,fastq_2'
+ch_input_reads = params.sample_sheet
+  ? Channel
+    .fromPath("${params.sample_sheet}", type: "file")
+      .view { "Sample sheet found : ${it}" }
+      .splitCsv( header: true, sep: ',' )
+      .map { row -> tuple( "${row.sample}", [ file("${row.fastq_1}"), file("${row.fastq_2}") ]) }
+  : Channel.empty()
 
 // Getting the fastq files
-params.reads = workflow.launchDir + '/reads'
 Channel
   .fromFilePairs(["${params.reads}/*_R{1,2}*.{fastq,fastq.gz,fq,fq.gz}",
                   "${params.reads}/*_{1,2}*.{fastq,fastq.gz,fq,fq.gz}"], size: 2 )
   .map { reads -> tuple(reads[0].replaceAll(~/_S[0-9]+_L[0-9]+/,""), reads[1]) }
   .view { "Paired-end fastq files found : ${it[0]}" }
-  .set { reads }
+  .unique()
+  .set { ch_reads }
 
 // Getting contig or fasta files
-params.fastas = workflow.launchDir + '/fastas'
 Channel
   .fromPath("${params.fastas}/*{.fa,.fasta,.fna}")
   .map { file -> tuple(file.baseName, file) }
-  .set { fastas }
+  .unique()
+  .set { ch_fastas }
 
 // Getting fasta files that have been annotated with prokka
-params.gff = workflow.launchDir + '/gff'
-Channel.fromPath("${params.gff}/*.gff", type: 'file')
+Channel
+  .fromPath("${params.gff}/*.gff", type: "file")
   .view { "gff file : $it" }
-  .set { gffs }
+  .unique()
+  .set { ch_gffs }
 
-// Getting the file with genome sizes of common organisms for cg-pipeline. The End User can use their own file and set with a param
-params.genome_sizes = workflow.projectDir + "/configs/genome_sizes.json"
-genome_sizes = Channel.fromPath(params.genome_sizes, type:'file')
-//
+// Getting accession for downloading
+ch_sra_accessions = Channel.from( params.sra_accessions )
+
+// ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
+// Channels for database files
+
+// ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
+// Getting the file with genome sizes of common organisms for fastqcscan. The End User can use their own file and set with a param
+Channel
+  .fromPath(params.genome_sizes, type: "file")
+  .ifEmpty{
+    println("The genome sizes file for this workflow are missing!")
+    exit 1}
+  .set { ch_genome_sizes }
+
+// Getting the file with genomes to include for every run
+Channel
+  .fromPath(params.genome_references, type: "file")
+  .ifEmpty{
+    println("The genome references for this workflow are missing!")
+    exit 1}
+  .set { ch_genome_ref }
+
 // Getting the reference genomes for fastANI
-params.fastani_refs = workflow.projectDir + "/configs/fastani_ref.tar.gz"
-fastani_genomes = Channel.fromPath("${params.fastani_refs}", type:'file')
+ch_fastani_genomes = Channel.fromPath("${params.fastani_ref}", type: "file")
 
 // Getting the database for blobtools
-local_blastdb = params.blast_db
-              ? Channel
-                  .fromPath(params.blast_db, type:'dir')
-                  .ifEmpty{
-                    println("No blast database was found at ${params.blast_db}")
-                    println("Set 'params.blast_db' to directory with blast database")
-                    exit 1
-                  }
-                  .view { "Local Blast Database for Blobtools : $it" }
-              : Channel.empty()
+ch_blast_db = params.blast_db
+  ? Channel
+    .fromPath(params.blast_db, type: "dir")
+    .ifEmpty{
+      println("No blast database was found at ${params.blast_db}")
+      println("Set 'params.blast_db' to directory with blast database")
+      exit 1
+      }
+      .view { "Local Blast Database for Blobtools : $it" }
+    : Channel.empty()
 
 // Getting the kraken2 database
-local_kraken2 = params.kraken2_db
-              ? Channel
-                  .fromPath(params.kraken2_db, type:'dir')
-                  .ifEmpty{
-                    println("No kraken2 database was found at ${params.kraken2_db}")
-                    println("Set 'params.kraken2_db' to directory with kraken2 database")
-                    exit 1
-                  }
-                  .view { "Local kraken2 database : $it" }
-              : Channel.empty()
+ch_kraken2_db = params.kraken2_db
+  ? Channel
+    .fromPath(params.kraken2_db, type: "dir")
+    .ifEmpty{
+      println("No kraken2 database was found at ${params.kraken2_db}")
+      println("Set 'params.kraken2_db' to directory with kraken2 database")
+      exit 1
+      }
+      .view { "Local kraken2 database : $it" }
+  : Channel.empty()
+
+// Getting the mash reference
+ch_mash_db = params.mash_db 
+  ? Channel
+    .fromPath(params.mash_db, type: "file")
+    .ifEmpty{
+      println("No mash database was found at ${params.mash_db}")
+      println("Set 'params.mash_db' to file of pre-sketched mash reference")
+      exit 1
+      }
+    .view { "Mash reference : $it" }
+  : Channel.empty()
 
 println("The files and directory for results is " + params.outdir)
 println("The maximum number of CPUS for any one process is ${params.maxcpus}")
 
+// ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
+// Workflow
+
+// ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
 workflow {
-  de_novo_alignment(reads)
 
-  fastq_information(reads, de_novo_alignment.out.clean_reads, genome_sizes, local_kraken2)
+  ch_for_multiqc   = Channel.empty()
+  ch_for_summary   = Channel.empty()
+  ch_for_flag      = Channel.empty()
+  ch_top_hit       = Channel.empty()
 
-  if (params.blast_db) {
-    blobtools(de_novo_alignment.out.clean_reads, de_novo_alignment.out.contigs, local_blastdb)
-    blobtools_species = blobtools.out.species
-    blobtools_perc    = blobtools.out.perc
+  // getting test files
+  if ( ! params.sra_accessions.isEmpty() ) { 
+    test(ch_sra_accessions)
+    ch_raw_reads = ch_reads.mix(test.out.fastq).mix(ch_input_reads)
   } else {
-    blobtools_species = Channel.empty()
-    blobtools_perc    = Channel.empty()
+    ch_raw_reads = ch_reads.mix(ch_input_reads)
   }
 
-  contigs             = de_novo_alignment.out.contigs.mix(fastas)
-  mash(fastas)
-  mash_species        = fastq_information.out.mash_species.mix(mash.out.species)
-  mash_genus          = fastq_information.out.mash_genus.mix(mash.out.genus)
-  salmonella_flag     = fastq_information.out.salmonella_flag.mix(mash.out.salmonella_flag)
-  ecoli_flag          = fastq_information.out.ecoli_flag.mix(mash.out.ecoli_flag)
-  klebsiella_flag     = fastq_information.out.klebsiella_flag.mix(mash.out.klebsiella_flag)
+  // running PHOENIX first (under development)
+  // if ( params.phoenix_wf )      { PHOENIX(input) }
+  // running DONUT FALLS first (under development)
+  // if ( params.donut_falls_wf )  { donut_falls(input) }
 
-  contig_information(contigs, mash_species, mash_genus, salmonella_flag, ecoli_flag, klebsiella_flag, fastani_genomes, local_kraken2)
+  // either phoenix or de_novo_alignment is required
+  de_novo_alignment(ch_raw_reads)
+  
+  ch_contigs       = ch_fastas.mix(de_novo_alignment.out.contigs)
+  ch_clean_reads   = de_novo_alignment.out.clean_reads
 
-  phylogenetic_analysis(contigs, mash_species, mash_genus, gffs )
+  ch_for_multiqc   = ch_for_multiqc.mix(de_novo_alignment.out.for_multiqc)
 
-  multiqc(de_novo_alignment.out.fastp_multiqc.collect().ifEmpty([]),
-          de_novo_alignment.out.bbduk_multiqc.collect().ifEmpty([]),
-          contig_information.out.kraken2_multiqc.collect().ifEmpty([]),
-          contig_information.out.quast_multiqc.collect().ifEmpty([]),
-          fastq_information.out.fastqc_multiqc.collect().ifEmpty([]),
-          fastq_information.out.kraken2_multiqc.collect().ifEmpty([]),
-          phylogenetic_analysis.out.prokka_multiqc.collect().ifEmpty([]))
+  // optional subworkflow blobtools (useful for interspecies contamination)
+  if (params.blast_db) {
+    blobtools(ch_clean_reads, ch_contigs, ch_blast_db)
 
-  reads
-    .mix(fastas)
-    // de_novo_alignment
-    .join(de_novo_alignment.out.phix_reads                                                                , remainder: true, by: 0)
-    .join(de_novo_alignment.out.fastp_results                                                             , remainder: true, by: 0)
+    ch_for_multiqc = ch_for_multiqc.mix(blobtools.out.for_multiqc)
+    ch_for_summary = ch_for_summary.mix(blobtools.out.for_summary)
+    ch_for_flag    = ch_for_flag.mix(blobtools.out.for_flag)
+  }
 
-    // fastq_information
-    .join(fastq_information.out.fastqc_1_results                                                          , remainder: true, by: 0)
-    .join(fastq_information.out.fastqc_2_results                                                          , remainder: true, by: 0)
-    .join(fastq_information.out.cg_pipeline_read_length                                                   , remainder: true, by: 0)
-    .join(fastq_information.out.cg_pipeline_quality                                                       , remainder: true, by: 0)
-    .join(fastq_information.out.cg_pipeline_coverage                                                      , remainder: true, by: 0)
-    .join(fastq_information.out.cg_pipeline_ref_gen_len                                                   , remainder: true, by: 0)
-    .join(fastq_information.out.shigatyper_predictions                                                    , remainder: true, by: 0)
-    .join(fastq_information.out.shigatyper_cada                                                           , remainder: true, by: 0)
-    .join(fastq_information.out.kraken2_top_hit                                                           , remainder: true, by: 0)
-    .join(fastq_information.out.kraken2_top_perc                                                          , remainder: true, by: 0)
-    .join(fastq_information.out.kraken2_top_reads                                                         , remainder: true, by: 0)
+  // optional subworkflow kraken2 (useful for interspecies contamination)
+  if (params.kraken2_db) {
+    kraken2(ch_clean_reads, ch_contigs, ch_kraken2_db)
 
-    // mash
-    .join(fastq_information.out.mash_genome_size                                                          , remainder: true, by: 0)
-    .join(fastq_information.out.mash_coverage                                                             , remainder: true, by: 0)
-    .join(mash_genus                                                                                      , remainder: true, by: 0)
-    .join(mash_species                                                                                    , remainder: true, by: 0)
-    .join(fastq_information.out.mash_full.mix(mash.out.full)                                              , remainder: true, by: 0)
-    .join(fastq_information.out.mash_pvalue.mix(mash.out.pvalue)                                          , remainder: true, by: 0)
-    .join(fastq_information.out.mash_distance.mix(mash.out.distance)                                      , remainder: true, by: 0)
+    ch_for_multiqc = ch_for_multiqc.mix(kraken2.out.for_multiqc)
+    ch_for_summary = ch_for_summary.mix(kraken2.out.for_summary)
+    ch_for_flag    = ch_for_flag.mix(kraken2.out.for_flag)
+  } 
+  
+  if (params.extras) {
+    // subworkflow mash for species determination
+    min_hash_distance(ch_clean_reads, ch_contigs, ch_mash_db)
 
-    // contig_information
-    .join(contig_information.out.seqsero2_profile                                                         , remainder: true, by: 0)
-    .join(contig_information.out.seqsero2_serotype                                                        , remainder: true, by: 0)
-    .join(contig_information.out.seqsero2_contamination                                                   , remainder: true, by: 0)
-    .join(contig_information.out.serotypefinder_ogroup                                                    , remainder: true, by: 0)
-    .join(contig_information.out.serotypefinder_hgroup                                                    , remainder: true, by: 0)
-    .join(contig_information.out.kraken2_top_hit                                                          , remainder: true, by: 0)
-    .join(contig_information.out.kraken2_top_perc                                                         , remainder: true, by: 0)
-    .join(contig_information.out.kraken2_top_reads                                                        , remainder: true, by: 0)
-    .join(contig_information.out.plasmidfinder_hits                                                       , remainder: true, by: 0)
-    .join(contig_information.out.quast_gc                                                                 , remainder: true, by: 0)
-    .join(contig_information.out.quast_contigs                                                            , remainder: true, by: 0)
-    .join(contig_information.out.quast_nfifty                                                             , remainder: true, by: 0)
-    .join(contig_information.out.quast_length                                                             , remainder: true, by: 0)
-    .join(contig_information.out.kleborate_score                                                          , remainder: true, by: 0)
-    .join(contig_information.out.kleborate_mlst                                                           , remainder: true, by: 0)
-    .join(contig_information.out.amrfinder_amr_genes                                                      , remainder: true, by: 0)
-    .join(contig_information.out.amrfinder_vir_genes                                                      , remainder: true, by: 0)
-    .join(contig_information.out.fastani_ref                                                              , remainder: true, by: 0)
-    .join(contig_information.out.fastani_ani_score                                                        , remainder: true, by: 0)
-    .join(contig_information.out.fastani_fragment                                                         , remainder: true, by: 0)
-    .join(contig_information.out.fastani_total                                                            , remainder: true, by: 0)
-    .join(contig_information.out.mlst_sttype                                                              , remainder: true, by: 0)
+    ch_for_summary = ch_for_summary.mix(min_hash_distance.out.for_summary)
+    ch_for_flag    = ch_for_flag.mix(min_hash_distance.out.for_flag)
 
-    // blobtools
-    .join(blobtools_species                                                                               , remainder: true, by: 0)
-    .join(blobtools_perc                                                                                  , remainder: true, by: 0)
+    // determining organisms in sample
+    average_nucleotide_identity(
+      ch_for_summary.collect(),
+      ch_contigs,
+      ch_fastani_genomes,
+      ch_genome_ref)
 
-    // whew!
-    .set { results }
-  summary(results)
+    ch_for_summary = ch_for_summary.mix(average_nucleotide_identity.out.for_summary)
+    ch_for_flag    = ch_for_flag.mix(average_nucleotide_identity.out.for_flag)
+    ch_top_hit     = ch_top_hit.mix(average_nucleotide_identity.out.top_hit)
+    ch_datasets    = average_nucleotide_identity.out.datasets_summary.ifEmpty('none')
 
-  contig_information.out.seqsero2_collect
-    .collectFile(name: "SeqSero_result.tsv",
-      keepHeader: true,
-      sort: true,
-      storeDir: "${params.outdir}/seqsero2")
+    ch_top_hit_files = ch_top_hit.map {it -> tuple(it[0], it[1])}
+    ch_top_hit_hit   = ch_top_hit.map {it -> tuple(it[0], it[2])}
 
-  summary.out.summary_files_txt
-    .collectFile(name: "grandeur_summary.txt",
-      keepHeader: true,
-      sort: true,
-      storeDir: "${params.outdir}/summary")
+    ch_contigs
+      .join(min_hash_distance.out.mash_err)
+      .map(it -> tuple (it[0], it[2]))
+      .join(ch_top_hit_hit, by: 0, remainder: true)
+      .join(ch_top_hit_files, by: 0, remainder: true)
+      .combine(ch_genome_sizes)
+      .combine(ch_datasets)
+      .set{ ch_size }
 
-  summary.out.summary_files_tsv
-    .collectFile(name: "grandeur_results.tsv",
-      keepHeader: true,
-      sort: true,
-      storeDir: "${params.outdir}")
+    // getting all the other information
+    information(
+      ch_raw_reads, 
+      ch_contigs, 
+      ch_for_flag, 
+      ch_size)
+
+    ch_for_summary = ch_for_summary.mix(information.out.for_summary)
+    ch_for_multiqc = ch_for_multiqc.mix(information.out.for_multiqc)
+  } 
+
+  // optional subworkflow for comparing shared genes
+  if ( params.msa ) { 
+    phylogenetic_analysis(
+      ch_contigs.ifEmpty([]), 
+      ch_gffs.ifEmpty([]), 
+      ch_top_hit.ifEmpty([]))
+    
+    ch_for_multiqc   = ch_for_multiqc.mix(phylogenetic_analysis.out.for_multiqc)
+  }
+
+  // getting a summary of everything
+  if (params.extras) { 
+    report(
+      ch_raw_reads, 
+      ch_fastas, 
+      ch_for_multiqc.collect(), 
+      ch_for_summary.concat(summary_script).collect(), 
+      de_novo_alignment.out.fastp_reads, 
+      de_novo_alignment.out.phix_reads)
+  }
 }
+
+// ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
+// Final Steps
+
+// ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
 workflow.onComplete {
     println("Pipeline completed at: $workflow.complete")
     println("MultiQC report can be found at ${params.outdir}/multiqc/multiqc_report.html")
-    println("Summary can be found at ${params.outdir}/grandeur_results.tsv")
+    println("Summary can be found at ${params.outdir}/grandeur_summary.tsv")
     println("Execution status: ${ workflow.success ? 'OK' : 'failed' }")
 }

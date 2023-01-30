@@ -1,0 +1,11 @@
+reports:
+  multiqc_report.html:
+    display: "MultiQC report"
+  grandeur_summary.tsv:
+    display: "Semi-colon delimited results"
+  grandeur_summary.txt:
+    display: "Tab delimited results"
+  grandeur_extended_summary.tsv:
+    display: "Semi-colon delimited extended results"
+  grandeur_extended_summary.txt:
+    display: "Tab delimited extended results"

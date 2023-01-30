@@ -1,44 +1,51 @@
 process shigatyper {
-  tag "${sample}"
-  label "medcpus"
-
+  tag           "${sample}"
+  label         "medcpus"
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/shigatyper:2.0.1'
+  stageInMode   'copy'
+  maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
+  //#UPHLICA memory 26.GB
+  //#UPHLICA cpus 7
+  
   when:
-  params.fastq_processes =~ /shigatyper/ && flag =~ 'found'
+  flag =~ 'found'
 
   input:
-  tuple val(sample), file(fastq), val(flag)
+  tuple val(sample), file(input), val(flag)
 
   output:
-  path "shigatyper/${sample}_shigatyper.tsv"                           , emit: files
-  path "shigatyper/${sample}-hits.tsv", optional: true                 , emit: hits
-  tuple val(sample), env(predictions)                                  , emit: predictions
-  tuple val(sample), env(lacy_cada)                                    , emit: cada
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}", emit: log
+  path "shigatyper/${sample}_shigatyper.tsv"                     , emit: files
+  path "shigatyper/${sample}_shigatyper-hits.tsv", optional: true, emit: collect
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
   '''
     mkdir -p shigatyper logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     echo "container : !{task.container}" >> $log_file
     shigatyper --version >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
     shigatyper !{params.shigatyper_options} \
-      --R1 !{fastq[0]} \
-      --R2 !{fastq[1]} \
-      2>> $err_file \
-      > shigatyper/!{sample}_shigatyper.tsv
+      --SE !{input} \
+      --name !{sample} \
+      | tee -a $log_file
 
-    if [ -f "!{sample}.tsv" ]; then cp !{sample}.tsv shigatyper/!{sample}-hits.tsv ; fi
+    hits=$(find . -iname "*hits.tsv" | head -n 1)
+    if [ -f "$hits" ]
+    then
+      head -n 1  $hits | awk '{print "sample\\t" $0}' > shigatyper/!{sample}_shigatyper-hits.tsv
+      tail -n +2 $hits | awk -v sample=!{sample} '{print sample "\\t" $0}' >> shigatyper/!{sample}_shigatyper-hits.tsv
+      rm $hits
+    fi
 
-    predictions=$(grep -v "prediction" shigatyper/!{sample}_shigatyper.tsv | grep -wv "Hit" | cut -f 2 | tr '\\n' ',' | sed 's/,$//g' )
-    lacy_cada="$(grep -ie "lac" -ie "cad" $err_file | head -n 1)"
-    if [ -z "$predictions" ] ; then predictions='none' ; fi
-    if [ -z "$lacy_cada" ] ; then lacy_cada='none' ; fi
+    cat *tsv > shigatyper/!{sample}_shigatyper.tsv
   '''
 }

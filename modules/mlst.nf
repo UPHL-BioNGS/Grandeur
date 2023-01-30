@@ -1,32 +1,37 @@
 process mlst {
-  tag "${sample}"
-
-  when:
-  params.contig_processes =~ /mlst/
+  tag           "${sample}"
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/mlst:2.22.1'
+  maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
+  //#UPHLICA memory 1.GB
+  //#UPHLICA cpus 3
 
   input:
   tuple val(sample), file(contig)
 
   output:
-  path "mlst/${sample}_mlst.txt"                                       , emit: collect
-  tuple val(sample), env(mlst)                                         , emit: mlst
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}", emit: log
+  path "mlst/${sample}_mlst.csv"                                 , emit: collect
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
   '''
     mkdir -p mlst logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     echo "container : !{task.container}" >> $log_file
     mlst --version >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    mlst !{params.mlst_options} !{contig} 2>> $err_file > mlst/!{sample}_mlst.txt
+    echo "sample,filename,matching PubMLST scheme,ST,ID1,ID2,ID3,ID4,ID5,ID6,ID7,ID8,ID9,ID10,ID11,ID12,ID13,ID14,ID15" > mlst/!{sample}_mlst.csv
 
-    mlst=$(awk '{ print $2 ":" $3 }' mlst/!{sample}_mlst.txt)
+    mlst !{params.mlst_options} \
+      --threads !{task.cpus} \
+      !{contig} | \
+      awk -v sample=!{sample} '{print sample "," $1 "," $2 "," $3 "," $4 "," $5 "," $6 "," $7 "," $8 "," $9 "," $10 "," $11 "," $12 "," $13 "," $14 "," $15 "," $16 "," $17 "," $18}' >> mlst/!{sample}_mlst.csv
   '''
 }

@@ -1,27 +1,28 @@
 process amrfinderplus {
-  tag "${sample}"
-  label "medcpus"
-
-  when:
-  params.contig_processes =~ /amrfinderplus/
+  tag           "${sample}"
+  label         "medcpus"
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/ncbi-amrfinderplus:3.10.36'
+  maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  //#UPHLICA cpus 7
+  //#UPHLICA memory 26.GB
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
 
   input:
   tuple val(sample), file(contigs), val(genus), val(species)
 
   output:
-  path "ncbi-AMRFinderplus/${sample}_amrfinder_plus.txt"                , emit: collect
-  tuple val(sample), env(amr_genes)                                     , emit: amr_genes
-  tuple val(sample), env(virulence_genes)                               , emit: vir_genes
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}" , emit: log
+  path "ncbi-AMRFinderplus/${sample}_amrfinder_plus.txt"         , emit: collect
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
   '''
     mkdir -p ncbi-AMRFinderplus logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file 
     amrfinder --version >> $log_file
     echo "container : !{task.container}" >> $log_file
     echo "Nextflow command : " >> $log_file
@@ -32,14 +33,14 @@ process amrfinderplus {
     if [ -n "$organism" ]
     then
       organism_check="--organism $organism"
-      echo "Mash result of !{genus} !{species} matched with $organism" >> $log_file
+      echo "Top organism result of !{genus} !{species} matched with $organism" >> $log_file
     elif [ "!{genus}" == "Shigella" ]
     then
       organism_check="--organism Escherichia"
-      echo "--organism Escherichia with be used because of Mash result of !{genus}" >> $log_file
+      echo "--organism Escherichia with be used because of top organism result of !{genus}" >> $log_file
     else
       organism_check=''
-      echo "Mash result of !{genus} !{species} did not match any of the organisms" >> $log_file
+      echo "Top organism result of !{genus} !{species} did not match any of the organisms" >> $log_file
     fi
 
     amrfinder !{params.amrfinderplus_options} \
@@ -49,11 +50,6 @@ process amrfinderplus {
       --output ncbi-AMRFinderplus/!{sample}_amrfinder_plus.txt \
       $organism_check \
       --plus \
-      2>> $err_file >> $log_file
-
-    amr_genes=$(cut -f 7 ncbi-AMRFinderplus/!{sample}_amrfinder_plus.txt | tail +2 | sort | uniq | tr '\\n' ',' | sed 's/,$//g' )
-    virulence_genes=$(grep "VIRULENCE" ncbi-AMRFinderplus/!{sample}_amrfinder_plus.txt | cut -f 7 | sort | uniq | tr '\\n' ',' | sed 's/,$//g' )
-    if [ -z "$amr_genes" ] ; then amr_genes="none" ; fi
-    if [ -z "$virulence_genes" ] ; then virulence_genes="none" ; fi
+      | tee -a $log_file
   '''
 }

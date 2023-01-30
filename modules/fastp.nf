@@ -1,6 +1,13 @@
 process fastp {
-  tag "${sample}"
-
+  tag           "${sample}"
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/fastp:0.23.2'
+  maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
+  //#UPHLICA memory 1.GB
+  //#UPHLICA cpus 3
+  
   input:
   tuple val(sample), file(reads)
 
@@ -18,8 +25,8 @@ process fastp {
     err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
-    fastp --version >> $log_file 2>> $err_file
+    date > $log_file
+    fastp --version >> $log_file
     echo "container : !{task.container}" >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
@@ -31,7 +38,7 @@ process fastp {
       -O fastp/!{sample}_fastp_R2.fastq.gz \
       -h fastp/!{sample}_fastp.html \
       -j fastp/!{sample}_fastp.json \
-      2>> $err_file >> $log_file
+      2>> $err_file | tee -a $log_file
 
     passed_reads=$(grep "reads passed filter" $err_file | tail -n 1 | cut -f 2 -d ":" | sed 's/ //g' )
     if [ -z "$passed_reads" ] ; then passed_reads="0" ; fi

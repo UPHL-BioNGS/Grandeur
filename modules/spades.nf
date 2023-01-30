@@ -1,27 +1,29 @@
 process spades {
-  tag "${sample}"
-  label "maxcpus"
-  errorStrategy { task.exitStatus == 21 ? 'ignore' : 'terminate' }
-
-  when:
-  params.fastq_processes =~ /spades/
-
+  tag           "${sample}"
+  label         "maxcpus"
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/spades:3.15.5'
+  maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-xlarge'
+  //#UPHLICA memory 60.GB
+  //#UPHLICA cpus 14
+  
   input:
   tuple val(sample), file(reads)
 
   output:
   path "spades/${sample}/*"                                              , emit: files
   tuple val(sample), file("contigs/${sample}_contigs.fa"), optional: true, emit: contigs
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}"  , emit: log
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log"        , emit: log
 
   shell:
   '''
     mkdir -p spades contigs logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     echo "container : !{task.container}" >> $log_file
     spades.py --version >> $log_file
     echo "Nextflow command : " >> $log_file
@@ -32,7 +34,7 @@ process spades {
       -2 !{reads[1]} \
       --threads !{task.cpus} \
       -o spades/!{sample} \
-      2>> $err_file >> $log_file
+      | tee -a $log_file
 
     if [ -f "spades/!{sample}/contigs.fasta" ] ; then cp spades/!{sample}/contigs.fasta contigs/!{sample}_contigs.fa ; fi
   '''

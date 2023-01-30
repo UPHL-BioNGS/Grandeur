@@ -1,32 +1,35 @@
 process iqtree2 {
-  tag "Pylogenetic Analysis"
-  label "maxcpus"
-
-  when:
-  params.phylogenetic_processes =~ /iqtree2/
-
+  tag           "Pylogenetic Analysis"
+  label         "maxcpus"
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/iqtree2:2.1.2'
+  maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-xlarge'
+  //#UPHLICA cpus 14
+  //#UPHLICA memory 60.GB
+  
   input:
   file(msa)
 
   output:
-  path "iqtree2/iqtree*"                                                     , emit: tree
-  path "logs/${task.process}/${task.process}.${workflow.sessionId}.{log,err}", emit: log
+  path "iqtree2/iqtree*"                                               , emit: tree
+  path "logs/${task.process}/${task.process}.${workflow.sessionId}.log", emit: log
 
   shell:
   '''
     mkdir -p iqtree2 logs/!{task.process}
     log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     iqtree2 -v >> $log_file
     echo "container : !{task.container}" >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
     outgroup=''
-    if [ -n "!{params.outgroup}" ] ; then outgroup="-o !{params.outgroup}" ; fi
+    if [ -n "!{params.iqtree2_outgroup}" ] ; then outgroup="-o !{params.iqtree2_outgroup}" ; fi
 
     iqtree2 !{params.iqtree2_options} \
       -s !{msa} \
@@ -34,6 +37,8 @@ process iqtree2 {
       -nt AUTO \
       -ntmax !{task.cpus} \
       $outgroup \
-      2>> $err_file >> $log_file
+      | tee -a $log_file
+
+    if [ -f "iqtree2/iqtree.treefile" ]; then cp iqtree2/iqtree.treefile iqtree2/iqtree.treefile.nwk ; fi
   '''
 }

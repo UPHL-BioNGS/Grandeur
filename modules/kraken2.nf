@@ -1,27 +1,28 @@
 process kraken2_fastq {
-  tag "${sample}"
-  label "maxcpus"
-
-  when:
-  params.fastq_processes =~ /kraken2/
-
+  tag           "${sample}"
+  label         "maxcpus"
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/kraken2:2.1.2-no-db'
+  maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-xlarge'
+  //#UPHLICA cpus 14
+  //#UPHLICA memory 60.GB
+  
   input:
   tuple val(sample), file(file), path(kraken2_db)
 
   output:
-  path "kraken2/${sample}_kraken2_report.txt"                           , emit: for_multiqc
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}" , emit: log
-  tuple val(sample), env(top_hit)                                       , emit: top_hit
-  tuple val(sample), env(top_perc)                                      , emit: top_perc
-  tuple val(sample), env(top_reads)                                     , emit: top_reads
+  path "kraken2/${sample}_kraken2_report_reads.txt"                     , emit: for_multiqc
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log"       , emit: log
+  tuple val(sample), file("kraken2/${sample}_reads_summary_kraken2.csv"), emit: results
 
   shell:
   '''
     mkdir -p kraken2 logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     echo "container : !{task.container}" >> $log_file
     kraken2 --version >> $log_file
     echo "Nextflow command : " >> $log_file
@@ -33,42 +34,41 @@ process kraken2_fastq {
       --threads !{task.cpus} \
       --db !{kraken2_db} \
       !{file} \
-      --report kraken2/!{sample}_kraken2_report.txt \
-      2>> $err_file >> $log_file
+      --report kraken2/!{sample}_kraken2_report_reads.txt \
+      | tee -a $log_file
 
-    top_hit=$(cat kraken2/!{sample}_kraken2_report.txt   | grep -w S | sort | tail -n 1 | awk '{print $6 " " $7}')
-    top_perc=$(cat kraken2/!{sample}_kraken2_report.txt  | grep -w S | sort | tail -n 1 | awk '{print $1}')
-    top_reads=$(cat kraken2/!{sample}_kraken2_report.txt | grep -w S | sort | tail -n 1 | awk '{print $2}')
-    if [ -z "$top_hit" ] ; then top_hit="NA" ; fi
-    if [ -z "$top_perc" ] ; then top_perc="0" ; fi
-    if [ -z "$top_reads" ] ; then top_reads="0" ; fi
+    echo "Sample,Type,Percentage of fragments,Number of fragments,Number of fragments assigned directly to this taxon,Rank code,NCBI taxonomic ID number,Scientific name" > kraken2/!{sample}_reads_summary_kraken2.csv
+    cat kraken2/!{sample}_kraken2_report_reads.txt | grep -w S | sed 's/,//g' | \
+      awk -v sample=!{sample} '{ if ($1 >= 5 ) print sample ",reads," $1 "," $2 "," $3 "," $4 "," $5 "," $6 "_" $7 }' | \
+      sort >> kraken2/!{sample}_reads_summary_kraken2.csv
   '''
 }
 
 process kraken2_fasta {
-  tag "${sample}"
-  label "maxcpus"
-
-  when:
-  params.contig_processes =~ /kraken2/
-
+  tag           "${sample}"
+  label         "maxcpus"
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/kraken2:2.1.2-no-db'
+  maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
+  //#UPHLICA cpus          7
+  //#UPHLICA memory        26.GB
+  
   input:
   tuple val(sample), file(file), path(kraken2_db)
 
   output:
-  path "kraken2/${sample}_kraken2_report_contigs.txt"                   , emit: for_multiqc
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}" , emit: log
-  tuple val(sample), env(top_hit)                                       , emit: top_hit
-  tuple val(sample), env(top_perc)                                      , emit: top_perc
-  tuple val(sample), env(top_reads)                                     , emit: top_reads
+  path "kraken2/${sample}_kraken2_report_contigs.txt"                     , emit: for_multiqc
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log"         , emit: log
+  tuple val(sample), file("kraken2/${sample}_contigs_summary_kraken2.csv"), emit: results
 
   shell:
     '''
     mkdir -p kraken2 logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     echo "container : !{task.container}" >> $log_file
     kraken2 --version >> $log_file
     echo "Nextflow command : " >> $log_file
@@ -79,13 +79,11 @@ process kraken2_fasta {
       --db !{kraken2_db} \
       !{file} \
       --report kraken2/!{sample}_kraken2_report_contigs.txt \
-      2>> $err_file >> $log_file
+      | tee -a $log_file
 
-    top_hit=$(cat kraken2/!{sample}_kraken2_report_contigs.txt   | grep -w S | sort | tail -n 1 | awk '{print $6 " " $7}')
-    top_perc=$(cat kraken2/!{sample}_kraken2_report_contigs.txt  | grep -w S | sort | tail -n 1 | awk '{print $1}')
-    top_reads=$(cat kraken2/!{sample}_kraken2_report_contigs.txt | grep -w S | sort | tail -n 1 | awk '{print $2}')
-    if [ -z "$top_hit" ]   ; then top_hit="NA"  ; fi
-    if [ -z "$top_perc" ]  ; then top_perc="0"  ; fi
-    if [ -z "$top_reads" ] ; then top_reads="0" ; fi
+    echo "Sample,Type,Percentage of fragments,Number of fragments,Number of fragments assigned directly to this taxon,Rank code,NCBI taxonomic ID number,Scientific name" > kraken2/!{sample}_contigs_summary_kraken2.csv
+    cat kraken2/!{sample}_kraken2_report_contigs.txt | grep -w S | \
+      awk -v sample=!{sample} '{ if ($1 >= 5 ) print sample ",contigs," $1 "," $2 "," $3 "," $4 "," $5 "," $6 "_" $7 }' | \
+      sort >> kraken2/!{sample}_contigs_summary_kraken2.csv
   '''
 }

@@ -1,104 +1,90 @@
-process mash_sketch {
-  tag "${sample}"
-
-  when:
-  params.fastq_processes =~ /mash/
+process mash {
+  tag           "${sample}"
+  label         "medcpus"
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/mash:2.3'
+  maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-xlarge'
+  //#UPHLICA cpus 14
+  //#UPHLICA memory 60.GB
 
   input:
-  tuple val(sample), file(reads)
+  tuple val(sample), file(fasta), file(fastq), file(reference)
 
   output:
-  tuple val(sample), file("mash/${sample}.msh"), optional: true        , emit: files
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}", emit: log
-  tuple val(sample), env(genome_size)                                  , emit: genome_size
-  tuple val(sample), env(coverage)                                     , emit: coverage
+  path "mash/${sample}.mashdist.txt"                                 , emit: mashdist
+  tuple val(sample), file("mash/${sample}.summary.mash.csv")         , emit: results
+  tuple val(sample), file("mash/${sample}.${workflow.sessionId}.err"), optional: true, emit: err
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log"    , emit: log
 
   shell:
   '''
-    mkdir -p mash logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
+  mkdir -p mash logs/!{task.process}
+  log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+  err_file=mash/!{sample}.!{workflow.sessionId}.err
 
-    # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
-    echo "container : !{task.container}" >> $log_file
-    echo "mash version: $(mash --version | head -n 1 )" >> $log_file
-    echo "Nextflow command : " >> $log_file
-    cat .command.sh >> $log_file
+  # time stamp + capturing tool versions
+  date > $log_file
+  echo "container : !{task.container}" >> $log_file
+  echo "mash version: $(mash --version | head -n 1 )" >> $log_file
+  echo "Nextflow command : " >> $log_file
+  cat .command.sh >> $log_file
+ 
+  if [[ "!{reference}" != *"input"* ]]
+  then 
+    reference=!{reference}
+  else
+    reference=/db/RefSeqSketchesDefaults.msh
+  fi
 
-    cat !{reads} | mash sketch -m 2 -o mash/!{sample} - 2>> $err_file | tee $log_file
-
-    genome_size=$(grep "Estimated genome size" $err_file | awk '{print $4}' )
-    coverage=$(grep "Estimated coverage" $err_file | awk '{print $3}' )
-
-    if [ -z "$genome_size" ] ; then genome_size=0 ; fi
-    if [ -z "$coverage" ] ; then coverage=0 ; fi
-  '''
-}
-
-process mash_dist {
-  tag "${sample}"
-  label "medcpus"
-
-  when:
-  params.fastq_processes =~ /mash/ || params.contig_processes =~ /mash/
-
-  input:
-  tuple val(sample), file(msh)
-
-  output:
-  tuple val(sample), file("mash/${sample}_mashdist.txt"), optional: true, emit: files
-  tuple val(sample), env(genus)                                         , emit: genus
-  tuple val(sample), env(species)                                       , emit: species
-  tuple val(sample), env(full_mash)                                     , emit: full
-  tuple val(sample), env(pvalue)                                        , emit: pvalue
-  tuple val(sample), env(distance)                                      , emit: distance
-  tuple val(sample), env(salmonella_flag)                               , emit: salmonella_flag
-  tuple val(sample), env(ecoli_flag)                                    , emit: ecoli_flag
-  tuple val(sample), env(klebsiella_flag)                               , emit: klebsiella_flag
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}" , emit: log
-
-  shell:
-  '''
-    mkdir -p mash logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
-
-    # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
-    echo "container : !{task.container}" >> $log_file
-    echo "mash version: $(mash --version | head -n 1 )" >> $log_file
-    echo "Nextflow command : " >> $log_file
-    cat .command.sh >> $log_file
-
-    mash dist -p !{task.cpus} !{params.mash_options} !{params.mash_reference} !{msh} | sort -gk3 > mash/!{sample}_mashdist.txt 2>> $err_file
-
-    if [ ! -s "mash/!{sample}_mashdist.txt" ]
+  for file in !{fasta} !{fastq}
+  do
+    if [[ "$file" == *"fastp"* ]] 
     then
-      echo "!{sample} had no mash results with '!{params.mash_options}'. Trying again without those parameters." 2>> $log_file
-      mash dist -p !{task.cpus} !{params.mash_reference} !{msh} | sort -gk3 > mash/!{sample}_mashdist.txt 2>> $err_file
-    fi
+      cat $file >> sample.fastq.gz
+      if [ ! -s "sample.fastq.gz" ] ; then rm sample.fastq.gz ; fi
+    elif [[ "$file" != *"input"* ]]
+    then
+      cat $file > sample.fasta
+    fi 
+  done
 
-    mash_result=($(head -n 1 mash/!{sample}_mashdist.txt | head -n 1 | cut -f 1 | cut -f 8 -d "-" | cut -f 1,2 -d "_" | cut -f 1 -d "." | tr "_" " " ) 'missing' 'missing')
-    genus=${mash_result[0]}
-    species=${mash_result[1]}
-    full_mash=$(head -n 1 mash/!{sample}_mashdist.txt | cut -f 1 )
-    pvalue=$(head -n 1 mash/!{sample}_mashdist.txt | cut -f 4 )
-    distance=$(head -n 1 mash/!{sample}_mashdist.txt | cut -f 3 )
-    if [ -z "$full_mash" ] ; then full_mash='missing' ; fi
-    if [ -z "$pvalue" ] ; then pvalue='NA' ; fi
-    if [ -z "$distance" ] ; then distance='NA' ; fi
+  if [ -f "sample.fastq.gz" ]
+  then
+    echo "Mash on fastq files" | tee -a $log_file
+    cat sample.fastq.gz | mash sketch !{params.mash_sketch_options} -o !{sample}.fastq - 2>> $err_file | tee -a $log_file
 
-    salmonella_flag=''
-    find_salmonella=$(head mash/!{sample}_mashdist.txt | grep "Salmonella" | head -n 1 )
-    if [ -n "$find_salmonella" ] ; then salmonella_flag="found" ; else salmonella_flag="not" ; fi
+    mash dist -p !{task.cpus} !{params.mash_dist_options} $reference !{sample}.fastq.msh > mash/!{sample}.mashdist.txt.tmp
+  fi
 
-    ecoli_flag=''
-    find_ecoli=$(head mash/!{sample}_mashdist.txt | grep -e "Escherichia" -e "Shigella" | head -n 1 )
-    if [ -n "$find_ecoli" ] ; then ecoli_flag="found" ; else ecoli_flag="not" ; fi
+  if [ -f "sample.fasta" ]
+  then
+    echo "Mash on fasta files" | tee -a $log_file
+    mash sketch !{params.mash_sketch_options} -o !{sample}.fasta sample.fasta 2>> $err_file | tee -a $log_file
 
-    klebsiella_flag=''
-    find_klebsiella=$(head mash/!{sample}_mashdist.txt | grep -e "Klebsiella" -e "Enterobacter" -e "Serratia" | head -n 1 )
-    if [ -n "$find_klebsiella" ] ; then klebsiella_flag="found" ; else klebsiella_flag="not" ; fi
+    mash dist -p !{task.cpus} !{params.mash_dist_options} $reference !{sample}.fasta.msh >> mash/!{sample}.mashdist.txt.tmp
+  fi 
+
+  touch mash/!{sample}.mashdist.txt.tmp
+
+  if [ ! -s "mash/!{sample}.mashdist.txt.tmp" ]
+  then
+    echo "!{sample} had no mash results with '!{params.mash_dist_options}'. Trying again without those parameters." | tee -a $log_file
+        
+    if [ -s "!{sample}.fastq.msh" ] ; then mash dist -p !{task.cpus} $reference !{sample}.fastq.msh >> mash/!{sample}.mashdist.txt.tmp ; fi
+
+    if [ -s "!{sample}.fasta.msh" ] ; then mash dist -p !{task.cpus} $reference !{sample}.fasta.msh >> mash/!{sample}.mashdist.txt.tmp ; fi
+  fi
+
+  sort -gk3 mash/!{sample}.mashdist.txt.tmp | head -n !{params.mash_max_hits} > mash/!{sample}.mashdist.txt
+
+  echo "sample,reference,query,mash-distance,P-value,matching-hashes,organism" > mash/!{sample}.summary.mash.csv
+
+  while read line
+  do
+    organism=$(echo $line | cut -f 8 -d "-" | cut -f 1,2 -d "_" | cut -f 1 -d ".")
+    echo $line | sed 's/,//g' | awk -v sample=!{sample} -v org=$organism '{print sample "," $1 "," $2 "," $3 "," $4 "," $5 "," org}' >> mash/!{sample}.summary.mash.csv
+  done < mash/!{sample}.mashdist.txt
   '''
 }

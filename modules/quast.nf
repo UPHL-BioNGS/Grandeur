@@ -1,30 +1,29 @@
 process quast {
-  tag "${sample}"
-
-  when:
-  params.contig_processes =~ /quast/
-
+  tag           "${sample}"
+  publishDir    params.outdir, mode: 'copy'
+  container     'staphb/quast:5.0.2'
+  maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
+  //#UPHLICA memory 1.GB
+  //#UPHLICA cpus 3
+  
   input:
   tuple val(sample), file(contigs)
 
   output:
-  path "quast/${sample}"                                                , emit: files
-  path "quast/${sample}_quast_report.tsv"     , optional: true          , emit: for_multiqc
-  path "quast/${sample}/transposed_report.tsv", optional: true          , emit: collect
-  tuple val(sample), env(gc)                                            , emit: gc
-  tuple val(sample), env(num_contigs)                                   , emit: contigs
-  tuple val(sample), env(n50)                                           , emit: nfifty
-  tuple val(sample), env(length)                                        , emit: length
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.{log,err}" , emit: log
+  path "quast/${sample}"                                         , emit: files
+  path "quast/${sample}_quast_report.tsv"     , optional: true   , emit: for_multiqc
+  path "quast/${sample}/transposed_report.tsv", optional: true   , emit: collect
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
   '''
     mkdir -p !{task.process} logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
-    date | tee -a $log_file $err_file > /dev/null
+    date > $log_file
     echo "container : !{task.container}" >> $log_file
     quast.py --version >> $log_file
     echo "Nextflow command : " >> $log_file
@@ -34,17 +33,12 @@ process quast {
       !{contigs} \
       --output-dir quast/!{sample} \
       --threads !{task.cpus} \
-      2>> $err_file | tee -a $log_file
-
-    gc=$(grep "GC (" quast/!{sample}/report.txt | awk '{print $3}' )
-    num_contigs=$(grep "contigs" quast/!{sample}/report.txt | grep -v "(" | awk '{print $3}' )
-    n50=$(grep "N50" quast/!{sample}/report.txt | awk '{print $2}' )
-    length=$(grep "Total length" quast/!{sample}/report.txt | grep -v "(" | awk '{print $3}' )
-    if [ -z "$gc" ] ; then gc='NA' ; fi
-    if [ -z "$num_contigs" ] ; then num_contigs='NA' ; fi
-    if [ -z "$n50" ] ; then n50='NA' ; fi
-    if [ -z "$length" ] ; then length='NA' ; fi
+      | tee -a $log_file
 
     if [ -f "quast/!{sample}/report.tsv" ] ; then cp quast/!{sample}/report.tsv quast/!{sample}_quast_report.tsv ; fi
+
+    head -n 1 quast/!{sample}/transposed_report.tsv | awk '{print "sample\\t" $0 }' > quast/!{sample}/transposed_report.tsv.tmp
+    tail -n 1 quast/!{sample}/transposed_report.tsv | awk -v sample=!{sample} '{print sample "\\t" $0}' >> quast/!{sample}/transposed_report.tsv.tmp
+    mv quast/!{sample}/transposed_report.tsv.tmp quast/!{sample}/transposed_report.tsv
   '''
 }
