@@ -5,7 +5,7 @@ process kraken2_fastq {
   container     'staphb/kraken2:2.1.2-no-db'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-xlarge'
   //#UPHLICA cpus 14
   //#UPHLICA memory 60.GB
   
