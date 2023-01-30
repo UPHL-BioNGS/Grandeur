@@ -12,7 +12,7 @@ Uses NCBI's datasets and dataformat to download
 representative genomes for bacteria, combine those sequences 
 into one fasta, and then create a mash sketch.
 
-Usage: new_mash.sh
+Usage: new_mash_ref.sh
 "
 
 ############################################################
