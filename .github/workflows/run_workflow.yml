@@ -18,21 +18,22 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          path: /tmp/.cache-cecret
-          key: ${{ runner.os }}-cecret-${{ github.sha }}
+          path: /tmp/.cache-grandeur
+          key: ${{ runner.os }}-grandeur-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-cecret
+            ${{ runner.os }}-grandeur
             
       - name: Install Nextflow
         run: |
           wget -qO- get.nextflow.io | bash
           sudo mv nextflow /usr/local/bin/
           
-      - name: Run Cecret
+      - name: Run Grandeur
         run: |
           docker --version
           
           mkdir reads
+          # lecleria genome - not an actual use-case
           wget -q ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR283/002/SRR2838702/SRR2838702_1.fastq.gz
           wget -q ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR283/002/SRR2838702/SRR2838702_2.fastq.gz
           mv *fastq.gz reads/.
@@ -40,5 +41,5 @@ jobs:
       
       - name: Move cache
         run: |
-          rm -rf /tmp/.cache-cecret
-          mv /tmp/.cache-cecret-new /tmp/.cache-cecret
+          rm -rf /tmp/.cache-grandeur
+          mv /tmp/.cache-grandeur-new /tmp/.cache-grandeur
