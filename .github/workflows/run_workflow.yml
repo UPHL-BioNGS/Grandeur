@@ -1,0 +1,44 @@
+name: Test Grandeur workflow
+
+on: [pull_request, workflow_dispatch]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+
+      - name: Checkout LFS objects
+        run: git lfs checkout
+      
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.cache-cecret
+          key: ${{ runner.os }}-cecret-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-cecret
+            
+      - name: Install Nextflow
+        run: |
+          wget -qO- get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+          
+      - name: Run Cecret
+        run: |
+          docker --version
+          
+          mkdir reads
+          wget -q ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR283/002/SRR2838702/SRR2838702_1.fastq.gz
+          wget -q ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR283/002/SRR2838702/SRR2838702_2.fastq.gz
+          mv *fastq.gz reads/.
+          nextflow run . -profile docker --maxcpus 2 --medcpus 2
+      
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.cache-cecret
+          mv /tmp/.cache-cecret-new /tmp/.cache-cecret
