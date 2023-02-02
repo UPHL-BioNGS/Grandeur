@@ -1,0 +1,47 @@
+name: Check versions
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 4 * * TUE'
+
+jobs:
+  check:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+
+      - name: Checkout LFS objects
+        run: git lfs checkout
+        
+      - name: versions
+        run: |
+          issue_text='Needing updates:\n'     
+          staphb_containers=($(grep -h container modules/* | grep staphb | sort | uniq | grep -v latest | awk '{print $2}' | sed 's/'\''//g'))
+          for container in ${staphb_containers[@]}
+          do
+            base=$(echo $container | cut -f 1 -d ":")
+            repo_version=$(echo $container | cut -f 2 -d ":")
+            
+            docker pull $base:latest
+            latest_version=$(docker inspect --format '{{ index .Config.Labels "software.version"}}' $base:latest)
+            
+            if [[ "$latest_version" == "$repo_version" ]]
+            then
+              echo "No version change for $base:$repo_version" 
+            else
+              echo "New version for $base! Upgrade to $latest_version from $repo_version." 
+              issue_text=$issue_text "$base $repo_version to $latest_version\n"
+            fi
+          done
+          echo -e $issue_text
+          echo 'ISSUE_TEXT='$issue_text >> $GITHUB_ENV
+          
+      - name: Create Issue
+        run: |
+          gh issue create --title "Version check" --body "$ISSUE_TEXT" --repo $GITHUB_REPOSITORY
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
