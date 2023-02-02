@@ -19,7 +19,7 @@ jobs:
         
       - name: versions
         run: |
-          issue_text='Needing updates:  '     
+          issue_text="Needing updates:  "     
           staphb_containers=($(grep -h container modules/* | grep staphb | sort | uniq | grep -v latest | awk '{print $2}' | sed 's/'\''//g'))
           for container in ${staphb_containers[@]}
           do
@@ -34,9 +34,10 @@ jobs:
               echo "No version change for $base:$repo_version" | tee -a versions.txt
             else
               echo "New version for $base! Upgrade to $latest_version from $repo_version." | tee -a versions.txt
-              issue_text="$issue_text  $base from $repo_version to $latest_version"
+              issue_text="$issue_text  $base from $repo_version to $latest_version  "
             fi
           done
+          echo $issue_text
           cat versions.txt
           echo 'ISSUE_TEXT='$issue_text >> $GITHUB_ENV
           
