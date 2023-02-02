@@ -31,17 +31,14 @@ jobs:
             
             if [[ "$latest_version" == "$repo_version" ]]
             then
-              echo "No version change for $base:$repo_version" 
+              echo "No version change for $base:$repo_version" | tee -a $GITHUB_STEP_SUMMARY
             else
-              echo "New version for $base! Upgrade to $latest_version from $repo_version." 
-              issue_text="$issue_text""$base $repo_version to $latest_version\n"
+              echo "New version for $base! Upgrade to $latest_version from $repo_version." | tee -a $GITHUB_STEP_SUMMARY
             fi
           done
-          echo -e $issue_text
-          eval 'ISSUE_TEXT='$issue_text >> $GITHUB_ENV
           
       - name: Create Issue
         run: |
-          gh issue create --title "Version check" --body "$ISSUE_TEXT" --repo $GITHUB_REPOSITORY
+          gh issue create --title "Version check" --body "$GITHUB_STEP_SUMMARY" --repo $GITHUB_REPOSITORY
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
