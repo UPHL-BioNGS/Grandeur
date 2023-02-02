@@ -38,7 +38,7 @@ jobs:
             fi
           done
           echo -e $issue_text
-          echo 'ISSUE_TEXT='$issue_text >> $GITHUB_ENV
+          eval 'ISSUE_TEXT='$issue_text >> $GITHUB_ENV
           
       - name: Create Issue
         run: |
