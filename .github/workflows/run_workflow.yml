@@ -30,3 +30,5 @@ jobs:
           wget -q ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR283/002/SRR2838702/SRR2838702_2.fastq.gz
           mv *fastq.gz reads/.
           nextflow run . -profile docker --maxcpus 2 --medcpus 2
+          cat grandeur/grandeur_summary.tsv
+          
