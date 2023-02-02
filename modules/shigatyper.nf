@@ -2,13 +2,14 @@ process shigatyper {
   tag           "${sample}"
   label         "medcpus"
   publishDir    params.outdir, mode: 'copy'
-  container     'staphb/shigatyper:2.0.1'
+  container     'staphb/shigatyper:2.0.3'
   stageInMode   'copy'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
   //#UPHLICA memory 26.GB
   //#UPHLICA cpus 7
+  //#UPHLICA time '10m'
   
   when:
   flag =~ 'found'

@@ -8,6 +8,7 @@ process spades {
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-xlarge'
   //#UPHLICA memory 60.GB
   //#UPHLICA cpus 14
+  //#UPHLICA time '5h'
   
   input:
   tuple val(sample), file(reads)

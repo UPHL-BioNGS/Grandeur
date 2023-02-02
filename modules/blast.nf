@@ -8,6 +8,7 @@ process blastn {
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-xlarge'
   //#UPHLICA cpus 14
   //#UPHLICA memory 60.GB
+  //#UPHLICA time '2h'
 
   input:
   tuple val(sample), file(contig), path(blastdb)

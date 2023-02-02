@@ -10,6 +10,7 @@ process fastani {
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
   //#UPHLICA memory 26.GB
   //#UPHLICA cpus 7
+  //#UPHLICA time '10m'
   
   input:
   tuple val(sample), file(contigs), path(genomes)

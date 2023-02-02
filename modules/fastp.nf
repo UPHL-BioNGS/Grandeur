@@ -7,6 +7,7 @@ process fastp {
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
   //#UPHLICA memory 1.GB
   //#UPHLICA cpus 3
+  //#UPHLICA time '1h'
   
   input:
   tuple val(sample), file(reads)

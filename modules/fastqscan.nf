@@ -8,6 +8,7 @@ process fastqscan {
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
   //#UPHLICA memory 26.GB
   //#UPHLICA cpus 7
+  //#UPHLICA time '1h'
     
   input:
   tuple val(sample), file(fastq), val(size)
