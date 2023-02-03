@@ -7,6 +7,7 @@ process blobtools_create {
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
   //#UPHLICA cpus 3
   //#UPHLICA memory 2.GB
+  //#UPHLICA time '10m'
   
   input:
   tuple val(sample), file(contig), file(blastn), file(bam)
@@ -46,6 +47,7 @@ process blobtools_view {
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
   //#UPHLICA cpus 3
   //#UPHLICA memory 1.GB
+  //#UPHLICA time '10m'
   
   input:
   tuple val(sample), file(json)
@@ -82,6 +84,7 @@ process blobtools_plot {
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
   //#UPHLICA cpus 3
   //#UPHLICA memory 1.GB
+  //#UPHLICA time '10m'
   
   input:
   tuple val(sample), file(json)

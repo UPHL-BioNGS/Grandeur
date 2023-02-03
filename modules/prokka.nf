@@ -2,12 +2,13 @@ process prokka {
   tag           "${sample}"
   label         "maxcpus"
   publishDir    params.outdir, mode: 'copy'
-  container     'staphb/prokka:1.14.5'
+  container     'staphb/prokka:1.14.6'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'himem-small'
   //#UPHLICA memory 60.GB
   //#UPHLICA cpus 7
+  //#UPHLICA time '24h'
 
   input:
   tuple val(sample), file(contigs), val(organism)

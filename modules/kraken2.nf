@@ -8,6 +8,7 @@ process kraken2_fastq {
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-xlarge'
   //#UPHLICA cpus 14
   //#UPHLICA memory 60.GB
+  //#UPHLICA time '1h'
   
   input:
   tuple val(sample), file(file), path(kraken2_db)
@@ -52,8 +53,9 @@ process kraken2_fasta {
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
-  //#UPHLICA cpus          7
-  //#UPHLICA memory        26.GB
+  //#UPHLICA cpus 7
+  //#UPHLICA memory 26.GB
+  //#UPHLICA time '1h'
   
   input:
   tuple val(sample), file(file), path(kraken2_db)

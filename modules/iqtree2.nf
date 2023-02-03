@@ -8,6 +8,7 @@ process iqtree2 {
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-xlarge'
   //#UPHLICA cpus 14
   //#UPHLICA memory 60.GB
+  //#UPHLICA time '24h'
   
   input:
   file(msa)

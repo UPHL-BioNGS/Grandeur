@@ -7,6 +7,7 @@ process datasets_summary {
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
   //#UPHLICA memory 1.GB
   //#UPHLICA cpus 3
+  //#UPHLICA time '10m'
   
   input:
   val(taxon)
@@ -48,6 +49,7 @@ process datasets_download {
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
   //#UPHLICA memory 1.GB
   //#UPHLICA cpus 3
+  //#UPHLICA time '1h'
   
   input:
   file(ids)

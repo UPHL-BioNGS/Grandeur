@@ -7,6 +7,7 @@ process species {
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
   //#UPHLICA memory 1.GB
   //#UPHLICA cpus 3
+  //#UPHLICA time '10m'
   
   input:
   file(results)
@@ -55,6 +56,7 @@ process decompression {
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
   //#UPHLICA memory 1.GB
   //#UPHLICA cpus 3
+  //#UPHLICA time '10m'
 
   input:
   file(compressed)
@@ -94,6 +96,7 @@ process flag {
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
   //#UPHLICA memory 1.GB
   //#UPHLICA cpus 3
+  //#UPHLICA time '10m'
 
   input:
   tuple val(sample), file(files)
@@ -162,6 +165,7 @@ process size {
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
   //#UPHLICA memory 1.GB
   //#UPHLICA cpus 3
+  //#UPHLICA time '10m'
     
   input:
   tuple val(sample), file(mash_err), file(fastani), val(top_hit), file(genome_sizes), file(datasets_summary)
@@ -245,6 +249,7 @@ process representative {
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
   //#UPHLICA memory 1.GB
   //#UPHLICA cpus 3
+  //#UPHLICA time '10m'
 
   input:
   tuple val(accession), path(genomes)

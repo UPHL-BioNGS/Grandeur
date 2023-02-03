@@ -8,6 +8,7 @@ process roary {
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'hicpu-small'
   //#UPHLICA cpus 15
   //#UPHLICA memory 30.GB
+  //#UPHLICA time '10m'
   
   input:
   file(contigs)
