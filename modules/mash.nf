@@ -62,7 +62,7 @@ process mash {
   if [ -f "sample.fasta" ]
   then
     echo "Mash on fasta files" | tee -a $log_file
-    mash sketch !{params.mash_sketch_options} -o !{sample}.fasta sample.fasta 2>> $err_file | tee -a $log_file
+    mash sketch -o !{sample}.fasta sample.fasta 2>> $err_file | tee -a $log_file
 
     mash dist -p !{task.cpus} !{params.mash_dist_options} $reference !{sample}.fasta.msh >> mash/!{sample}.mashdist.txt.tmp
   fi 
@@ -82,10 +82,19 @@ process mash {
 
   echo "sample,reference,query,mash-distance,P-value,matching-hashes,organism" > mash/!{sample}.summary.mash.csv
 
-  while read line
-  do
-    organism=$(echo $line | cut -f 8 -d "-" | cut -f 1,2 -d "_" | cut -f 1 -d ".")
-    echo $line | sed 's/,//g' | awk -v sample=!{sample} -v org=$organism '{print sample "," $1 "," $2 "," $3 "," $4 "," $5 "," org}' >> mash/!{sample}.summary.mash.csv
-  done < mash/!{sample}.mashdist.txt
+  if [[ "!{reference}" != *"input"* ]]
+  then
+    while read line
+    do 
+      organism=$(echo $line | cut -f 3,4 -d "_" | cut -f 1 -d ".")
+      echo $line | sed 's/,//g' | awk -v sample=!{sample} -v org=$organism '{print sample "," $1 "," $2 "," $3 "," $4 "," $5 "," org}' >> mash/!{sample}.summary.mash.csv
+    done < mash/!{sample}.mashdist.txt
+  else
+    while read line
+    do
+      organism=$(echo $line | cut -f 8 -d "-" | cut -f 1,2 -d "_" | cut -f 1 -d ".")
+      echo $line | sed 's/,//g' | awk -v sample=!{sample} -v org=$organism '{print sample "," $1 "," $2 "," $3 "," $4 "," $5 "," org}' >> mash/!{sample}.summary.mash.csv
+    done < mash/!{sample}.mashdist.txt
+  fi
   '''
 }
