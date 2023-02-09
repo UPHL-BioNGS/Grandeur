@@ -5,9 +5,9 @@ process mash {
   container     'staphb/mash:2.3'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-xlarge'
-  //#UPHLICA cpus 14
-  //#UPHLICA memory 60.GB
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize' , value: 'himem-medium'
+  //#UPHLICA cpus 8
+  //#UPHLICA memory 100.GB
   //#UPHLICA time '10m'
 
   input:

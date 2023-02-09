@@ -4,9 +4,9 @@ process bbduk {
   container     'staphb/bbtools:39.01'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  //#UPHLICA cpus 3
-  //#UPHLICA memory 5.GB
-  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
+  //#UPHLICA cpus 14
+  //#UPHLICA memory 60.GB
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-xlarge'
   //#UPHLICA time '10m'
 
   input:
