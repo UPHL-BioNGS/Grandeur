@@ -149,6 +149,7 @@ GCF_013374815.1	Shigella_sonnei
 GCF_000013425.1	Staphylococcus_aureus_subsp._aureus_NCTC_8325
 GCF_900475405.1	Stenotrophomonas_maltophilia
 GCF_009665435.1	Vibrio_alginolyticus
+GCA_023650915.1	Vibrio_alginolyticus
 GCF_009665515.2	Vibrio_cholerae
 GCF_008369605.1	Vibrio_cholerae
 GCF_009665415.1	Vibrio_cidicii
@@ -163,6 +164,7 @@ GCF_009665195.1	Vibrio_mimicus
 GCF_000176375.1	Vibrio_mimicus_MB451
 GCF_009665215.1	Vibrio_navarrensis
 GCF_012275065.1	Vibrio_navarrensis
+GCA_003311965.1	Vibrio_paracholerae
 GCF_009665495.1	Vibrio_parahaemolyticus
 GCF_000196095.1	Vibrio_parahaemolyticus_RIMD_2210633
 GCF_009665455.1	Vibrio_vulnificus
