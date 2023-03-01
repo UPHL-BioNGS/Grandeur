@@ -23,7 +23,7 @@ fastqscan      = 'fastqscan_summary.csv'
 kleborate      = 'kleborate_results.tsv'
 kraken2        = 'kraken2_summary.csv'
 mash           = 'mash_summary.csv'
-mlst           = 'mlst_summary.csv'
+mlst           = 'mlst_summary.tsv'
 plasmidfinder  = 'plasmidfinder_result.tsv'
 quast          = 'quast_report.tsv'
 seqsero2       = 'seqsero2_results.txt'
@@ -116,8 +116,7 @@ if exists(fastani) :
     print("Adding results for " + file)
     analysis = "fastani"
     new_df = pd.read_csv(file, dtype = str, index_col= False)
-    new_df['ref1'] = new_df['reference'].str.split("/").str[1]
-    new_df['genome (ANI estimate)'] = new_df['ref1'].str.split('_').str[0] + " " + new_df['ref1'].str.split("_").str[1] + " " + new_df['ref1'].str.split('_').str[-2] + "_" + new_df['ref1'].str.split('_').str[-1] + " (" + new_df['ANI estimate'] + ")"
+    new_df['genome (ANI estimate)'] = new_df['reference'].str.split('_').str[0] + " " + new_df['reference'].str.split("_").str[1] + " " + new_df['reference'].str.split('_').str[-2] + "_" + new_df['reference'].str.split('_').str[-1] + " (" + new_df['ANI estimate'] + ")"
     new_df = new_df[['sample', 'genome (ANI estimate)']]
     new_df = new_df.groupby('sample', as_index=False).agg({'genome (ANI estimate)': lambda x: list(x)})
     new_df = new_df.add_prefix(analysis + '_')

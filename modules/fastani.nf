@@ -44,7 +44,7 @@ process fastani {
       | tee -a $log_file
 
     echo "sample,query,reference,ANI estimate,total query sequence fragments,fragments aligned as orthologous matches" > fastani/!{sample}_fastani.csv
-    cat fastani/!{sample}.txt | sed 's/,//g' | tr "\\t" "," | awk -v sample=!{sample} '{ print sample "," $0 }' >> fastani/!{sample}_fastani.csv
+    cat fastani/!{sample}.txt | sed 's/,//g' | sed 's/!{genomes}\\///g' | tr "\\t" "," | awk -v sample=!{sample} '{ print sample "," $0 }' >> fastani/!{sample}_fastani.csv
 
     top_hit=$(head -n 2 fastani/!{sample}_fastani.csv | tail -n 1 | cut -f 3 -d , )
     if [ -f "$top_hit" ]; then mkdir -p top_hit ; cp $top_hit top_hit/. ; fi
