@@ -59,7 +59,7 @@ workflow information {
       .set { flag_summary }
 
     mlst.out.collect
-      .collectFile(name: "mlst_summary.csv",
+      .collectFile(name: "mlst_summary.tsv",
         keepHeader: true,
         sort: { file -> file.text },
         storeDir: "${params.outdir}/mlst")

@@ -13,7 +13,7 @@ process mlst {
   tuple val(sample), file(contig)
 
   output:
-  path "mlst/${sample}_mlst.csv"                                 , emit: collect
+  path "mlst/${sample}_mlst.tsv"                                 , emit: collect
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
@@ -28,12 +28,11 @@ process mlst {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    echo "sample,filename,matching PubMLST scheme,ST,ID1,ID2,ID3,ID4,ID5,ID6,ID7,ID8,ID9,ID10,ID11,ID12,ID13,ID14,ID15" > mlst/!{sample}_mlst.csv
+    echo -e "sample\\tfilename\\tmatching PubMLST scheme\\tST\\tID1\\tID2\\tID3\\tID4\\tID5\\tID6\\tID7\\tID8\\tID9\\tID10\\tID11\\tID12\\tID13\\tID14\\tID15" > mlst/!{sample}_mlst.tsv
 
     mlst !{params.mlst_options} \
       --threads !{task.cpus} \
       !{contig} | \
-      sed 's/,/_/g' | \
-      awk -v sample=!{sample} '{print sample "," $1 "," $2 "," $3 "," $4 "," $5 "," $6 "," $7 "," $8 "," $9 "," $10 "," $11 "," $12 "," $13 "," $14 "," $15 "," $16 "," $17 "," $18}' >> mlst/!{sample}_mlst.csv
+      awk -v sample=!{sample} '{print sample "\\t" $1 "\\t" $2 "\\t" $3 "\\t" $4 "\\t" $5 "\\t" $6 "\\t" $7 "\\t" $8 "\\t" $9 "\\t" $10 "\\t" $11 "\\t" $12 "\\t" $13 "\\t" $14 "\\t" $15 "\\t" $16 "\\t" $17 "\\t" $18}' >> mlst/!{sample}_mlst.tsv
   '''
 }

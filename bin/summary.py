@@ -38,8 +38,8 @@ extended       = 'grandeur_extended_summary'
 # grouping similar files                 #
 ##########################################
 
-csv_files = [ fastqscan, mlst ]
-tsv_files = [ quast, seqsero2, kleborate ]
+csv_files = [ fastqscan ]
+tsv_files = [ quast, seqsero2, kleborate, mlst ]
 
 top_hit    = [ fastani ]
 
