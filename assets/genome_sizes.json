@@ -147,9 +147,13 @@
     "Stenotrophomonas_maltophilia" : 4481118,
     "Sutterella_wadsworthensis" : 3026517,
     "Variovorax_paradoxus" : 6664268,
+    "Vibrio_alginolyticus": 5146637,
     "Vibrio_cholerae" : 4138412,
+    "Vibrio_fluvialis" : 4787490,
+    "Vibrio_harveyi" : 5854100,
     "Vibrio_mimicus" : 4313453,
     "Vibrio_navarrensis" : 4287126,
+    "Vibrio_paracholerae" : 3953770,
     "Vibrio_parahaemolyticus" : 5165770,
     "Vibrio_vulnificus" : 5117890
   }
