@@ -1,0 +1,41 @@
+name: Test Grandeur workflow with E. coli and Shigella
+
+on: [pull_request, workflow_dispatch]
+
+jobs:
+
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+
+      - name: Checkout LFS objects
+        run: git lfs checkout
+            
+      - name: Install Nextflow
+        run: |
+          wget -qO- get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+          
+      - name: Run Grandeur
+        run: |
+          docker --version
+          
+          mkdir fastas 
+
+          for accesion in GCA_009738455.1_ASM973845v1 GCA_003019175.1_ASM301917v1 GCA_023823105.1_ASM2382310v1
+          do
+            all=$(echo $accession | cut -f 2 -d "_")
+            fir=$(echo $all | cut -c 1-3)
+            mid=$(echo $all | cut -c 4-6)
+            end=$(echo $all | cut -c 7-9)
+            wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/$fir/$mid/$end/$accession/${accession}_genomic.fna.gz
+            gzip -d ${accession}_genomic.fna.gz
+            mv ${accession}_genomic.fna fastas/.
+          done
+
+          nextflow run . -profile docker --maxcpus 2 --medcpus 2
+          cat grandeur/grandeur_summary.tsv

@@ -1,0 +1,41 @@
+name: Test Grandeur phylogenetic workflow
+
+on: [pull_request, workflow_dispatch]
+
+jobs:
+
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+
+      - name: Checkout LFS objects
+        run: git lfs checkout
+            
+      - name: Install Nextflow
+        run: |
+          wget -qO- get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+          
+      - name: Run Grandeur
+        run: |
+          docker --version
+
+          wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/904/864/595/GCA_904864595.1_INF333/GCA_904864595.1_INF333_genomic.fna.gz             && gzip -d GCA_904864595.1_INF333_genomic.fna.gz
+          wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/013/783/245/GCA_013783245.1_ASM1378324v1/GCA_013783245.1_ASM1378324v1_genomic.fna.gz && gzip -d GCA_013783245.1_ASM1378324v1_genomic.fna.gz
+          wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/026/626/185/GCA_026626185.1_ASM2662618v1/GCA_026626185.1_ASM2662618v1_genomic.fna.gz && gzip -d GCA_026626185.1_ASM2662618v1_genomic.fna.gz 
+          wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/020/808/985/GCA_020808985.1_ASM2080898v1/GCA_020808985.1_ASM2080898v1_genomic.fna.gz && gzip -d GCA_020808985.1_ASM2080898v1_genomic.fna.gz
+          wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/904/863/225/GCA_904863225.1_KSB1_6J/GCA_904863225.1_KSB1_6J_genomic.fna.gz           && gzip -d GCA_904863225.1_KSB1_6J_genomic.fna.gz
+          
+          mkdir fastas
+          mv *fna fastas/.
+
+          nextflow run . -profile docker --maxcpus 2 --medcpus 2
+
+          cat grandeur/grandeur_summary.tsv
+
+          nextflow run . -profile docker,msa --maxcpus 2 --medcpus 2 -resume
+          
