@@ -25,7 +25,7 @@ jobs:
           docker --version
           
           mkdir fastas
-          for accesion in GCA_009665515.2_ASM966551v2 GCA_009763645.1_ASM976364v1 GCA_004355205.1_ASM435520v1 GCA_009665315.1_ASM966531v1 GCA_002953375.1_ASM295337v1
+          for accession in GCA_009665515.2_ASM966551v2 GCA_009763645.1_ASM976364v1 GCA_004355205.1_ASM435520v1 GCA_009665315.1_ASM966531v1 GCA_002953375.1_ASM295337v1
           do
             all=$(echo $accession | cut -f 2 -d "_")
             fir=$(echo $all | cut -c 1-3)
