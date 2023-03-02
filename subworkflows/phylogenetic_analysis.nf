@@ -14,12 +14,12 @@ workflow phylogenetic_analysis {
     for_prokka = Channel.empty()
     if (params.extras) {
       ch_top_hit
-        .map { it -> tuple( it[0] , [ it[1].split("/")[1].split("_")[0], it[1].split("/")[1].split("_")[1]] )}
+        .map { it -> tuple( it[0] , [ it[1].split("_")[0], it[1].split("_")[1]] )}
         .set { ch_organism }
 
       if ( params.fastani_include ) {
         ch_top_hit
-          .map { it -> tuple( it[1].split("/")[1].split("_", 3)[2].replaceAll(~/.fna/,""), it[2], it[1].split("/")[1].split("_")[0, 1]) }
+          .map { it -> tuple( it[1].split("_", 3)[2].replaceAll(~/.fna/,""), it[2], it[1].split("_")[0, 1]) }
           .groupTuple(by: 0)
           .map { it -> tuple( it[0], it[1][0], it[2][0] ) }
           .unique()

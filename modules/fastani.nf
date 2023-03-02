@@ -47,6 +47,6 @@ process fastani {
     cat fastani/!{sample}.txt | sed 's/,//g' | sed 's/!{genomes}\\///g' | tr "\\t" "," | awk -v sample=!{sample} '{ print sample "," $0 }' >> fastani/!{sample}_fastani.csv
 
     top_hit=$(head -n 2 fastani/!{sample}_fastani.csv | tail -n 1 | cut -f 3 -d , )
-    if [ -f "$top_hit" ]; then mkdir -p top_hit ; cp $top_hit top_hit/. ; fi
+    if [ -f "!{genomes}/$top_hit" ]; then mkdir -p top_hit ; cp !{genomes}/$top_hit top_hit/. ; fi
   '''
 }
