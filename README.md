@@ -41,7 +41,7 @@ WARNING : "Grandeur" will automatically grab any fastq files in `workflow.launch
 The README got too long, so it's been moved to a [wiki](https://github.com/UPHL-BioNGS/Grandeur/wiki). There are several covered topics including:
 - [Installation](https://github.com/UPHL-BioNGS/Grandeur/wiki/Installation)
 - [Usage](https://github.com/UPHL-BioNGS/Grandeur/wiki/USAGE)
-  - [Stadalone](https://github.com/UPHL-BioNGS/Grandeur/wiki/USAGE#standalone)
+  - [Standalone](https://github.com/UPHL-BioNGS/Grandeur/wiki/USAGE#standalone)
   - [After PHOENIX or another workflow](https://github.com/UPHL-BioNGS/Grandeur/wiki/USAGE#after-phoenix)
   - [Phylogenetic or Relatedness Analysis](https://github.com/UPHL-BioNGS/Grandeur/wiki/Phylogenetic-Analysis)
   - [Using config Files](https://github.com/UPHL-BioNGS/Grandeur/wiki/config-file)
