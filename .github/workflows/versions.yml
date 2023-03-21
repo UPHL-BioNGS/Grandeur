@@ -34,7 +34,7 @@ jobs:
               echo "No version change for $base:$repo_version" | tee -a versions.txt
             else
               echo "New version for $base! Upgrade to $latest_version from $repo_version." | tee -a versions.txt
-              issue_text="$issue_text  $base from $repo_version to $latest_version  "
+              issue_text="$issue_text<br>- $base from $repo_version to $latest_version  "
             fi
           done
           echo $issue_text
