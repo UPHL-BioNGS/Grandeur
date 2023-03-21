@@ -36,6 +36,19 @@ nextflow run UPHL-BioNGS/Grandeur -profile docker --fastas <path to fastas>
 
 WARNING : "Grandeur" will automatically grab any fastq files in `workflow.launchDir + '/reads'`, fasta files in `workflow.launchDir + '/fastas'`, and gff files in `workflow.launchDir + '/gff'`. This is a **feature** of the workflow.
 
+### Commonly adjusted parameters
+- params.reads / --reads : specify directory with paired-end files
+- params.fastas / --fastas : specify directory with fasta files
+- params.sample_sheet / --sample_sheet : specify sample sheet with sample id, forward reads in fastq.gz format, and reverse reads in fastq.gz format
+- params.outdir / --outdir : specify directly where results are saved (basic result patterns are granduer/analysis/sample*)
+
+### Not-as-commonly adjusted parameters
+- params.kraken2_db / --kraken2_db : specify directory of kraken2 database
+- params.blast_db / --blast_db : specify directory of blast database
+- params.mash_db / --mash_db : specify reference file for mash 
+- params.current_datasets / --current_datasets : set to false to avoid downloading genomes from NCBI genomes
+- params.iqtree2_outgroup / --iqtree2_outgroup : set outgroup for iqtree2 (is most successful when included as input)
+
 ## Wiki sections
 
 The README got too long, so it's been moved to a [wiki](https://github.com/UPHL-BioNGS/Grandeur/wiki). There are several covered topics including:
