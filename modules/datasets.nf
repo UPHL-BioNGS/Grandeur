@@ -1,7 +1,7 @@
 process datasets_summary {
   tag           "${taxon}"
   publishDir    params.outdir, mode: 'copy'
-  container     'staphb/ncbi-datasets:14.13.2'
+  container     'staphb/ncbi-datasets:14.20.0'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
@@ -43,7 +43,7 @@ process datasets_download {
   // because there's no way to specify threads
   label         "medcpus"
   publishDir    params.outdir, mode: 'copy'
-  container     'staphb/ncbi-datasets:14.7.0'
+  container     'staphb/ncbi-datasets:14.20.0'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
