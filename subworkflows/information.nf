@@ -1,9 +1,13 @@
 include { amrfinderplus }  from '../modules/amrfinderplus'  addParams(params)
+include { emmtyper }       from '../modules/emmtyper'       addParams(params)
 include { fastqc }         from '../modules/fastqc'         addParams(params)
 include { fastqscan }      from '../modules/fastqscan'      addParams(params)
 include { flag }           from '../modules/grandeur'       addParams(params)
+include { kaptive }        from '../modules/kaptive'        addParams(params)
 include { kleborate }      from '../modules/kleborate'      addParams(params)
+include { legsta }         from '../modules/legsta'         addParams(params)
 include { mlst }           from '../modules/mlst'           addParams(params)
+include { pbptyper }       from '../modules/pbptyper'       addParams(params)
 include { plasmidfinder }  from '../modules/plasmidfinder'  addParams(params)
 include { quast }          from '../modules/quast'          addParams(params)
 include { seqsero2 }       from '../modules/seqsero2'       addParams(params)
@@ -31,12 +35,45 @@ workflow information {
 
     // species specific
     flag(ch_flag.groupTuple())
-    amrfinderplus(ch_contigs.join(flag.out.organism,    by:0))       
+
+    amrfinderplus(ch_contigs.join(flag.out.organism,    by:0))
+    emmtyper(ch_contigs.join(flag.out.strepa_flag,      by:0)) 
+    //kaptive(ch_contigs.join(flag.out.klebacin_flag,     by:0))      
     kleborate(ch_contigs.join(flag.out.klebsiella_flag, by:0))
+    legsta(ch_contigs.join(flag.out.legionella_flag,    by:0))
     seqsero2(ch_contigs.join(flag.out.salmonella_flag,  by:0))
     serotypefinder(ch_contigs.join(flag.out.ecoli_flag, by:0))
     shigatyper(ch_contigs.join(flag.out.ecoli_flag,     by:0))
+    pbptyper(ch_contigs.join(flag.out.streppneu_flag,   by:0))
     
+    emmtyper.out.collect
+      .collectFile(name: "emmtyper_summary.tsv",
+        keepHeader: true,
+        sort: { file -> file.text },
+        storeDir: "${params.outdir}/emmtyper")
+      .set{ emmtyper_summary }
+
+    // kaptive.out.collect
+    //   .collectFile(name: "kaptive_summary.csv",
+    //     keepHeader: true,
+    //     sort: { file -> file.text },
+    //     storeDir: "${params.outdir}/kaptive")
+    //   .set{ kaptive_summary }
+    
+    legsta.out.collect
+      .collectFile(name: "legsta_summary.csv",
+        keepHeader: true,
+        sort: { file -> file.text },
+        storeDir: "${params.outdir}/legsta")
+      .set{ legsta_summary }
+    
+    pbptyper.out.collect
+      .collectFile(name: "pbptyper_summary.tsv",
+        keepHeader: true,
+        sort: { file -> file.text },
+        storeDir: "${params.outdir}/pbptyper")
+      .set{ pbptyper_summary }
+
     fastqc.out.collect
       .collectFile(name: "fastqc_summary.csv",
         keepHeader: true,
@@ -114,7 +151,6 @@ workflow information {
         storeDir: "${params.outdir}/size")
       .set{ size_summary }
 
-
     amrfinderplus.out.collect
       .collectFile(name: "amrfinderplus.txt",
         keepHeader: true,
@@ -123,10 +159,14 @@ workflow information {
       .set{ amrfinderplus_summary }
 
     amrfinderplus_summary
+      .mix(emmtyper_summary)
       .mix(fastqc_summary)
       .mix(fastqscan_summary)
+      //.mix(kaptive_summary)
       .mix(kleborate_summary)
+      .mix(legsta_summary)
       .mix(mlst_summary)
+      .mix(pbptyper_summary)
       .mix(plasmidfinder_summary)
       .mix(quast_summary)
       .mix(seqsero2_summary)
