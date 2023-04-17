@@ -1,0 +1,41 @@
+name: Test Grandeur workflow with Streptococcus pneumoniae
+
+on: [pull_request, workflow_dispatch]
+
+jobs:
+
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+
+      - name: Checkout LFS objects
+        run: git lfs checkout
+            
+      - name: Install Nextflow
+        run: |
+          wget -qO- get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+          
+      - name: Run Grandeur
+        run: |
+          docker --version
+          
+          mkdir fastas 
+          for accession in 	GCA_002076835.1_ASM207683v1 GCA_000221985.1_ASM22198v1
+          do
+            all=$(echo $accession | cut -f 2 -d "_")
+            fir=$(echo $all | cut -c 1-3)
+            mid=$(echo $all | cut -c 4-6)
+            end=$(echo $all | cut -c 7-9)
+            wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/${fir}/${mid}/${end}/${accession}/${accession}_genomic.fna.gz
+            gzip -d ${accession}_genomic.fna.gz
+            mv ${accession}_genomic.fna fastas/.
+          done
+
+          nextflow run . -profile docker --maxcpus 2 --medcpus 2
+          cat grandeur/grandeur_summary.tsv
+          cat grandeur/pbptyper/pbptyper_summary.tsv
