@@ -13,6 +13,7 @@
         "bbduk_options": {
             "type": "string",
             "hidden": true,
+            "default": "k=31 hdist=1",
             "description": "additional options for editing for process"
         },
         "bbmap_options": {
@@ -22,6 +23,7 @@
         },
         "blast_db": {
             "type": "string",
+            "default": "nt",
             "description": "directory with blast database"
         },
         "blast_db_type": {
@@ -31,6 +33,7 @@
         "blastn_options": {
             "type": "string",
             "hidden": true,
+            "default": "-max_target_seqs 10 -max_hsps 1 -evalue 1e-25",
             "description": "additional options for editing for process"
         },
         "blobtools_bbmap_options": {
@@ -46,6 +49,7 @@
         "blobtools_plot_options": {
             "type": "string",
             "hidden": true,
+            "default": "--format png -r species",
             "description": "additional options for editing for process"
         },
         "blobtools_view_options": {
@@ -60,16 +64,20 @@
         },
         "current_datasets": {
             "type": "boolean",
+            "hidden": true,
+            "default": true,
             "description": "toggles whether or not genomes are downloaded from NCBI"
         },
         "datasets_max_genomes": {
             "type": "number",
             "hidden": true,
+            "default": 5,
             "description": "the maxiumum number of genomes to download per organism"
         },
         "donut_falls_wf": {
             "type": "string",
             "hidden": true,
+            "default": false,
             "description": "directory of donut falls nextflow workflow"
         },
         "emmtyper_options":{
@@ -80,16 +88,19 @@
         "extras": {
             "type": "boolean",
             "hidden": true,
+            "default": true,
             "description": "turns off blobtools, kraken2, fastani, mash, and report generation subworkflows"
         },
         "fastani_include": {
             "type": "boolean",
             "hidden": true,
+            "default": true,
             "description": "adds fastani top hit to msa"
         },
         "fastani_options": {
             "type": "string",
             "hidden": true,
+            "default": "--matrix",
             "description": "additional options for editing for process"
         },
         "fastani_ref": {
@@ -99,6 +110,7 @@
         },
         "fastas": {
             "type": "string",
+            "default": "fastas",
             "description": "directory with fasta files"
         },
         "fasterqdump_options": {
@@ -109,6 +121,7 @@
         "fastp_options": {
             "type": "string",
             "hidden": true,
+            "default": "--detect_adapter_for_pe",
             "description": "additional options for editing for process"
         },
         "fastqc_options": {
@@ -134,11 +147,13 @@
         "gff": {
             "type": "string",
             "hidden": true,
+            "default": "gff",
             "description": "directory of prokka-annotated gff files (only for use with msa)"
         },
         "iqtree2_options": {
             "type": "string",
             "hidden": true,
+            "default": "-t RANDOM -m GTR+F+I -bb 1000 -alrt 1000",
             "description": "additional options for editing for process"
         },
         "iqtree2_outgroup": {
@@ -154,6 +169,7 @@
         "kleborate_options": {
             "type": "string",
             "hidden": true,
+            "default": "-all",
             "description": "additional options for editing for process"
         },
         "kraken2_db": {
@@ -177,16 +193,19 @@
         "mash_dist_options": {
             "type": "string",
             "hidden": true,
+            "default": "-v 0 -d 0.5",
             "description": "additional options for editing for process"
         },
         "mash_max_hits": {
             "type": "number",
             "hidden": true,
+            "default": 25,
             "description": "the number of mash hits allowed in result file"
         },
         "mash_sketch_options": {
             "type": "string",
             "hidden": true,
+            "default": "-m 2",
             "description": "additional options for editing for process"
         },
         "maxcpus": {
@@ -204,6 +223,7 @@
         "minimum_reads": {
             "type": "number",
             "hidden": true,
+            "default": 10000,
             "description": "the minimum number of reads in a fastq file required to move to de novo alignment"
         },
         "mlst_options": {
@@ -213,6 +233,8 @@
         },
         "msa": {
             "type": "boolean",
+            "hidden": true,
+            "default": false,
             "description": "toggles whether or not phylogenetic analysis will be run on samples"
         },
         "multiqc_options": {
@@ -243,6 +265,7 @@
         "prokka_options": {
             "type": "string",
             "hidden": true,
+            "default": "--mincontiglen 500 --compliant --locustag locus_tag --centre STAPHB",
             "description": "additional options for editing for process"
         },
         "quast_options": {
@@ -252,11 +275,13 @@
         },
         "reads": {
             "type": "string",
+            "default": "reads",
             "description": "directory of reads"
         },
         "roary_min_genes": {
             "type": "number",
             "hidden": true,
+            "default": 1500,
             "description": "minimum number of genes in core genome alignment for iqtree2"
         },
         "roary_options": {
@@ -271,6 +296,7 @@
         "seqsero2_options": {
             "type": "string",
             "hidden": true,
+            "default": "-m a -b mem",
             "description": "additional options for editing for process"
         },
         "serotypefinder_options": {
@@ -286,11 +312,13 @@
         "snp_dists_options": {
             "type": "string",
             "hidden": true,
+            "default": "-c",
             "description": "additional options for editing for process"
         },
         "spades_options": {
             "type": "string",
             "hidden": true,
+            "default": "--isolate",
             "description": "additional options for editing for process"
         },
         "sra_accessions": {
