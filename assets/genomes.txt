@@ -148,6 +148,11 @@ GCF_000006925.2	Shigella_flexneri_2a_str._301
 GCF_013374815.1	Shigella_sonnei
 GCF_000013425.1	Staphylococcus_aureus_subsp._aureus_NCTC_8325
 GCF_900475405.1	Stenotrophomonas_maltophilia
+GCF_001412635.1	Streptococcus_anginosus
+GCF_016724885.1	Streptococcus_dysgalactiae
+GCF_002076835.1	Streptococcus_pneumoniae
+GCF_000221985.1	Streptococcus_pseudopneumoniae
+GCF_900475035.1	Streptococcus_pyogenes
 GCF_009665435.1	Vibrio_alginolyticus
 GCA_023650915.1	Vibrio_alginolyticus
 GCF_009665515.2	Vibrio_cholerae
