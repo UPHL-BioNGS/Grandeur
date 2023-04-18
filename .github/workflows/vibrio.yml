@@ -38,3 +38,4 @@ jobs:
 
           nextflow run . -profile docker --maxcpus 2 --medcpus 2
           cat grandeur/grandeur_summary.tsv
+          grep -i vibrio grandeur/fastani/fastani_summary.csv

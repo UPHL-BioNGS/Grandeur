@@ -42,7 +42,7 @@ process species {
       cut -f 7 -d , mash_summary.csv >> species.txt
     fi
 
-    grep -v no-hit species.txt | grep -v undef | grep -v name | grep -v "sp." | sort | uniq > datasets/species_list.txt
+    grep -v no-hit species.txt | grep -v undef | grep -v name | sort | uniq > datasets/species_list.txt
   '''
 }
 
@@ -105,6 +105,10 @@ process flag {
   tuple val(sample), env(salmonella_flag)                        , emit: salmonella_flag
   tuple val(sample), env(klebsiella_flag)                        , emit: klebsiella_flag
   tuple val(sample), env(ecoli_flag)                             , emit: ecoli_flag
+  tuple val(sample), env(streppneu_flag)                         , emit: streppneu_flag
+  tuple val(sample), env(legionella_flag)                        , emit: legionella_flag
+  tuple val(sample), env(klebacin_flag)                          , emit: klebacin_flag
+  tuple val(sample), env(strepa_flag)                            , emit: strepa_flag
   tuple val(sample), env(genus), env(species)                    , emit: organism
   path "flag/${sample}_flag.csv"                                 , emit: collect
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log_files
@@ -147,6 +151,32 @@ process flag {
     klebsiella_flag=''
     find_klebsiella=$(head -n 10 $files smaller_fastani.csv | grep -e "Klebsiella" -e "Enterobacter" -e "Serratia" | tee -a $log_file | head -n 1 )
     if [ -n "$find_klebsiella" ] ; then klebsiella_flag="found" ; else klebsiella_flag="not" ; fi
+
+    
+    echo "Looking for Strep A organisms:" >> $log_file
+    strepa_flag=''
+    find_strepa=$(head -n 10 $files smaller_fastani.csv | grep "Streptococcus" | grep -e "pyogenes" -e "dysgalactiae" -e "anginosus" | tee -a $log_file | head -n 1 )
+    if [ -n "$find_strepa" ] ; then strepa_flag='found' ; else strepa_flag='not' ; fi
+
+    echo "Looking for Streptococcus pneumoniae organisms:" >> $log_file
+    streppneu_flag_flag=''
+    find_streppneu=$(head -n 10 $files smaller_fastani.csv | grep "Streptococcus" | grep "pneumoniae" | tee -a $log_file | head -n 1 )
+    if [ -n "$find_streppneu" ] ; then streppneu_flag='found' ; else streppneu_flag='not' ; fi
+  
+    echo "Looking for Legionella organisms:" >> $log_file
+    legionella_flag=''
+    find_legionella=$(head -n 10 $files smaller_fastani.csv | grep "Legionella" | tee -a $log_file | head -n 1 )
+    if [ -n "$find_legionella" ] ; then legionella_flag='found' ; else legionella_flag='not' ; fi
+
+    echo "Looking for Klebsiella or Acinetobacter:" >> $log_file
+    klebacin_flag=''
+    if [ -n "$find_klebsiella" ]
+    then
+      klebacin_flag='found'
+    else
+      find_acin=$(head -n 10 $files smaller_fastani.csv | grep "Acinetobacter" | tee -a $log_file | head -n 1 )
+      if [ -n "$find_acin" ] ; then klebacin_flag='found' ; else klebacin_flag='not' ; fi
+    fi
 
     if [ -z "$genus" ]   ; then genus=unknown ; fi
     if [ -z "$species" ] ; then species=unknown ; fi

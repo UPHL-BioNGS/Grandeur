@@ -80,6 +80,11 @@
             "default": false,
             "description": "directory of donut falls nextflow workflow"
         },
+        "emmtyper_options":{
+            "type": "string",
+            "hidden": true,
+            "description": "options for emmtyper"
+        },
         "extras": {
             "type": "boolean",
             "hidden": true,
@@ -156,6 +161,11 @@
             "hidden": true,
             "description": "specify outgroup for iqtree2"
         },
+        "kaptive_options": {
+            "type": "string",
+            "hidden": true,
+            "description": "options for process"
+        },
         "kleborate_options": {
             "type": "string",
             "hidden": true,
@@ -170,6 +180,11 @@
             "type": "string",
             "hidden": true,
             "description": "additional options for editing for process"
+        },
+        "legsta_options": {
+            "type": "string",
+            "hidden": true,
+            "description": "additonal options for editing for process"
         },
         "mash_db": {
             "type": "string",
@@ -195,11 +210,13 @@
         },
         "maxcpus": {
             "type": "number",
+            "hidden": true,
             "description": "the maximum number of cpus for any one process (if using labels)",
             "default": 12
         },
         "medcpus": {
             "type": "number",
+            "hidden": true,
             "description": "for those processes that aren't as intensive (if using labels)",
             "default": 4
         },
@@ -229,6 +246,11 @@
             "type": "string",
             "description": "result output directory",
             "default": "grandeur"
+        },
+        "pbptyper_options": {
+            "type": "string",
+            "hidden": true,
+            "description": "additional options for editing for process"
         },
         "phoenix_wf": {
             "type": "string",

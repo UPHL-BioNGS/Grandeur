@@ -17,13 +17,16 @@ names          = 'input_files.csv'
 amrfinderplus  = 'amrfinderplus.txt'
 blobtools      = 'blobtools_summary.txt'
 datasets       = 'datasets_summary.csv'
+emmtyper       = 'emmtyper_summary.tsv'
 fastani        = 'fastani_summary.csv'
 fastqc         = 'fastqc_summary.csv'
 fastqscan      = 'fastqscan_summary.csv'
 kleborate      = 'kleborate_results.tsv'
 kraken2        = 'kraken2_summary.csv'
+legsta         = 'legsta_summary.csv'
 mash           = 'mash_summary.csv'
 mlst           = 'mlst_summary.tsv'
+pbptyper       = 'pbptyper_summary.tsv'
 plasmidfinder  = 'plasmidfinder_result.tsv'
 quast          = 'quast_report.tsv'
 seqsero2       = 'seqsero2_results.txt'
@@ -38,8 +41,8 @@ extended       = 'grandeur_extended_summary'
 # grouping similar files                 #
 ##########################################
 
-csv_files = [ fastqscan ]
-tsv_files = [ quast, seqsero2, kleborate, mlst ]
+csv_files = [ fastqscan, legsta ]
+tsv_files = [ quast, seqsero2, kleborate, mlst, emmtyper , pbptyper]
 
 top_hit    = [ fastani ]
 
@@ -250,7 +253,10 @@ final_columns = [
 # species specific information
 'seqsero2_Predicted_antigenic_profile',
 'seqsero2_Predicted_serotype',
+'emmtyper_Predicted_emm-type',
 'kleborate_virulence_score',
+'pbptyper_pbptype',
+'legsta_SBT',
 'serotypefinder_Serotype_O',
 'serotypefinder_Serotype_H',
 'shigatyper_Hit']

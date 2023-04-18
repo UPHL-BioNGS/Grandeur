@@ -1,4 +1,4 @@
-name: Test Grandeur workflow with salmonella
+name: Test Grandeur workflow with Group A Strep
 
 on: [pull_request, workflow_dispatch]
 
@@ -24,18 +24,18 @@ jobs:
         run: |
           docker --version
           
-          mkdir fastas
-          for accession in GCA_019710395.3_ASM1971039v3 GCA_001652385.2_ASM165238v2 GCA_013344545.1_ASM1334454v1
+          mkdir fastas 
+          for accession in GCA_001412635.1_ASM141263v1 GCA_016724885.1_ASM1672488v1 GCA_900475035.1_41965_F01
           do
             all=$(echo $accession | cut -f 2 -d "_")
             fir=$(echo $all | cut -c 1-3)
             mid=$(echo $all | cut -c 4-6)
             end=$(echo $all | cut -c 7-9)
-            wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/$fir/$mid/$end/$accession/${accession}_genomic.fna.gz
+            wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/${fir}/${mid}/${end}/${accession}/${accession}_genomic.fna.gz
             gzip -d ${accession}_genomic.fna.gz
             mv ${accession}_genomic.fna fastas/.
           done
 
           nextflow run . -profile docker --maxcpus 2 --medcpus 2
           cat grandeur/grandeur_summary.tsv
-          cat grandeur/seqsero2/seqsero2_results.txt
+          cat grandeur/emmtyper/emmtyper_summary.tsv
