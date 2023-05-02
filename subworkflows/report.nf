@@ -12,7 +12,7 @@ workflow report {
         phix_reads
   
     main:
-        multiqc(for_multiqc)
+        multiqc(for_multiqc.mix(for_summary).collect())
 
         names(ch_reads.mix(ch_fastas).join(fastp_reads, by: 0, remainder: true).join(phix_reads, by: 0 , remainder: true))
 
