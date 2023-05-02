@@ -3,11 +3,11 @@
 ################################################
 # written by Erin Young                        #
 # for downloading Erin's msh file for grandeur #
-# refseq 215                                   #
+# refseq 217                                   #
 ################################################
 
 ver=215
-URL=https://zenodo.org/record/7348463/files/rep-genomes.msh
+URL=https://zenodo.org/record/7887021/files/rep-genomes.msh
 
 ############################################################
 
