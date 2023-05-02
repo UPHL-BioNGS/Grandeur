@@ -20,7 +20,7 @@ accessions="GCF_008632635.1 GCF_000191145.1 GCF_001558935.2 GCF_003812345.1 GCF_
 datasets download genome accession $accessions --filename ncbi_dataset.zip
 
 # cut -f 1 /home/eriny/sandbox/Grandeur/configs/genomes.txt > id_list.txt
-datasets download genome accession --inputfile id_list.txt --filename ncbi_dataset.zip
+# datasets download genome accession --inputfile id_list.txt --filename ncbi_dataset.zip
 
 unzip -o ncbi_dataset.zip
     
@@ -30,13 +30,13 @@ for fasta in ${fastas[@]}
 do  
     accession=$(echo $fasta | cut -f 3 -d / )
     organism=$(head -n 1 $fasta | awk '{print $2 "_" $3 }' )
-    cat $fasta | sed 's/ /_/g' | sed 's/,//g' > $out/${organism}_${accession}.fna
+    echo "$(date): The accession is $accession for the $organism found in fasta $fasta"
+    cat $fasta | sed 's/ /_/g' | sed 's/,//g' > ${organism}_${accession}.fna
 done
 
-rm ncbi_dataset.zip
-rm -rf ncbi_dataset
+rm -rf ncbi_dataset README.md ncbi_dataset.zip
 cd ../
 
 tar -czvf fastani_refs.tar.gz $out/
 
-# mv fastani_refs.tar.gz ~/sandbox/Grandeur/configs/fastani_refs.tar.gz
+cp fastani_refs.tar.gz ~/sandbox/Grandeur/configs/fastani_refs.tar.gz
