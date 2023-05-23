@@ -17,7 +17,6 @@ process bbduk {
   path "bbduk/*",                                                     emit: files
   path "bbduk/${sample}.phix.stats.txt",                              emit: stats
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log",    emit: log
-  tuple val(sample), env(phix_reads),                                 emit: phix_reads
 
   shell:
   '''
@@ -41,8 +40,6 @@ process bbduk {
       stats=bbduk/!{sample}.phix.stats.txt \
       threads=!{task.cpus} \
       | tee -a $log_file
-
-    phix_reads=$(grep Matched bbduk/!{sample}.phix.stats.txt | cut -f 2)
   '''
 }
 
