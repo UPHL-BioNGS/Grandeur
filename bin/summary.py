@@ -20,7 +20,6 @@ datasets       = 'datasets_summary.csv'
 emmtyper       = 'emmtyper_summary.tsv'
 fastani        = 'fastani_summary.csv'
 fastqc         = 'fastqc_summary.csv'
-fastqscan      = 'fastqscan_summary.csv'
 kleborate      = 'kleborate_results.tsv'
 kraken2        = 'kraken2_summary.csv'
 legsta         = 'legsta_summary.csv'
@@ -32,19 +31,19 @@ quast          = 'quast_report.tsv'
 seqsero2       = 'seqsero2_results.txt'
 serotypefinder = 'serotypefinder_results.txt'
 shigatyper     = 'shigatyper_results.txt'
+multiqc        = 'something'
 
 # final files
 final          = 'grandeur_summary'
-extended       = 'grandeur_extended_summary'
+extended       = 'summary/grandeur_extended_summary'
 
 ##########################################
 # grouping similar files                 #
 ##########################################
 
-csv_files = [ fastqscan, legsta ]
+csv_files = [ legsta ]
 tsv_files = [ quast, seqsero2, kleborate, mlst, emmtyper , pbptyper]
-
-top_hit    = [ fastani ]
+top_hit   = [ fastani ]
 
 ##########################################
 # creating the summary dataframe         #
@@ -227,7 +226,6 @@ final_columns = [
 # general information
 'fastqc_total_sequences',
 'fastqc_flagged_sequences',
-'fastqscan_coverage',
 'quast_#_contigs',
 'quast_GC_(%)',
 'amrfinder_genes_(per_cov/per_ident)',
