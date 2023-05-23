@@ -8,21 +8,19 @@ workflow report {
         ch_fastas
         for_multiqc
         for_summary
-        fastp_reads
-        phix_reads
   
     main:
         multiqc(for_multiqc.mix(for_summary).collect())
 
-        names(ch_reads.mix(ch_fastas).join(fastp_reads, by: 0, remainder: true).join(phix_reads, by: 0 , remainder: true))
+        names(ch_reads.mix(ch_fastas))
 
         names.out.collect
-        .collectFile(
-           storeDir: "${params.outdir}/summary/",
-           keepHeader: true,
-           sort: { file -> file.text },
-           name: "input_files.csv")
-        .set { ch_names }
+            .collectFile(
+                storeDir: "${params.outdir}/summary/",
+                keepHeader: true,
+                sort: { file -> file.text },
+                name: "input_files.csv")
+            .set { ch_names }
 
-        summary(for_summary.mix(ch_names).collect())
+        summary(for_summary.mix(ch_names).mix(multiqc.out.data_folder).collect())
 }
