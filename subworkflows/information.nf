@@ -1,7 +1,6 @@
 include { amrfinderplus }  from '../modules/amrfinderplus'  addParams(params)
 include { emmtyper }       from '../modules/emmtyper'       addParams(params)
 include { fastqc }         from '../modules/fastqc'         addParams(params)
-include { fastqscan }      from '../modules/fastqscan'      addParams(params)
 include { flag }           from '../modules/grandeur'       addParams(params)
 include { kaptive }        from '../modules/kaptive'        addParams(params)
 include { kleborate }      from '../modules/kleborate'      addParams(params)
@@ -24,14 +23,16 @@ workflow information {
 
   main:
     // fastq files
-    size(ch_size)
-    fastqscan(ch_reads.join(size.out.size, by: 0))
+
     fastqc(ch_reads)
 
     // contigs
     mlst(ch_contigs)
     quast(ch_contigs)
     plasmidfinder(ch_contigs)
+
+    // estimating size of genome for the oganism
+    size(ch_size.join(quast.out.results, by: 0, remainder: true).map{ it -> tuple(it[0], [ it[1], it[2], it[3], it[4], it[5], it[6], it[7], it[8]])})
 
     // species specific
     flag(ch_flag.groupTuple())
@@ -80,13 +81,6 @@ workflow information {
         sort: { file -> file.text },
         storeDir: "${params.outdir}/fastqc")
       .set{ fastqc_summary }
-
-    fastqscan.out.collect
-      .collectFile(name: "fastqscan_summary.csv",
-        keepHeader: true,
-        sort: { file -> file.text },
-        storeDir: "${params.outdir}/fastq-scan")
-      .set{ fastqscan_summary }
 
     flag.out.collect
       .collectFile(name: "flag_summary.csv",
@@ -161,7 +155,6 @@ workflow information {
     amrfinderplus_summary
       .mix(emmtyper_summary)
       .mix(fastqc_summary)
-      .mix(fastqscan_summary)
       //.mix(kaptive_summary)
       .mix(kleborate_summary)
       .mix(legsta_summary)
