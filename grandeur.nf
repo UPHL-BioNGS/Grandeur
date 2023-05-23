@@ -29,6 +29,11 @@ if (params.config_file) {
   exit 0
 }
 
+params.fastqscan_options = ""
+if (params.fastqscan_options) {
+  println("WARNING : ${params.fastqscan_options} is depreciated" )
+}
+
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
 // Defining params
@@ -84,7 +89,6 @@ params.fastani_options            = "--matrix"
 params.fasterqdump_options        = ""
 params.fastp_options              = "--detect_adapter_for_pe"
 params.fastqc_options             = ""
-params.fastqscan_options          = ""
 params.iqtree2_options            = "-t RANDOM -m GTR+F+I -bb 1000 -alrt 1000"
 params.iqtree2_outgroup           = ""
 params.kaptive_options            = ''
@@ -325,9 +329,8 @@ workflow {
 
     ch_contigs
       .join(min_hash_distance.out.mash_err)
-      .map(it -> tuple (it[0], it[2]))
-      .join(ch_top_hit_hit, by: 0, remainder: true)
-      .join(ch_top_hit_files, by: 0, remainder: true)
+      .join(min_hash_distance.out.for_flag)
+      .join(average_nucleotide_identity.out.for_flag)
       .combine(ch_genome_sizes)
       .combine(ch_datasets)
       .set{ ch_size }
@@ -359,9 +362,7 @@ workflow {
       ch_raw_reads, 
       ch_fastas, 
       ch_for_multiqc.collect(), 
-      ch_for_summary.concat(summary_script).collect(), 
-      de_novo_alignment.out.fastp_reads, 
-      de_novo_alignment.out.phix_reads)
+      ch_for_summary.concat(summary_script).collect())
   }
 }
 
