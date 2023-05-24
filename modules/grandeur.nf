@@ -202,8 +202,6 @@ process size {
   // results should include the mash results, the mash err files, the fastani results, the genome sizes file, the genomes file, the quast file
 
   output:
-  tuple val(sample), env(size)                                   , emit: size
-  tuple val(sample), env(genus), env(species), env(accession)    , emit: organism
   path "size/${sample}_size.csv"                                 , emit: collect
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log_files
 
@@ -276,8 +274,24 @@ process size {
 
     if [ -f "!{sample}.!{workflow.sessionId}.err" ]
     then
-      mash_size="$(grep "Estimated genome size" !{sample}.!{workflow.sessionId}.err | awk '{print $4 }' | sort -gr | tr '\\n' ' ' )"
-      echo "The expected size based on kmers from mash is $mash_size" | tee -a $log_file
+      mash_sizes=($(grep "Estimated genome size" !{sample}.!{workflow.sessionId}.err | awk '{print $4 }' | sort -gr | tr '\\n' ' ' ))
+      i=1
+      mash_header="mash_size"
+      for err_size in ${mash_sizes}
+      do
+        err_size=$(printf "%.0f" $err_size)
+        if [ -z "$mash_size" ]
+        then
+          mash_size="$err_size"
+        else
+          mash_size="$mash_size,$err_size"
+          mash_header="$mash_header,mash_size$i"
+        fi
+        i=$((i + 1))
+      done
+      echo "The expected size based on kmers from mash is ${mash_size[@]}" | tee -a $log_file
+    else
+      mash_header="mash_size"
     fi
 
     if [ -f "!{sample}_quast_report.tsv" ]
@@ -306,7 +320,7 @@ process size {
     echo "The final size is $size" | tee -a $log_file
     
     # Step 4. Putting it in a file
-    echo "sample,genus,species,accession,size,datasets_size,expected_size,mash_size,quast_size" > size/!{sample}_size.csv
+    echo "sample,genus,species,accession,size,datasets_size,expected_size,$mash_header,quast_size" > size/!{sample}_size.csv
     echo "!{sample},$genus,$species,$accession,$size,$datasets_size,$expected_size,$mash_size,$quast_size" >> size/!{sample}_size.csv
   '''
 }
