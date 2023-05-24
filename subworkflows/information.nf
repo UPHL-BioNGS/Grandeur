@@ -165,6 +165,7 @@ workflow information {
       .mix(seqsero2_summary)
       .mix(serotypefinder_summary)
       .mix(shigatyper_summary)
+      .mix(size_summary)
       .set { for_summary }
 
     fastqc.out.for_multiqc
