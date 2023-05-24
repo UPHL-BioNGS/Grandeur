@@ -65,7 +65,7 @@ process mash {
     mash sketch -o !{sample}.fasta sample.fasta 2>> $err_file | tee -a $log_file
 
     mash dist -p !{task.cpus} !{params.mash_dist_options} $reference !{sample}.fasta.msh >> mash/!{sample}.mashdist.txt.tmp
-  fi 
+  fi
 
   touch mash/!{sample}.mashdist.txt.tmp
 
