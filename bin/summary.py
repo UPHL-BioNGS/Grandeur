@@ -6,6 +6,7 @@
 ##########################################
 
 import pandas as pd
+import json
 from os.path import exists
 
 ##########################################
@@ -31,7 +32,9 @@ quast          = 'quast_report.tsv'
 seqsero2       = 'seqsero2_results.txt'
 serotypefinder = 'serotypefinder_results.txt'
 shigatyper     = 'shigatyper_results.txt'
-multiqc        = 'something'
+size           = 'size_results.csv'
+multiqc_json   = 'multiqc_data.json'
+multiqc_stats  = 'multiqc_general_stats.txt'
 
 # final files
 final          = 'grandeur_summary'
@@ -50,6 +53,7 @@ top_hit   = [ fastani ]
 ##########################################
 
 summary_df = pd.read_csv(names, dtype = str)
+summary_df['warnings'] = ''
 columns = list(summary_df.columns)
 
 # csv files
@@ -108,9 +112,11 @@ if exists(blobtools) :
     new_df['organism (per mapped reads)'] = new_df['name'] + ' (' + new_df['bam0_read_map_p'] + ')'
     new_df = new_df[['sample', 'organism (per mapped reads)']]
     new_df = new_df.groupby('sample', as_index=False).agg({'organism (per mapped reads)': lambda x: list(x)})
+    new_df['warning'] = new_df['organism (per mapped reads)'].apply(lambda x: "Blobtools multiple organisms," if ','.join(x).count(',') >= 2 else "")
     new_df = new_df.add_prefix(analysis + '_')
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
+    summary_df['warnings'] = summary_df['warnings'] + summary_df['blobtools_warning']
 
 # fastani : merging relevant rows into one
 if exists(fastani) :
@@ -121,9 +127,11 @@ if exists(fastani) :
     new_df['genome (ANI estimate)'] = new_df['reference'].str.split('_').str[0] + " " + new_df['reference'].str.split("_").str[1] + " " + new_df['reference'].str.split('_').str[-2] + "_" + new_df['reference'].str.split('_').str[-1] + " (" + new_df['ANI estimate'] + ")"
     new_df = new_df[['sample', 'genome (ANI estimate)']]
     new_df = new_df.groupby('sample', as_index=False).agg({'genome (ANI estimate)': lambda x: list(x)})
+    new_df['warning'] = new_df['genome (ANI estimate)'].apply(lambda x: "Multiple FastANI hits," if ','.join(x).count(',') >= 4 else "")
     new_df = new_df.add_prefix(analysis + '_')
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
+    summary_df['warnings'] = summary_df['warnings'] + summary_df['fastani_warning']
 
 # fastqc : merging relevant rows into one
 if exists(fastqc) :
@@ -154,9 +162,11 @@ if exists(kraken2) :
     new_df['organism (per fragment)'] = new_df['Scientific name'] + " (" + new_df['Percentage of fragments'] + ' ' + new_df['Type'] + ")"    
     new_df = new_df[['Sample', 'organism (per fragment)']]
     new_df = new_df.groupby('Sample', as_index=False).agg({'organism (per fragment)': lambda x: list(x)})
+    new_df['warning'] = new_df['organism (per fragment)'].apply(lambda x: "Kraken2 multiple organisms," if ','.join(x).count(',') >= 2 else "")
     new_df = new_df.add_prefix(analysis + '_')
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_Sample", how = 'left')
     summary_df.drop(analysis + "_Sample", axis=1, inplace=True)
+    summary_df['warnings'] = summary_df['warnings'] + summary_df['kraken2_warning']
 
 # mash : top hit of potentially two different files
 if exists(mash) :
@@ -212,6 +222,71 @@ if exists(shigatyper) :
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
 
+# multiqc : bbduk and fastp
+
+if exists(multiqc_json) :
+    file = multiqc_json
+    print("Adding analysis parsed via multiqc in " + file)
+    with open(file) as multiqc_data:
+        data = json.load(multiqc_data)
+        
+        # fastp filtered reads
+        samples = [sample.replace("_rmphix_R1", "") for sample in data["report_plot_data"]['fastp_filtered_reads_plot']['samples'][0]]
+        fastp_passedreads_df = pd.DataFrame(samples, columns=['fastp_sample'])
+        fastp_passedreads_df['fastp_passed_reads'] = data["report_plot_data"]['fastp_filtered_reads_plot']['datasets'][0][0]['data']
+        summary_df = pd.merge(summary_df, fastp_passedreads_df, left_on="sample", right_on="fastp_sample", how = 'left')
+        summary_df.drop("fastp_sample", axis=1, inplace=True)
+        
+        # bbduk phix reads
+        samples = [sample.replace(".phix", "") for sample in data['report_saved_raw_data']['bbmap']['stats'].keys()]
+        phix_reads=[]
+        for sample in data['report_saved_raw_data']['bbmap']['stats'].keys() :
+            phix_reads.append(data['report_saved_raw_data']['bbmap']['stats'][sample]['kv']['Matched'])
+        bbduk_phixreads_df = pd.DataFrame(samples, columns=['bbduk_sample'])
+        bbduk_phixreads_df['bbduk_phix_reads'] = phix_reads
+        summary_df = pd.merge(summary_df, bbduk_phixreads_df, left_on="sample", right_on="bbduk_sample", how = 'left')
+        summary_df.drop("bbduk_sample", axis=1, inplace=True)
+        
+if exists(multiqc_stats) : 
+    file = multiqc_stats
+    print("Adding analysis parsed via multiqc in " + file)
+    new_df = pd.read_table(file, dtype = str, index_col= False)
+    tmp_df = new_df[["Sample","FastQC_mqc-generalstats-fastqc-avg_sequence_length"]]
+    tmp_df["fastqc_avg_length"]= tmp_df["FastQC_mqc-generalstats-fastqc-avg_sequence_length"]
+    tmp_df.drop("FastQC_mqc-generalstats-fastqc-avg_sequence_length", axis=1, inplace=True)
+    
+    summary_df["possible_fastqc_name"] = summary_df['file'].str.split(" ").str[0].str.split(".").str[0]
+    summary_df = pd.merge(summary_df, tmp_df, left_on="possible_fastqc_name", right_on="Sample", how = 'left')
+    summary_df.drop("Sample", axis=1, inplace=True)
+    summary_df.drop("possible_fastqc_name", axis=1, inplace=True)
+
+# size : getting the size and coverage and warning if there's too much stdev
+if exists(size) :
+    file = size
+    print("Adding coverage information from sizes in " + file)
+    new_df = pd.read_csv(file, dtype = str, index_col= False)
+    new_df['datasets_size'] = new_df['datasets_size'].astype('float').astype('Int32')
+    new_df['expected_size'] = new_df['expected_size'].astype('float').astype('Int32')
+    new_df['mash_size'] = new_df['mash_size'].astype('float').astype('Int32')
+    new_df['quast_size'] = new_df['quast_size'].astype('float').astype('Int32')
+    new_df['average'] = new_df[["datasets_size","expected_size","mash_size", "quast_size"]].mean(axis = 1, skipna = True)
+    new_df['stdev'] = new_df[["datasets_size","expected_size","mash_size", "quast_size"]].std(axis = 1, skipna = True)
+    new_df['stdev_ratio'] = new_df['stdev']/new_df['average']
+    new_df['warning'] = new_df['stdev_ratio'].apply(lambda x: "Variable genome size," if x >= 0.1 else "")
+    new_df = new_df.add_prefix("size_")
+
+    summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on="size_sample", how = 'left')
+    summary_df.drop("size_sample", axis=1, inplace=True)
+    summary_df.drop("size_genus", axis=1, inplace=True)
+    summary_df.drop("size_species", axis=1, inplace=True)
+    summary_df.drop("size_accession", axis=1, inplace=True)
+    summary_df['warnings'] = summary_df['warnings'] + summary_df['size_warning']
+
+    summary_df['total_bases'] = summary_df['fastqc_total sequences'].astype(int) * summary_df['fastqc_avg_length'].astype(float)
+    summary_df['coverage'] = summary_df['total_bases'].astype(float) / summary_df['size_size'].astype(float)
+    summary_df['coverage_warning'] = summary_df['coverage'].apply(lambda x: "Low coverage," if x <= 20 else "")
+    summary_df['warnings'] = summary_df['warnings'] + summary_df['coverage_warning']
+
 ##########################################
 # creating files                         #
 ##########################################
@@ -226,6 +301,10 @@ final_columns = [
 # general information
 'fastqc_total_sequences',
 'fastqc_flagged_sequences',
+'fastqc_avg_length',
+'fastp_passed_reads',
+'bbduk_phix_reads',
+'warnings',
 'quast_#_contigs',
 'quast_GC_(%)',
 'amrfinder_genes_(per_cov/per_ident)',
@@ -264,5 +343,5 @@ for new_column in final_columns :
     if new_column in summary_df.columns :
         set_columns.append(new_column)
 
-summary_df.to_csv(final + '.tsv', columns = ['sample','file','version','reads','phix_reads'] + set_columns, index=False, sep="\t")
-summary_df.to_csv(final + '.txt', columns = ['sample','file','version','reads','phix_reads'] + set_columns, index=False, sep=";")
+summary_df.to_csv(final + '.tsv', columns = ['sample','file','version'] + set_columns, index=False, sep="\t")
+summary_df.to_csv(final + '.txt', columns = ['sample','file','version'] + set_columns, index=False, sep=";")
