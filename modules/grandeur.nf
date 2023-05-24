@@ -277,7 +277,7 @@ process size {
       mash_sizes=($(grep "Estimated genome size" !{sample}.!{workflow.sessionId}.err | awk '{print $4 }' | sort -gr | tr '\\n' ' ' ))
       i=1
       mash_header="mash_size"
-      for err_size in ${mash_sizes}
+      for err_size in ${mash_sizes[@]}
       do
         err_size=$(printf "%.0f" $err_size)
         if [ -z "$mash_size" ]
@@ -289,7 +289,7 @@ process size {
         fi
         i=$((i + 1))
       done
-      echo "The expected size based on kmers from mash is ${mash_size[@]}" | tee -a $log_file
+      echo "The expected size based on kmers from mash is ${mash_sizes[@]}" | tee -a $log_file
     else
       mash_header="mash_size"
     fi
