@@ -30,7 +30,6 @@ process summary {
     cat .command.sh >> $log_file
 
     python summary.py | tee -a $log_file
-
   '''
 }
 
