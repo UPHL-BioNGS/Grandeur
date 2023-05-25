@@ -272,6 +272,7 @@ process size {
       echo "There is no genus to look for" | tee -a $log_file
     fi
 
+    mash_header="mash_size"
     if [ -f "!{sample}.!{workflow.sessionId}.err" ]
     then
       mash_check=$(grep "Estimated genome size" !{sample}.!{workflow.sessionId}.err | head -n 1)
@@ -280,7 +281,6 @@ process size {
       then
         mash_sizes=($(grep "Estimated genome size" !{sample}.!{workflow.sessionId}.err | awk '{print $4 }'))
         i=1
-        mash_header="mash_size"
       
         for err_size in ${mash_sizes[@]}
         do
@@ -296,8 +296,6 @@ process size {
         done
         echo "The expected size based on kmers from mash is ${mash_sizes[@]}" | tee -a $log_file
       fi
-    else
-      mash_header="mash_size"
     fi
 
     if [ -f "!{sample}_quast_report.tsv" ]
