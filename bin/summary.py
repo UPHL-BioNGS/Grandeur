@@ -286,7 +286,11 @@ if exists(size) :
     summary_df.drop("size_accession", axis=1, inplace=True)
     summary_df['warnings'] = summary_df['warnings'] + summary_df['size_warning']
 
-    summary_df['total_bases']              = summary_df['fastqc_total sequences'].astype('Int32') * summary_df['fastqc_avg_length'].astype(float)
+    if "fastqc_total sequences" in summary_df:
+        summary_df['total_bases']          = summary_df['fastqc_total sequences'].astype('Int32') * summary_df['fastqc_avg_length'].astype(float)
+    else:
+        summary_df['total_bases']          = summary_df['quast_Total length'].astype(float)
+
     summary_df['coverage']                 = summary_df['total_bases'].astype(float) /  summary_df['size_size'].astype(float)
     summary_df['coverage_for_1.5M_genome'] = summary_df['total_bases'].astype(float) /  1500000
     summary_df['coverage_for_2M_genome']   = summary_df['total_bases'].astype(float) /  2000000
