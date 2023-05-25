@@ -274,22 +274,25 @@ process size {
 
     if [ -f "!{sample}.!{workflow.sessionId}.err" ]
     then
-      mash_sizes=($(grep "Estimated genome size" !{sample}.!{workflow.sessionId}.err | awk '{print $4 }' | sort -gr | tr '\\n' ' ' ))
+      mash_sizes=($(grep "Estimated genome size" !{sample}.!{workflow.sessionId}.err | awk '{print $4 }'))
       i=1
       mash_header="mash_size"
-      for err_size in ${mash_sizes[@]}
-      do
-        err_size=$(printf "%.0f" $err_size)
-        if [ -z "$mash_size" ]
-        then
-          mash_size="$err_size"
-        else
-          mash_size="$mash_size,$err_size"
-          mash_header="$mash_header,mash_size$i"
-        fi
-        i=$((i + 1))
-      done
-      echo "The expected size based on kmers from mash is ${mash_sizes[@]}" | tee -a $log_file
+      if [ -n "$mash_sizes" ]
+      then
+        for err_size in ${mash_sizes[@]}
+        do
+          err_size=$(printf "%.0f" $err_size)
+          if [ -z "$mash_size" ]
+          then
+            mash_size="$err_size"
+          else
+            mash_size="$mash_size,$err_size"
+            mash_header="$mash_header,mash_size$i"
+          fi
+          i=$((i + 1))
+        done
+        echo "The expected size based on kmers from mash is ${mash_sizes[@]}" | tee -a $log_file
+      fi
     else
       mash_header="mash_size"
     fi
@@ -301,14 +304,14 @@ process size {
     fi
 
     # Step 3. Settling on a final genome size for coverage
-    if [ -n "$datasets_size" ]
+    if [ -n "$expected_size" ]
     then
-      echo "Using size from datasets : $datasets_size" | tee -a $log_file
-      size=$datasets_size
-    elif [ -n "$expected_size" ] && [ -z "$datasets_size" ]
-    then
-      echo "Using size from genomes file : $expected_size" | tee -a $log_file
+      echo "Using size from datasets : $expected_size" | tee -a $log_file
       size=$expected_size
+    elif [ -z "$expected_size" ] && [ -n "$datasets_size" ]
+    then
+      echo "Using size from genomes file : $datasets_size" | tee -a $log_file
+      size=$datasets_size
     elif [ -n "$quast_size"] && [ -z "$datasets_size" ] && [ -z "$expected_size" ]
     then
       echo "Using size from quast : $quast_size" | tee -a $log_file
