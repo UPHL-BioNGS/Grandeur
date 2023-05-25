@@ -274,11 +274,14 @@ process size {
 
     if [ -f "!{sample}.!{workflow.sessionId}.err" ]
     then
-      mash_sizes=($(grep "Estimated genome size" !{sample}.!{workflow.sessionId}.err | awk '{print $4 }'))
-      i=1
-      mash_header="mash_size"
-      if [ -n "$mash_sizes" ]
+      mash_check=$(grep "Estimated genome size" !{sample}.!{workflow.sessionId}.err | head -n 1)
+      
+      if [ -n "$mash_check" ]
       then
+        mash_sizes=($(grep "Estimated genome size" !{sample}.!{workflow.sessionId}.err | awk '{print $4 }'))
+        i=1
+        mash_header="mash_size"
+      
         for err_size in ${mash_sizes[@]}
         do
           err_size=$(printf "%.0f" $err_size)
