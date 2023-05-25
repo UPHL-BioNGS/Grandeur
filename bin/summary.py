@@ -231,11 +231,12 @@ if exists(multiqc_json) :
         data = json.load(multiqc_data)
         
         # fastp filtered reads
-        samples = [sample.replace("_rmphix_R1", "") for sample in data["report_plot_data"]['fastp_filtered_reads_plot']['samples'][0]]
-        fastp_passedreads_df = pd.DataFrame(samples, columns=['fastp_sample'])
-        fastp_passedreads_df['fastp_passed_reads'] = data["report_plot_data"]['fastp_filtered_reads_plot']['datasets'][0][0]['data']
-        summary_df = pd.merge(summary_df, fastp_passedreads_df, left_on="sample", right_on="fastp_sample", how = 'left')
-        summary_df.drop("fastp_sample", axis=1, inplace=True)
+        if "fastp_filtered_reads_plot" in data["report_plot_data"].keys():
+            samples = [sample.replace("_rmphix_R1", "") for sample in data["report_plot_data"]['fastp_filtered_reads_plot']['samples'][0]]
+            fastp_passedreads_df = pd.DataFrame(samples, columns=['fastp_sample'])
+            fastp_passedreads_df['fastp_passed_reads'] = data["report_plot_data"]['fastp_filtered_reads_plot']['datasets'][0][0]['data']
+            summary_df = pd.merge(summary_df, fastp_passedreads_df, left_on="sample", right_on="fastp_sample", how = 'left')
+            summary_df.drop("fastp_sample", axis=1, inplace=True)
         
         # bbduk phix reads
         if "bbmap" in data['report_saved_raw_data'].keys():
@@ -253,14 +254,15 @@ if exists(multiqc_stats) :
     file = multiqc_stats
     print("Adding analysis parsed via multiqc in " + file)
     new_df = pd.read_table(file, dtype = str, index_col= False)
-    tmp_df = new_df[["Sample","FastQC_mqc-generalstats-fastqc-avg_sequence_length"]]
-    tmp_df["fastqc_avg_length"]= tmp_df["FastQC_mqc-generalstats-fastqc-avg_sequence_length"]
-    tmp_df.drop("FastQC_mqc-generalstats-fastqc-avg_sequence_length", axis=1, inplace=True)
-    
-    summary_df["possible_fastqc_name"] = summary_df['file'].str.split(" ").str[0].str.split(".").str[0]
-    summary_df = pd.merge(summary_df, tmp_df, left_on="possible_fastqc_name", right_on="Sample", how = 'left')
-    summary_df.drop("Sample", axis=1, inplace=True)
-    summary_df.drop("possible_fastqc_name", axis=1, inplace=True)
+    if "FastQC_mqc-generalstats-fastqc-avg_sequence_length" in new_df.columns :
+        tmp_df = new_df[["Sample","FastQC_mqc-generalstats-fastqc-avg_sequence_length"]]
+        tmp_df["fastqc_avg_length"]= tmp_df["FastQC_mqc-generalstats-fastqc-avg_sequence_length"]
+        tmp_df.drop("FastQC_mqc-generalstats-fastqc-avg_sequence_length", axis=1, inplace=True)
+        
+        summary_df["possible_fastqc_name"] = summary_df['file'].str.split(" ").str[0].str.split(".").str[0]
+        summary_df = pd.merge(summary_df, tmp_df, left_on="possible_fastqc_name", right_on="Sample", how = 'left')
+        summary_df.drop("Sample", axis=1, inplace=True)
+        summary_df.drop("possible_fastqc_name", axis=1, inplace=True)
 
 # size : getting the size and coverage and warning if there's too much stdev
 if exists(size) :
