@@ -284,7 +284,7 @@ if exists(size) :
     summary_df.drop("size_accession", axis=1, inplace=True)
     summary_df['warnings'] = summary_df['warnings'] + summary_df['size_warning']
 
-    summary_df['total_bases']              = summary_df['fastqc_total sequences'].astype(int) * summary_df['fastqc_avg_length'].astype(float)
+    summary_df['total_bases']              = summary_df['fastqc_total sequences'].astype('Int32') * summary_df['fastqc_avg_length'].astype(float)
     summary_df['coverage']                 = summary_df['total_bases'].astype(float) /  summary_df['size_size'].astype(float)
     summary_df['coverage_for_1.5M_genome'] = summary_df['total_bases'].astype(float) /  1500000
     summary_df['coverage_for_2M_genome']   = summary_df['total_bases'].astype(float) /  2000000
@@ -319,6 +319,7 @@ summary_df.to_csv(extended + '.txt', index=False, sep=";")
 # reducing to the top 1 or 2 results for each analysis
 final_columns = [
 # general information
+'coverage',
 'fastqc_total_sequences',
 'fastqc_flagged_sequences',
 'fastqc_avg_length',
