@@ -13,10 +13,11 @@ process quast {
   tuple val(sample), file(contigs)
 
   output:
-  path "quast/${sample}"                                         , emit: files
-  path "quast/${sample}_quast_report.tsv"     , optional: true   , emit: for_multiqc
-  path "quast/${sample}/transposed_report.tsv", optional: true   , emit: collect
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
+  path "quast/${sample}"                                                     , emit: files
+  path "quast/${sample}_quast_report.tsv"                    , optional: true, emit: for_multiqc
+  tuple val(sample), file("quast/${sample}_quast_report.tsv"), optional: true, emit: results
+  path "quast/${sample}/transposed_report.tsv"               , optional: true, emit: collect
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log"            , emit: log
 
   shell:
   '''

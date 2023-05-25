@@ -17,10 +17,6 @@ workflow de_novo_alignment {
     spades(read_check)
 
   emit:
-    // for summary
-    fastp_reads = fastp.out.fastp_results
-    phix_reads  = bbduk.out.phix_reads
-
     // for downstream analyses
     clean_reads = fastp.out.fastq
     contigs     = spades.out.contigs

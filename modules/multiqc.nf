@@ -87,7 +87,6 @@ process multiqc {
     if [ -f 'fastani_summary.csv' ] ; then awk -F ',' '{print $1 "_" NR "," $3 "," $4 "," $5 "," $6 }' fastani_summary.csv > fastani_mqc.csv ; fi
     if [ -f 'shigatyper_results.txt' ] ; then awk '{print $1 "_" $2 "\t" $3}' shigatyper_results.txt > shigatyper_mqc.tsv ; fi
     if [ -f 'amrfinderplus.txt' ] ; then sed 's/ /_/g' amrfinderplus.txt | awk '{print $1 "_" NR "\t" $7 "\t" $11 "\t" $12 "\t" $13 "\t" $15 "\t" $16 "\t" $17 "\t" $18 "\t" $18 "\t" $20 }'   >  amrfinderplus_mqc.txt  ; fi
-    if [ -f 'fastqscan_summary.csv' ] ; then awk -F , '{if ($4 > 40) print $0 ",PASS" ; else if ($4 > 20) print $0 ",TBD" ; else print $0 ",FAIL" }' fastqscan_summary.csv > fastqscan_mqc.csv ; fi
     if [ -f 'kleborate_results.tsv' ] ; then cut -f 1,3-12 kleborate_results.tsv > kleborate_mqc.tsv       ; fi
     if [ -f 'mlst_summary.tsv' ] ; then cut -f 1,3,4 mlst_summary.tsv > mlst_mqc.tsv            ; fi
     if [ -f 'plasmidfinder_result.tsv' ] ; then awk '{ print $1 "_" NR "\t" $2 "\t" $3 "\t" $4 "\t" $5 }' plasmidfinder_result.tsv > plasmidfinder_mqc.tsv   ; fi

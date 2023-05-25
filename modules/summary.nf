@@ -29,11 +29,7 @@ process summary {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    touch grandeur_summary.{tsv,txt} grandeur_extended_summary.{tsv,txt}
-
     python summary.py | tee -a $log_file
-
-    mv *extended* summary/.
   '''
 }
 
@@ -49,7 +45,7 @@ process names {
   //#UPHLICA time '10m'
   
   input:
-  tuple val(sample), file(input), val(reads), val(phix)
+  tuple val(sample), file(input)
 
   output:
   path "summary/${sample}_names.csv"                              , emit: collect
@@ -65,7 +61,7 @@ process names {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    echo "sample,file,version,reads,phix_reads" > summary/!{sample}_names.csv
-    echo "!{sample},!{input},!{workflow.manifest.version},!{reads},!{phix}" >> summary/!{sample}_names.csv
+    echo "sample,file,version" > summary/!{sample}_names.csv
+    echo "!{sample},!{input},!{workflow.manifest.version}" >> summary/!{sample}_names.csv
   '''
 }

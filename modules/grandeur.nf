@@ -198,11 +198,10 @@ process size {
   //#UPHLICA time '10m'
     
   input:
-  tuple val(sample), file(mash_err), file(fastani), val(top_hit), file(genome_sizes), file(datasets_summary)
+  tuple val(sample), file(results)
+  // results should include the mash results, the mash err files, the fastani results, the genome sizes file, the genomes file, the quast file
 
   output:
-  tuple val(sample), env(size)                                   , emit: size
-  tuple val(sample), env(genus), env(species), env(accession)    , emit: organism
   path "size/${sample}_size.csv"                                 , emit: collect
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log_files
 
@@ -217,57 +216,114 @@ process size {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    echo "This process is still here for a placeholder. Sometimes when contamination occurs, the genome size from mash is very different than the expectation. TBC" >> $log_file
+    # Step 1 : Getting the top hit
+    genus=""
+    species=""
+    accession=""
 
-    mash_size="NA"
-    expected_size="NA"
-    top_hit_size="NA"
-    ncbi_size="NA"
-    size=''
-
-    genus=$(echo !{top_hit} | cut -f 2 -d "/" | cut -f 1 -d "_" )
-    species=$(echo !{top_hit} | cut -f 2 -d "_" )
-    accession=$(echo !{top_hit} | sed 's/.*_GC/GC/g' | cut -f 1,2 -d '.' )
-
-    top_hit_size=$(grep -v ">" !{fastani} | wc -c )
-    size=$top_hit_size
-
-    if [ -f "datasets_summary.csv" ]
+    if [ -f "!{sample}_fastani.csv" ] 
     then
-      ncbi_size=$(grep $accession datasets_summary.csv | cut -f 5 -d "," | head -n 1 )
-      echo "The expected size based on the fastANI top hit is $ncbi_size" | tee -a $log_file
-      size=$ncbi_size
+      genus=$(head -n 2 !{sample}_fastani.csv | tail -n 1 | cut -f 3 -d "," | cut -f 1 -d "_" )
+      species=$(head -n 2 !{sample}_fastani.csv | tail -n 1 | cut -f 3 -d "," | cut -f 2 -d "_" )
+      accession=$(head -n 2 !{sample}_fastani.csv | tail -n 1 | sed 's/.*_GC/GC/g' | cut -f 1,2 -d '.' )
     fi
 
-    genus_check=$(grep -v '#' !{genome_sizes} | grep $genus | head -n 1)
-    if [ -n "$genus_check" ]
+    if [ -z "$genus" ] && [ -f "!{sample}.summary.mash.csv"]
     then
-      species_check=$(grep -v '#' !{genome_sizes} | grep $genus | grep $species | head -n 1 )
-      
-      if [ -n "$species_check" ]
+      genus=$(head -n 2 !{sample}.summary.mash.csv | tail -n 1 | cut -f 7 -d "," | cut -f 1 -d "_" )
+      species=$(head -n 2 !{sample}.summary.mash.csv | tail -n 1 | cut -f 7 -d "," | cut -f 2 -d "_" )
+      accession=$(head -n 2 !{sample}.summary.mash.csv | tail -n 1 | cut -f 2 -d "," | cut -f 1,2 -d '_' )
+    fi
+    
+    # Step 2 : Using this information to get the estimated genome size
+    datasets_size=""
+    expected_size=""
+    mash_size=""
+    quast_size=""
+
+    if [ -f "datasets_summary.csv" ] && [ -n "$accession" ]
+    then
+      datasets_size=$(grep $accession datasets_summary.csv | cut -f 5 -d "," | head -n 1 )
+      if [ -z "$datasets_size" ] && [ -n "$species" ] ; then datasets_size=$(grep $genus datasets_summary.csv | grep $species | cut -f 5 -d "," | head -n 1 ) ; fi
+      echo "The expected size based on the fastANI top hit is $datasets_size" | tee -a $log_file
+    fi
+
+    if [ -n "$genus" ]
+    then
+      genus_check=$(grep -v '#' genome_sizes.json | grep $genus | head -n 1)
+      if [ -n "$genus_check" ]
       then
-        expected_size=$(grep -v '#' !{genome_sizes} | grep $genus | grep $species | awk '{print $3}' | sed 's/,$//g' | head -n 1 )
-        echo "The expected size based on $genus and $species is $expected_size" | tee -a $log_file
-        size=$expected_size
+        species_check=$(grep -v '#' genome_sizes.json | grep $genus | grep $species | head -n 1 )
+      
+        if [ -n "$species_check" ]
+        then
+          expected_size=$(grep -v '#' genome_sizes.json | grep $genus | grep $species | awk '{print $3}' | sed 's/,$//g' | head -n 1 )
+          echo "The expected genome size based on $genus and $species is $expected_size" | tee -a $log_file
+        else
+          expected_size=$(grep -v '#' genome_sizes.json | grep $genus | awk '{print $3}' | sed 's/,$//g' | head -n 1 )
+          echo "The expected genome size based on using $genus is $expected_size" | tee -a $log_file
+        fi
       else
-        expected_size=$(grep -v '#' !{genome_sizes} | grep $genus | awk '{print $3}' | sed 's/,$//g' | head -n 1 )
-        echo "The expected size based on using $genus is $expected_size" | tee -a $log_file
-        size=$expected_size
+        echo "The expected genome size based on $genus and $species was not found" | tee -a $log_file
       fi
     else
-      expected_size="not found"
-      echo "The expected size based on $genus and $species was not found" | tee -a $log_file
+      echo "There is no genus to look for" | tee -a $log_file
     fi
 
-    mash_size="$(grep "Estimated genome size" !{mash_err} | awk '{print $4 }' | sort -gr | tr '\\n' ' ' )"
-    echo "The expected size based on kmers from mash is $mash_size" | tee -a $log_file
-    
-    echo "sample,genus,species,accession,size,expected,top_hit,ncbi,mash" > size/!{sample}_size.csv
-    echo "!{sample},$genus,$species,$accession,$size,$expected_size,$top_hit_size,$ncbi_size,$mash_size" >> size/!{sample}_size.csv
+    mash_header="mash_size"
+    if [ -f "!{sample}.!{workflow.sessionId}.err" ]
+    then
+      mash_check=$(grep "Estimated genome size" !{sample}.!{workflow.sessionId}.err | head -n 1)
+      
+      if [ -n "$mash_check" ]
+      then
+        mash_sizes=($(grep "Estimated genome size" !{sample}.!{workflow.sessionId}.err | awk '{print $4 }'))
+        i=1
+      
+        for err_size in ${mash_sizes[@]}
+        do
+          err_size=$(printf "%.0f" $err_size)
+          if [ -z "$mash_size" ]
+          then
+            mash_size="$err_size"
+          else
+            mash_size="$mash_size,$err_size"
+            mash_header="$mash_header,mash_size$i"
+          fi
+          i=$((i + 1))
+        done
+        echo "The expected size based on kmers from mash is ${mash_sizes[@]}" | tee -a $log_file
+      fi
+    fi
 
-    if [ -z "$size" ] ; then size=$(echo $mash_size | cut -f 1 -d " " ) ; fi
-    
+    if [ -f "!{sample}_quast_report.tsv" ]
+    then
+      quast_size=$(grep "Total length" !{sample}_quast_report.tsv | grep -v "=" | awk '{print $3}')
+      echo "The total length from quast is $quast_size" | tee -a $log_file
+    fi
+
+    # Step 3. Settling on a final genome size for coverage
+    if [ -n "$expected_size" ]
+    then
+      echo "Using size from datasets : $expected_size" | tee -a $log_file
+      size=$expected_size
+    elif [ -z "$expected_size" ] && [ -n "$datasets_size" ]
+    then
+      echo "Using size from genomes file : $datasets_size" | tee -a $log_file
+      size=$datasets_size
+    elif [ -n "$quast_size"] && [ -z "$datasets_size" ] && [ -z "$expected_size" ]
+    then
+      echo "Using size from quast : $quast_size" | tee -a $log_file
+      size=$quast_size
+    else
+      echo "A size could not be determined. Setting to 5M" | tee -a $log_file
+      size=5000000
+    fi
     echo "The final size is $size" | tee -a $log_file
+    
+    # Step 4. Putting it in a file
+    echo "sample,genus,species,accession,size,datasets_size,expected_size,$mash_header,quast_size" > size/!{sample}_size.csv
+    echo "!{sample},$genus,$species,$accession,$size,$datasets_size,$expected_size,$mash_size,$quast_size" >> size/!{sample}_size.csv
   '''
 }
 
