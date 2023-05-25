@@ -238,14 +238,16 @@ if exists(multiqc_json) :
         summary_df.drop("fastp_sample", axis=1, inplace=True)
         
         # bbduk phix reads
-        samples = [sample.replace(".phix", "") for sample in data['report_saved_raw_data']['bbmap']['stats'].keys()]
-        phix_reads=[]
-        for sample in data['report_saved_raw_data']['bbmap']['stats'].keys() :
-            phix_reads.append(data['report_saved_raw_data']['bbmap']['stats'][sample]['kv']['Matched'])
-        bbduk_phixreads_df = pd.DataFrame(samples, columns=['bbduk_sample'])
-        bbduk_phixreads_df['bbduk_phix_reads'] = phix_reads
-        summary_df = pd.merge(summary_df, bbduk_phixreads_df, left_on="sample", right_on="bbduk_sample", how = 'left')
-        summary_df.drop("bbduk_sample", axis=1, inplace=True)
+        if "bbmap" in data['report_saved_raw_data'].keys():
+            print("Adding in phix reads from bbmap")
+            samples = [sample.replace(".phix", "") for sample in data['report_saved_raw_data']['bbmap']['stats'].keys()]
+            phix_reads=[]
+            for sample in data['report_saved_raw_data']['bbmap']['stats'].keys() :
+                phix_reads.append(data['report_saved_raw_data']['bbmap']['stats'][sample]['kv']['Matched'])
+            bbduk_phixreads_df = pd.DataFrame(samples, columns=['bbduk_sample'])
+            bbduk_phixreads_df['bbduk_phix_reads'] = phix_reads
+            summary_df = pd.merge(summary_df, bbduk_phixreads_df, left_on="sample", right_on="bbduk_sample", how = 'left')
+            summary_df.drop("bbduk_sample", axis=1, inplace=True)
         
 if exists(multiqc_stats) : 
     file = multiqc_stats
@@ -304,9 +306,9 @@ final_columns = [
 'fastqc_avg_length',
 'fastp_passed_reads',
 'bbduk_phix_reads',
-'warnings',
 'quast_#_contigs',
 'quast_GC_(%)',
+'warnings',
 'amrfinder_genes_(per_cov/per_ident)',
 
 # species
