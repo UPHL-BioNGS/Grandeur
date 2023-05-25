@@ -264,11 +264,9 @@ process size {
           echo "The expected genome size based on using $genus is $expected_size" | tee -a $log_file
         fi
       else
-        expected_size="not found"
         echo "The expected genome size based on $genus and $species was not found" | tee -a $log_file
       fi
     else
-      expected_size="not found"
       echo "There is no genus to look for" | tee -a $log_file
     fi
 
