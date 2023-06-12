@@ -49,6 +49,22 @@ tsv_files = [ quast, seqsero2, kleborate, mlst, emmtyper , pbptyper]
 top_hit   = [ fastani ]
 
 ##########################################
+# exiting if no input files              #
+##########################################
+
+if not exists(names) :
+    print("No analyses to report on for this run!")
+    with open(extended + '.tsv', 'w') as fp:
+        pass
+    with open(extended + '.txt', 'w') as fp:
+        pass
+    with open(final + '.tsv', 'w') as fp:
+        pass
+    with open(final + '.txt', 'w') as fp:
+        pass
+    quit()
+
+##########################################
 # creating the summary dataframe         #
 ##########################################
 
@@ -139,9 +155,9 @@ if exists(fastqc) :
     print("Adding results for " + file)
     analysis = "fastqc"
     new_df = pd.read_csv(file, dtype = str, index_col= False)
-    R1_df = new_df.drop_duplicates(subset='sample', keep="first")
+    R1_df = new_df.drop_duplicates(subset='sample', keep="first").copy()
     R1_df = R1_df.add_prefix('R1_')
-    R2_df = new_df.drop_duplicates(subset='sample', keep="last")
+    R2_df = new_df.drop_duplicates(subset='sample', keep="last").copy()
     R2_df = R2_df.add_prefix('R2_')
     new_df = pd.merge(R1_df, R2_df, left_on="R1_sample", right_on="R2_sample", how = 'left')
     new_df['sample'] = new_df['R1_sample']
@@ -202,9 +218,9 @@ if exists(serotypefinder) :
     new_df = new_df.sort_values(by='Identity', ascending=False)
     new_df = new_df.drop_duplicates(subset=['sample', 'Database'], keep="first")
     new_df = new_df.add_prefix(analysis + '_')
-    H_df   = new_df[new_df[analysis + '_Database' ] == 'H_type']
+    H_df   = new_df[new_df[analysis + '_Database' ] == 'H_type'].copy()
     H_df   = H_df.add_suffix('_H')
-    O_df   = new_df[new_df[analysis + '_Database' ] == 'O_type']
+    O_df   = new_df[new_df[analysis + '_Database' ] == 'O_type'].copy()
     O_df   = O_df.add_suffix('_O')
     summary_df = pd.merge(summary_df, O_df, left_on="sample", right_on=analysis + "_sample_O", how = 'left')
     summary_df.drop(analysis + "_sample_O", axis=1, inplace=True)
@@ -255,8 +271,8 @@ if exists(multiqc_stats) :
     print("Adding analysis parsed via multiqc in " + file)
     new_df = pd.read_table(file, dtype = str, index_col= False)
     if "FastQC_mqc-generalstats-fastqc-avg_sequence_length" in new_df.columns :
-        tmp_df = new_df[["Sample","FastQC_mqc-generalstats-fastqc-avg_sequence_length"]]
-        tmp_df["fastqc_avg_length"]= tmp_df["FastQC_mqc-generalstats-fastqc-avg_sequence_length"]
+        tmp_df = new_df[["Sample","FastQC_mqc-generalstats-fastqc-avg_sequence_length"]].copy()
+        tmp_df["fastqc_avg_length"] = tmp_df["FastQC_mqc-generalstats-fastqc-avg_sequence_length"]
         tmp_df.drop("FastQC_mqc-generalstats-fastqc-avg_sequence_length", axis=1, inplace=True)
         
         summary_df["possible_fastqc_name"] = summary_df['file'].str.split(" ").str[0].str.split(".").str[0]
