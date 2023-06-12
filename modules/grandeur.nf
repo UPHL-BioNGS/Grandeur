@@ -39,7 +39,7 @@ process species {
 
     if [ -f "mash_summary.csv" ]
     then
-      cut -f 7 -d , mash_summary.csv >> species.txt
+      cut -f 7 -d , mash_summary.csv | tail -n+2 >> species.txt
     fi
 
     grep -v no-hit species.txt | grep -v undef | grep -v name | sort | uniq > datasets/species_list.txt
@@ -223,12 +223,15 @@ process size {
 
     if [ -f "!{sample}_fastani.csv" ] 
     then
-      genus=$(head -n 2 !{sample}_fastani.csv | tail -n 1 | cut -f 3 -d "," | cut -f 1 -d "_" )
-      species=$(head -n 2 !{sample}_fastani.csv | tail -n 1 | cut -f 3 -d "," | cut -f 2 -d "_" )
-      accession=$(head -n 2 !{sample}_fastani.csv | tail -n 1 | sed 's/.*_GC/GC/g' | cut -f 1,2 -d '.' )
+      if [ "$(wc -l !{sample}_fastani.csv | awk '{print $1}' )" -gt 1 ]
+      then
+        genus=$(head     -n 2 !{sample}_fastani.csv | tail -n 1 | cut -f 3 -d "," | cut -f 1 -d "_" )
+        species=$(head   -n 2 !{sample}_fastani.csv | tail -n 1 | cut -f 3 -d "," | cut -f 2 -d "_" )
+        accession=$(head -n 2 !{sample}_fastani.csv | tail -n 1 | sed 's/.*_GC/GC/g' | cut -f 1,2 -d '.' )
+      fi
     fi
 
-    if [ -z "$genus" ] && [ -f "!{sample}.summary.mash.csv"]
+    if [ -z "$genus" ] && [ -f "!{sample}.summary.mash.csv" ]
     then
       genus=$(head -n 2 !{sample}.summary.mash.csv | tail -n 1 | cut -f 7 -d "," | cut -f 1 -d "_" )
       species=$(head -n 2 !{sample}.summary.mash.csv | tail -n 1 | cut -f 7 -d "," | cut -f 2 -d "_" )
@@ -311,7 +314,7 @@ process size {
     then
       echo "Using size from genomes file : $datasets_size" | tee -a $log_file
       size=$datasets_size
-    elif [ -n "$quast_size"] && [ -z "$datasets_size" ] && [ -z "$expected_size" ]
+    elif [ -n "$quast_size" ] && [ -z "$datasets_size" ] && [ -z "$expected_size" ]
     then
       echo "Using size from quast : $quast_size" | tee -a $log_file
       size=$quast_size
