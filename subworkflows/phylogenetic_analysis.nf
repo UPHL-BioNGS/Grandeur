@@ -33,10 +33,11 @@ workflow phylogenetic_analysis {
 
     ch_contig_organism = ch_contigs.join( ch_organism, by: 0, remainder: true)
 
-    for_prokka = for_prokka.mix(ch_contig_organism)
+    for_prokka = for_prokka.mix(ch_contig_organism).unique()
 
     prokka( for_prokka )
-    roary(prokka.out.gffs.concat(ch_gff).collect())
+
+    roary(prokka.out.gffs.concat(ch_gff).unique().collect())
 
     roary.out.core_gene_alignment
       .filter ({ it[1] as int >= 4 })

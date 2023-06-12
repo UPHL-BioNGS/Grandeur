@@ -1,7 +1,7 @@
 process fastp {
   tag           "${sample}"
   publishDir    params.outdir, mode: 'copy'
-  container     'staphb/fastp:0.23.2'
+  container     'staphb/fastp:0.23.4'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'

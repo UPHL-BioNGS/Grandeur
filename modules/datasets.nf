@@ -1,7 +1,7 @@
 process datasets_summary {
   tag           "${taxon}"
   publishDir    params.outdir, mode: 'copy'
-  container     'staphb/ncbi-datasets:14.20.0'
+  container     'staphb/ncbi-datasets:15.2.0'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
@@ -30,20 +30,29 @@ process datasets_summary {
 
     taxon=$(echo !{taxon} | tr "_" " ")
 
-    datasets summary genome taxon "$taxon" --reference  --limit !{params.datasets_max_genomes} --as-json-lines | \
+    datasets summary genome taxon "$taxon" --reference --limit !{params.datasets_max_genomes} --as-json-lines | \
       dataformat tsv genome --fields accession,assminfo-refseq-category,assminfo-level,organism-name,assmstats-total-ungapped-len | \
       grep -v Homo | \
       tr '\\t' ',' \
       > datasets/!{taxon}_genomes.csv
+
+    datasets summary genome taxon "$taxon" --limit !{params.datasets_max_genomes} --as-json-lines | \
+      dataformat tsv genome --fields accession,assminfo-refseq-category,assminfo-level,organism-name,assmstats-total-ungapped-len | \
+      grep -v Homo | \
+      grep -v "Assembly Accession" | \
+      tr '\\t' ',' \
+      >> datasets/!{taxon}_genomes.csv
   '''
 }
 
+// It is faster if datasets can download the entire list at a time, but there is a timeout for downloading that is about 20 minutes.
+// The '||' is to allow each genome to be downloaded on its own, which is longer overall but each genome should be less than 20 minutes.
 process datasets_download {
   tag           "Downloading Genomes"
   // because there's no way to specify threads
   label         "medcpus"
-  publishDir    params.outdir, mode: 'copy'
-  container     'staphb/ncbi-datasets:14.20.0'
+  publishDir = [ path: "${params.outdir}", mode: 'copy', pattern: "{logs/*/*log,datasets/fastani_refs.tar.gz}" ]
+  container     'staphb/ncbi-datasets:15.2.0'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
@@ -77,18 +86,20 @@ process datasets_download {
 
     cat all_runs.txt this_run.txt | sort | uniq > id_list.txt
 
-    datasets download genome accession --inputfile id_list.txt --filename ncbi_dataset.zip
+    ( datasets download genome accession --inputfile id_list.txt --filename ncbi_dataset.zip unzip -o ncbi_dataset.zip ) || \
+    ( while read line ; do echo "Downloading $line" ; datasets download genome accession $line --filename dataset.zip ; unzip -o dataset.zip ; done < id_list.txt )
 
-    unzip -o ncbi_dataset.zip
-    
-    fastas=$(ls ncbi_dataset/data/*/*.fna)
-    
+    fastas=$(ls ncbi_dataset/data/*/*.fna )
+
     for fasta in ${fastas[@]}
     do
-      accession=$(echo $fasta | cut -f 3 -d / )
-      organism=$(head -n 1 $fasta | awk '{print $2 "_" $3 }' )
+      echo "Copying $fasta to genomes"
+      accession=$(echo $fasta | cut -f 4 -d / | cut -f 1,2 -d _ )
+      organism=$(head -n 1 $fasta | awk '{print $2 "_" $3 }' | sed 's/,//g' )
       cat $fasta | sed 's/ /_/g' | sed 's/,//g' > genomes/${organism}_${accession}.fna
-    done
+    done  
+
+    rm -rf genomes/*:_*
 
     tar -czvf datasets/fastani_refs.tar.gz genomes/
   '''
