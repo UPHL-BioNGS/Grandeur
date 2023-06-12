@@ -13,7 +13,7 @@ GCF_010918895.1	Acinetobacter_schindleri
 GCF_016064815.1	Acinetobacter_seifertii
 GCF_018409485.1	Acinetobacter_variabilis
 GCF_000967305.2	Alcaligenes_faecalis
-GCF_008011635.1	Campylobacter_coli
+GCA_008011635.1	Campylobacter_coli
 GCF_009730395.1	Campylobacter_coli
 GCF_000015085.1	Campylobacter_fetus
 GCF_000495505.1	Campylobacter_fetus
@@ -22,13 +22,13 @@ GCF_011600945.2	Campylobacter_fetus
 GCF_001643955.1	Campylobacter_hyointestinalis
 GCF_013372165.1	Campylobacter_hyointestinalis_subsp._lawsonii
 GCF_000017485.1	Campylobacter_jejuni
-GCF_008011525.1	Campylobacter_jejuni
+GCA_008011525.1	Campylobacter_jejuni
 GCF_000009085.1	Campylobacter_jejuni_subsp._jejuni_NCTC_11168_=_ATCC_700819
 GCF_000816225.1	Campylobacter_lari
 GCF_000019205.1	Campylobacter_lari_RM2100
 GCF_014931075.1	Campylobacter_peloridis
 GCF_000816305.1	Campylobacter_subantarcticus_LMG_24377
-GCF_008011615.1	Campylobacter_upsaliensis
+GCA_008011615.1	Campylobacter_upsaliensis
 GCF_916098265.1	Campylobacter_upsaliensis
 GCF_001558935.2	Citrobacter_amalonaticus
 GCF_009648935.1	Citrobacter_braakii
@@ -111,7 +111,7 @@ GCF_014526935.1	Listeria_monocytogenes
 GCF_000196035.1	Listeria_monocytogenes_EGD-e
 GCF_017363605.1	Listeria_seeligeri
 GCF_002489005.1	Listeria_welshimeri
-GCF_007681265.1	Mixta_calida
+GCA_007681265.1	Mixta_calida
 GCF_902387845.1	Morganella_morganii
 GCF_013030075.1	Neisseria_gonorrhoeae
 GCF_000233595.1	Pantoea_ananatis_PA13
@@ -136,9 +136,9 @@ GCF_000412675.1	Pseudomonas_putida_NBRC_14164
 GCF_902374465.1	Ralstonia_pickettii
 GCF_901421005.1	Raoultella_ornithinolytica
 GCF_022637595.1	Raoultella_planticola
-GCF_013588055.1	Salmonella_bongori
+GCA_013588055.1	Salmonella_bongori
 GCF_000439255.1	Salmonella_bongori_N268-08
-GCF_011388235.1	Salmonella_enterica
+GCA_011388235.1	Salmonella_enterica
 GCF_000006945.2	Salmonella_enterica_subsp._enterica_serovar_Typhimurium_str._LT2
 GCF_003516165.1	Serratia_marcescens
 GCF_004768745.1	Serratia_nematodiphila
@@ -155,9 +155,9 @@ GCF_000221985.1	Streptococcus_pseudopneumoniae
 GCF_900475035.1	Streptococcus_pyogenes
 GCF_009665435.1	Vibrio_alginolyticus
 GCA_023650915.1	Vibrio_alginolyticus
-GCF_009665515.2	Vibrio_cholerae
+GCA_009665515.2	Vibrio_cholerae
 GCF_008369605.1	Vibrio_cholerae
-GCF_009665415.1	Vibrio_cidicii
+GCA_009665415.1	Vibrio_cidicii
 GCF_009665395.1	Vibrio_cincinnatiensis
 GCF_009665355.1	Vibrio_fluvialis
 GCF_009665335.1	Vibrio_furnissii
