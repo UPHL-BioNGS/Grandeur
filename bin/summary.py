@@ -302,32 +302,39 @@ if exists(size) :
     summary_df.drop("size_accession", axis=1, inplace=True)
     summary_df['warnings'] = summary_df['warnings'] + summary_df['size_warning']
 
-    if "fastqc_total sequences" in summary_df:
+    if "fastqc_total sequences" and 'fastqc_avg_length' in summary_df:
         summary_df['total_bases']          = summary_df['fastqc_total sequences'].astype('Int32') * summary_df['fastqc_avg_length'].astype(float)
-    else:
+    elif 'quast_Total length' in summary_df:
         summary_df['total_bases']          = summary_df['quast_Total length'].astype(float)
+    
+    if 'total_bases' in summary_df:
+        summary_df['coverage']                 = summary_df['total_bases'].astype(float) /  summary_df['size_size'].astype(float)
+        summary_df['coverage_for_1.5M_genome'] = summary_df['total_bases'].astype(float) /  1500000
+        summary_df['coverage_for_2M_genome']   = summary_df['total_bases'].astype(float) /  2000000
+        summary_df['coverage_for_2.5M_genome'] = summary_df['total_bases'].astype(float) /  2500000
+        summary_df['coverage_for_3M_genome']   = summary_df['total_bases'].astype(float) /  3000000
+        summary_df['coverage_for_3.5M_genome'] = summary_df['total_bases'].astype(float) /  3500000
+        summary_df['coverage_for_4M_genome']   = summary_df['total_bases'].astype(float) /  4000000
+        summary_df['coverage_for_4.5M_genome'] = summary_df['total_bases'].astype(float) /  4500000
+        summary_df['coverage_for_5M_genome']   = summary_df['total_bases'].astype(float) /  5000000
+        summary_df['coverage_for_5.5M_genome'] = summary_df['total_bases'].astype(float) /  5500000
+        summary_df['coverage_for_6M_genome']   = summary_df['total_bases'].astype(float) /  6000000
+        summary_df['coverage_for_6.5M_genome'] = summary_df['total_bases'].astype(float) /  6500000
+        summary_df['coverage_for_7M_genome']   = summary_df['total_bases'].astype(float) /  7000000
+        summary_df['coverage_for_7.5M_genome'] = summary_df['total_bases'].astype(float) /  7500000
+        summary_df['coverage_for_8M_genome']   = summary_df['total_bases'].astype(float) /  8000000
+        summary_df['coverage_for_8.5M_genome'] = summary_df['total_bases'].astype(float) /  8500000
+        summary_df['coverage_for_9M_genome']   = summary_df['total_bases'].astype(float) /  9000000
+        summary_df['coverage_for_9.5M_genome'] = summary_df['total_bases'].astype(float) /  9500000
+        summary_df['coverage_for_10M_genome']  = summary_df['total_bases'].astype(float) / 10000000
+        summary_df['coverage_warning']         = summary_df['coverage'].apply(lambda x: "Low coverage," if x <= 20 else "")
+        summary_df['warnings']                 = summary_df['warnings'] + summary_df['coverage_warning']
 
-    summary_df['coverage']                 = summary_df['total_bases'].astype(float) /  summary_df['size_size'].astype(float)
-    summary_df['coverage_for_1.5M_genome'] = summary_df['total_bases'].astype(float) /  1500000
-    summary_df['coverage_for_2M_genome']   = summary_df['total_bases'].astype(float) /  2000000
-    summary_df['coverage_for_2.5M_genome'] = summary_df['total_bases'].astype(float) /  2500000
-    summary_df['coverage_for_3M_genome']   = summary_df['total_bases'].astype(float) /  3000000
-    summary_df['coverage_for_3.5M_genome'] = summary_df['total_bases'].astype(float) /  3500000
-    summary_df['coverage_for_4M_genome']   = summary_df['total_bases'].astype(float) /  4000000
-    summary_df['coverage_for_4.5M_genome'] = summary_df['total_bases'].astype(float) /  4500000
-    summary_df['coverage_for_5M_genome']   = summary_df['total_bases'].astype(float) /  5000000
-    summary_df['coverage_for_5.5M_genome'] = summary_df['total_bases'].astype(float) /  5500000
-    summary_df['coverage_for_6M_genome']   = summary_df['total_bases'].astype(float) /  6000000
-    summary_df['coverage_for_6.5M_genome'] = summary_df['total_bases'].astype(float) /  6500000
-    summary_df['coverage_for_7M_genome']   = summary_df['total_bases'].astype(float) /  7000000
-    summary_df['coverage_for_7.5M_genome'] = summary_df['total_bases'].astype(float) /  7500000
-    summary_df['coverage_for_8M_genome']   = summary_df['total_bases'].astype(float) /  8000000
-    summary_df['coverage_for_8.5M_genome'] = summary_df['total_bases'].astype(float) /  8500000
-    summary_df['coverage_for_9M_genome']   = summary_df['total_bases'].astype(float) /  9000000
-    summary_df['coverage_for_9.5M_genome'] = summary_df['total_bases'].astype(float) /  9500000
-    summary_df['coverage_for_10M_genome']  = summary_df['total_bases'].astype(float) / 10000000
-    summary_df['coverage_warning']         = summary_df['coverage'].apply(lambda x: "Low coverage," if x <= 20 else "")
-    summary_df['warnings']                 = summary_df['warnings'] + summary_df['coverage_warning']
+    else:
+        summary_df['total_bases']              = "Undetermined"
+        summary_df['coverage']                 = "Undetermined"
+        summary_df['coverage_warning']         = "Coverage is undetermined"
+        summary_df['warnings']                 = summary_df['warnings'] + summary_df['coverage_warning']
 
 ##########################################
 # creating files                         #
