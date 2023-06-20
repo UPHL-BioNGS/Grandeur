@@ -1,11 +1,13 @@
-include { iqtree2 }        from '../modules/iqtree2'   addParams(params)
-include { prokka }         from '../modules/prokka'    addParams(params)
-include { representative } from '../modules/grandeur'  addParams(params)
-include { roary }          from '../modules/roary'     addParams(params)
-include { snp_dists }      from '../modules/snp-dists' addParams(params)
+include { iqtree2 }        from '../modules/iqtree2'    addParams(params)
+include { prokka }         from '../modules/prokka'     addParams(params)
+include { representative } from '../modules/grandeur'   addParams(params)
+include { roary }          from '../modules/roary'      addParams(params)
+include { snp_dists }      from '../modules/snp-dists'  addParams(params)
+include { snp_matrix }     from '../modules/snp-matrix' addParams(params)
 
 workflow phylogenetic_analysis {
   take:
+    snpmatrix_script
     ch_contigs
     ch_gff
     ch_top_hit
@@ -47,7 +49,8 @@ workflow phylogenetic_analysis {
 
     iqtree2(ch_core_genome)
     snp_dists(roary.out.core_gene_alignment.map( it -> it[0] ))
+    snp_matrix(snp_dists.out.snp_matrix, snpmatrix_script)
 
   emit:
-    for_multiqc = prokka.out.for_multiqc
+    for_multiqc = prokka.out.for_multiqc.mix(snp_matrix.out.for_multiqc)
 }

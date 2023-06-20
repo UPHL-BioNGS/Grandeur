@@ -146,7 +146,8 @@ include { test }                        from "./subworkflows/test"              
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
 // Creating the summary files
-summary_script = Channel.fromPath(workflow.projectDir + "/bin/summary.py", type: "file")
+summary_script   = Channel.fromPath(workflow.projectDir + "/bin/summary.py", type: "file")
+snpmatrix_script = Channel.fromPath(workflow.projectDir + "/bin/HeatCluster-0.01.py", type: "file")
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
@@ -349,6 +350,7 @@ workflow {
   // optional subworkflow for comparing shared genes
   if ( params.msa ) { 
     phylogenetic_analysis(
+      snpmatrix_script,
       ch_contigs.ifEmpty([]), 
       ch_gffs.ifEmpty([]), 
       ch_top_hit.ifEmpty([]))
