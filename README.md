@@ -75,7 +75,6 @@ Grandeur wouldn't be possible without the following tools:
 - [fastani](https://github.com/ParBLiSS/FastANI) - species evaluator
 - [fastp](https://github.com/OpenGene/fastp) - cleaning reads
 - [fastqc](https://github.com/s-andrews/FastQC) - fastq file QC
-- [fastq-scan](https://github.com/rpetit3/fastq-scan) - quality metrics for fastq files in json format
 - [iqtree2](http://www.iqtree.org/) - phylogenetic tree creation - used after core genome alignment
 - [kleborate](https://github.com/katholt/Kleborate) - Klebsiella serotyping
 - [kraken2](https://ccb.jhu.edu/software/kraken2/) - contamination
