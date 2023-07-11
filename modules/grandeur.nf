@@ -1,7 +1,7 @@
 process species {
   tag           "Creating list of species"
   publishDir    params.outdir, mode: 'copy'
-  container     'quay.io/biocontainers/pandas:1.1.5'
+  container     'quay.io/uphl/seaborn:0.12.2-2'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
@@ -49,7 +49,7 @@ process species {
 process decompression {
   tag           "Decompressing genome file"
   publishDir    params.outdir, mode: 'copy'
-  container     'quay.io/biocontainers/pandas:1.1.5'
+  container     'quay.io/uphl/seaborn:0.12.2-2'
   maxForks      10
   stageInMode   'copy'
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
@@ -90,7 +90,7 @@ process decompression {
 process flag {
   tag           "${sample}"
   publishDir    params.outdir, mode: 'copy'
-  container     'quay.io/biocontainers/pandas:1.1.5'
+  container     'quay.io/uphl/seaborn:0.12.2-2'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
@@ -189,7 +189,7 @@ process flag {
 process size {
   tag           "${sample}"
   publishDir    params.outdir, mode: 'copy'
-  container     'quay.io/biocontainers/pandas:1.1.5'
+  container     'quay.io/uphl/seaborn:0.12.2-2'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
@@ -332,7 +332,7 @@ process size {
 
 process representative {
   tag           "${accession}"
-  container     'quay.io/biocontainers/pandas:1.1.5'
+  container     'quay.io/uphl/seaborn:0.12.2-2'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
@@ -365,3 +365,41 @@ process representative {
     cp !{genomes}/*!{accession}* representative/.
   '''
 }
+
+process snp_matrix_heatmap {
+  tag           "heatmap"
+  publishDir    params.outdir, mode: 'copy'
+  container     'quay.io/uphl/seaborn:0.12.2-2'
+  maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
+  //#UPHLICA memory 1.GB
+  //#UPHLICA cpus 3
+  //#UPHLICA time '10m'
+
+  input:
+  tuple file(snp_matrix), file(script)
+
+  output:
+  path "snp-dists/SNP_matrix*"
+  path "snp-dists/SNP_matrix_mqc.png"                              , emit: for_multiqc
+  path "logs/${task.process}/snp_matrix.${workflow.sessionId}.log" , emit: log_files
+
+  shell:
+  '''
+    mkdir -p snp-dists logs/!{task.process}
+    log_file=logs/!{task.process}/snp_matrix.!{workflow.sessionId}.log
+
+    # time stamp + capturing tool versions
+    date > $log_file
+    echo "container : !{task.container}" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
+
+    python3 !{script}
+
+    mv SNP* snp-dists/.
+  '''
+}
+
+
