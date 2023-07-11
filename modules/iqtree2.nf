@@ -2,7 +2,7 @@ process iqtree2 {
   tag           "Pylogenetic Analysis"
   label         "maxcpus"
   publishDir    params.outdir, mode: 'copy'
-  container     'staphb/iqtree2:2.1.2'
+  container     'staphb/iqtree2:2.2.2.6'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-xlarge'
