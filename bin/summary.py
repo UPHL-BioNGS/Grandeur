@@ -111,6 +111,7 @@ if exists(amrfinderplus) :
     print("Adding results for " + file)
     analysis = "amrfinder"
     new_df = pd.read_table(file, dtype = str, index_col= False)
+    new_df = new_df.sort_values('Gene symbol')
     new_df['genes (per cov/per ident)'] = new_df['Gene symbol'] + ' (' + new_df['% Coverage of reference sequence'] + '/' + new_df['% Identity to reference sequence'] + ')'
     new_df = new_df[['Name', 'genes (per cov/per ident)']]
     new_df = new_df.groupby('Name', as_index=False).agg({'genes (per cov/per ident)': lambda x: list(x)})
@@ -125,13 +126,22 @@ if exists(blobtools) :
     analysis = "blobtools"
     new_df = pd.read_table(file, dtype = str, index_col= False)
     new_df = new_df[new_df['name'] != 'all']
+    new_df = new_df.sort_values('bam0_read_map_p', ascending = False)
+    
+    tmp_df = new_df.drop_duplicates(subset='sample', keep="first").copy()
+    tmp_df = new_df['sample', 'name']
+    tmp_df['top_organism'] = tmp_df['name']
+    tmp_df = tmp_df.add_prefix(analysis + '_')
+    
     new_df['organism (per mapped reads)'] = new_df['name'] + ' (' + new_df['bam0_read_map_p'] + ')'
     new_df = new_df[['sample', 'organism (per mapped reads)']]
     new_df = new_df.groupby('sample', as_index=False).agg({'organism (per mapped reads)': lambda x: list(x)})
     new_df['warning'] = new_df['organism (per mapped reads)'].apply(lambda x: "Blobtools multiple organisms," if ','.join(x).count(',') >= 2 else "")
     new_df = new_df.add_prefix(analysis + '_')
+    
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
+    summary_df = pd.merge(summary_df, tmp_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
     summary_df['warnings'] = summary_df['warnings'] + summary_df['blobtools_warning']
 
 # fastani : merging relevant rows into one
@@ -175,12 +185,21 @@ if exists(kraken2) :
     print("Adding results for " + file)
     analysis = "kraken2"
     new_df = pd.read_csv(file, dtype = str, index_col= False)
+    new_df = new_df.sort_values('Sample', 'Percentage of fragments', ascending= False)
+    new_df['top_organism'] = new_df['Scientific name']
+
+    tmp_df = new_df['Sample', 'top_organism'].copy
+    tmp_df = tmp_df.drop_duplicates(subset=['Sample'], keep="first")
+    tmp_df = tmp_df.add_prefix(analysis + '_')
+
     new_df['organism (per fragment)'] = new_df['Scientific name'] + " (" + new_df['Percentage of fragments'] + ' ' + new_df['Type'] + ")"    
     new_df = new_df[['Sample', 'organism (per fragment)']]
     new_df = new_df.groupby('Sample', as_index=False).agg({'organism (per fragment)': lambda x: list(x)})
     new_df['warning'] = new_df['organism (per fragment)'].apply(lambda x: "Kraken2 multiple organisms," if ','.join(x).count(',') >= 2 else "")
     new_df = new_df.add_prefix(analysis + '_')
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_Sample", how = 'left')
+    summary_df.drop(analysis + "_Sample", axis=1, inplace=True)
+    summary_df = pd.merge(summary_df, tmp_df, left_on="sample", right_on=analysis + "_Sample", how = 'left')
     summary_df.drop(analysis + "_Sample", axis=1, inplace=True)
     summary_df['warnings'] = summary_df['warnings'] + summary_df['kraken2_warning']
 
@@ -190,7 +209,7 @@ if exists(mash) :
     print("Adding results for " + file)
     analysis = "mash"
     new_df = pd.read_csv(file, dtype = str, index_col= False)
-    new_df.sort_values(by = ['P-value', 'mash-distance'], ascending = [True, True], inplace=True)
+    new_df = new_df.sort_values(by = ['P-value', 'mash-distance'], ascending = [True, True])
     new_df = new_df.drop_duplicates(subset=['sample'], keep='first')
     new_df = new_df.add_prefix(analysis + "_")
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
@@ -360,6 +379,7 @@ final_columns = [
 'amrfinder_genes_(per_cov/per_ident)',
 
 # species
+# TODO 'predicted_organism',
 'mlst_matching_PubMLST_scheme',
 'mlst_ST',
 'mash_reference',
