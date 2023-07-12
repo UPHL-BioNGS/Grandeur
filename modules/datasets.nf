@@ -13,7 +13,7 @@ process datasets_summary {
   val(taxon)
 
   output:
-  path "datasets/${taxon}_genomes.csv"                          , emit: genomes
+  path "datasets/*_genomes.csv"                                 , emit: genomes
   path "logs/${task.process}/${taxon}.${workflow.sessionId}.log", emit: log
 
   shell:
@@ -28,7 +28,8 @@ process datasets_summary {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    taxon=$(echo !{taxon} | tr "_" " ")
+    taxon="$(echo !{taxon} | tr '_' ' ' | sed 's/[//g' | sed 's/]//g' )"
+    echo "the taxon is now $taxon"
 
     datasets summary genome taxon "$taxon" --reference --limit !{params.datasets_max_genomes} --as-json-lines | \
       dataformat tsv genome --fields accession,assminfo-refseq-category,assminfo-level,organism-name,assmstats-total-ungapped-len | \
