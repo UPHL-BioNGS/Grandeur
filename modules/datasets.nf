@@ -14,7 +14,7 @@ process datasets_summary {
 
   output:
   path "datasets/*_genomes.csv"                                 , emit: genomes
-  path "logs/${task.process}/${taxon}.${workflow.sessionId}.log", emit: log
+  path "logs/${task.process}/*.${workflow.sessionId}.log", emit: log
 
   shell:
   '''
