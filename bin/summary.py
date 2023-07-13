@@ -129,7 +129,7 @@ if exists(blobtools) :
     new_df = new_df.sort_values('bam0_read_map_p', ascending = False)
     
     tmp_df = new_df.drop_duplicates(subset='sample', keep="first").copy()
-    tmp_df = new_df['sample', 'name']
+    tmp_df = tmp_df[['sample', 'name']]
     tmp_df['top_organism'] = tmp_df['name']
     tmp_df = tmp_df.add_prefix(analysis + '_')
     
@@ -185,11 +185,11 @@ if exists(kraken2) :
     print("Adding results for " + file)
     analysis = "kraken2"
     new_df = pd.read_csv(file, dtype = str, index_col= False)
-    new_df = new_df.sort_values('Sample', 'Percentage of fragments', ascending= False)
+    new_df = new_df.sort_values(['Sample', 'Percentage of fragments'], ascending= False)
     new_df['top_organism'] = new_df['Scientific name']
 
-    tmp_df = new_df['Sample', 'top_organism'].copy
-    tmp_df = tmp_df.drop_duplicates(subset=['Sample'], keep="first")
+    tmp_df = new_df.drop_duplicates(subset=['Sample'], keep="first").copy()
+    tmp_df = tmp_df[['Sample', 'top_organism']]
     tmp_df = tmp_df.add_prefix(analysis + '_')
 
     new_df['organism (per fragment)'] = new_df['Scientific name'] + " (" + new_df['Percentage of fragments'] + ' ' + new_df['Type'] + ")"    
