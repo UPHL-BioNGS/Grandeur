@@ -20,7 +20,7 @@ numSamples = len(lines) -1 #counts data lines
 
 # Remove 'snp-dists 0.8.2', '_contigs' and '_genomic', & replace commas with tabs
 cleaned_lines = [line.replace('snp-dists 0.8.2\t', '').replace('snp-dists 0.8.2,', '').
-                 replace(",", "\t").replace('_contigs', '').replace('_genomic', '')
+                 replace(",", "\t").replace('_contigs', '').replace('_genomic', '').replace("^\t", '')
                  for line in lines]
 
 # Combine the cleaned lines into a single string instead of a file
