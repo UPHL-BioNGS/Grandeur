@@ -381,9 +381,9 @@ process snp_matrix_heatmap {
   tuple file(snp_matrix), file(script)
 
   output:
-  path "snp-dists/SNP_matrix*"
-  path "snp-dists/SNP_matrix_mqc.png"                              , emit: for_multiqc
-  path "logs/${task.process}/snp_matrix.${workflow.sessionId}.log" , emit: log_files
+  path "snp-dists/SNP_matrix*", optional : true
+  path "snp-dists/SNP_matrix_mqc.png", optional : true, emit: for_multiqc
+  path "logs/${task.process}/snp_matrix.${workflow.sessionId}.log", emit: log_files
 
   shell:
   '''
