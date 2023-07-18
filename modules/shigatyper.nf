@@ -2,7 +2,7 @@ process shigatyper {
   tag           "${sample}"
   label         "medcpus"
   publishDir    params.outdir, mode: 'copy'
-  container     'staphb/shigatyper:2.0.3'
+  container     'staphb/shigatyper:2.0.5'
   stageInMode   'copy'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
