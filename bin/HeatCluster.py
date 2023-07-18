@@ -11,23 +11,21 @@ import matplotlib.pyplot as plt
 import scipy.cluster.hierarchy as sch
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
-from io import StringIO
 
-# Read the SNP matrix file
-with open("snp_matrix.txt", "r") as infile:
-    lines = infile.readlines()
-numSamples = len(lines) -1 #counts data lines
+tabs   = pd.read_csv("snp_matrix.txt", nrows=1, sep='\t').shape[1]
+commas = pd.read_csv("snp_matrix.txt", nrows=1, sep=',').shape[1]
+if tabs > commas:
+    df = pd.read_csv("snp_matrix.txt", sep='\t', index_col=0)
+else:
+    df = pd.read_csv("snp_matrix.txt", sep=',', index_col=0)
 
-# Remove 'snp-dists 0.8.2', '_contigs' and '_genomic', & replace commas with tabs
-cleaned_lines = [line.replace('snp-dists 0.8.2\t', '').replace('snp-dists 0.8.2,', '').
-                 replace(",", "\t").replace('_contigs', '').replace('_genomic', '').replace("^\t", '')
-                 for line in lines]
+print("Found ", len(df.columns), " samples in snp_matrix.txt")
 
-# Combine the cleaned lines into a single string instead of a file
-snp_matrix_string = "\n".join(cleaned_lines)
-
-# Read the tab-delimited string into a DataFrame
-df = pd.read_csv(StringIO(snp_matrix_string), sep='\t')
+if len(df.columns) <= 2:
+    print("This matrix has too few samples or has been melted. Sorry!")
+    exit(0)
+else:
+    numSamples = len(df.columns)
 
 #Define colormap for heatmap
 cmap = 'Reds_r'
@@ -45,14 +43,10 @@ sorted_cluster_matrix = TotalRow_snps.drop(['Total_SNPs'], axis="columns")
 sorted_cluster_matrix=sorted_cluster_matrix.reindex(columns=sorted_cluster_matrix.index)
 
 #Change output figure size tuple based on number of samples
-if   (numSamples <= 20): 
+if (numSamples <= 20): 
     figureSize = (10, 8)
-elif (numSamples <= 40): 
-    figureSize = (20, 16)
-elif (numSamples <= 60): 
-    figureSize = (30, 24)
-else: 
-    figureSize = (40, 32)
+else:
+    figureSize = (round(numSamples / 2,0) , round(numSamples / 2.5,0))
 print("\n\nNumber of samples: ", numSamples,"\nFigure size: ", figureSize)
 
 # Compute clusters
@@ -142,4 +136,4 @@ heatmap.savefig('SNP_matrix_mqc.png')
 plt.show()
 plt.close()
 
-print("Saved heatmap as Heatmap.{pdf,png}")
+print("Saved heatmap as SNP_matrix.{pdf,png}")
