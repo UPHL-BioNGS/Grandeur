@@ -39,8 +39,11 @@ process quast {
 
     if [ -f "quast/!{sample}/report.tsv" ] ; then cp quast/!{sample}/report.tsv quast/!{sample}_quast_report.tsv ; fi
 
-    head -n 1 quast/!{sample}/transposed_report.tsv | awk '{print "sample\\t" $0 }' > quast/!{sample}/transposed_report.tsv.tmp
-    tail -n 1 quast/!{sample}/transposed_report.tsv | awk -v sample=!{sample} '{print sample "\\t" $0}' >> quast/!{sample}/transposed_report.tsv.tmp
-    mv quast/!{sample}/transposed_report.tsv.tmp quast/!{sample}/transposed_report.tsv
+    if [ -f "quast/!{sample}/transposed_report.tsv" ]
+    then
+      head -n 1 quast/!{sample}/transposed_report.tsv | awk '{print "sample\\t" $0 }' > quast/!{sample}/transposed_report.tsv.tmp
+      tail -n 1 quast/!{sample}/transposed_report.tsv | awk -v sample=!{sample} '{print sample "\\t" $0}' >> quast/!{sample}/transposed_report.tsv.tmp
+      mv quast/!{sample}/transposed_report.tsv.tmp quast/!{sample}/transposed_report.tsv
+    fi
   '''
 }
