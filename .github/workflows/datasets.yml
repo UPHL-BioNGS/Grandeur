@@ -6,7 +6,7 @@ on:
     - cron: '30 4 * * TUE'
 
 jobs:
-  check:
+  datasets:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
@@ -14,10 +14,6 @@ jobs:
         
       - name: download datasets
         run: |
-          grep -h container modules/datasets.nf
-          grep -h container modules/datasets.nf | sort | uniq
-          grep -h container modules/datasets.nf | sort | uniq | awk '{print $2}'
-          grep -h container modules/datasets.nf | sort | uniq | head -n 1 | awk '{print $2}' | cut -f 2 -d ":"
           DATASETS_VER=$(grep -h container modules/datasets.nf \
             | grep datasets \
             | sort \
@@ -29,7 +25,7 @@ jobs:
         
           echo "The datasets version is $DATASETS_VER"
         
-          wget https://github.com/ncbi/datasets/releases/download/v${DATASETS_VER}/linux-amd64.cli.package.zip && \
+          wget -q https://github.com/ncbi/datasets/releases/download/v${DATASETS_VER}/linux-amd64.cli.package.zip && \
             unzip linux-amd64.cli.package.zip && \
             rm linux-amd64.cli.package.zip && \
             chmod +x dataformat datasets
@@ -55,14 +51,14 @@ jobs:
 
             echo "Getting the representative genome"
             ./datasets summary genome taxon "$taxon" --reference --limit 5 --as-json-lines | \
-              dataformat tsv genome --fields accession,assminfo-refseq-category,assminfo-level,organism-name,assmstats-total-ungapped-len | \
+              ./dataformat tsv genome --fields accession,assminfo-refseq-category,assminfo-level,organism-name,assmstats-total-ungapped-len | \
               grep -v Homo | \
               tr '\\t' ',' \
               | tee ${organism}_genomes.csv
             
             echo "Getting additional genomes"
             ./datasets summary genome taxon "$taxon" --limit 5 --as-json-lines | \
-              dataformat tsv genome --fields accession,assminfo-refseq-category,assminfo-level,organism-name,assmstats-total-ungapped-len | \
+              ./dataformat tsv genome --fields accession,assminfo-refseq-category,assminfo-level,organism-name,assmstats-total-ungapped-len | \
               grep -v Homo | \
               grep -v "Assembly Accession" | \
               tr '\\t' ',' \
