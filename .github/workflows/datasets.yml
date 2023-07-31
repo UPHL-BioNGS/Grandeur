@@ -25,44 +25,46 @@ jobs:
         
           echo "The datasets version is $DATASETS_VER"
         
-          wget -q https://github.com/ncbi/datasets/releases/download/v${DATASETS_VER}/linux-amd64.cli.package.zip && \
-            unzip linux-amd64.cli.package.zip && \
-            rm linux-amd64.cli.package.zip && \
-            chmod +x dataformat datasets
+          wget -q https://github.com/ncbi/datasets/releases/download/v${DATASETS_VER}/linux-amd64.cli.package.zip
+          unzip linux-amd64.cli.package.zip && \
+          chmod +x dataformat datasets
           
       - name: get accessions
         run: |
-          taxons=("Acinetobacter baumannii"
-            "Burkholderia cenocepacia"
-            "Campylobacter jejuni"
-            "Citrobacter sp"
-            "Elizabethkingia meningoseptica"
-            "Escherichia coli"
-            "Klebsiella oxytoca"
-            "Legionella pneumophila"
-            "Pseudomonas sp"
-            "Raoultella ornithinolytica"
-            "Salmonella enterica")
+          taxons=("Acinetobacter_baumannii"
+            "Burkholderia_cenocepacia"
+            "Campylobacter_jejuni"
+            "Citrobacter_sp"
+            "Elizabethkingia_meningoseptica"
+            "Escherichia_coli"
+            "Klebsiella_oxytoca"
+            "Legionella_pneumophila"
+            "Pseudomonas_sp"
+            "Raoultella_ornithinolytica"
+            "Salmonella_enterica")
           
           for taxon in ${taxons[@]} 
           do
-            echo "the taxon is now $taxon"
-            organism=$(echo $taxon | sed 's/ /_/g')
+            echo "The taxon is now $taxon"
+            organism="$(echo $taxon | sed 's/_/ /g')"
+            echo "The organisms is now " "$organism"
 
             echo "Getting the representative genome"
-            ./datasets summary genome taxon "$taxon" --reference --limit 5 --as-json-lines | \
-              ./dataformat tsv genome --fields accession,assminfo-refseq-category,assminfo-level,organism-name,assmstats-total-ungapped-len | \
-              grep -v Homo | \
-              tr '\t' ',' \
-              | tee ${organism}_genomes.csv
+            echo "./datasets summary genome taxon \"$organism\" --reference --limit 5 --as-json-lines"
+            
+            ./datasets summary genome taxon "$organism" --reference --limit 5 --as-json-lines \
+              | ./dataformat tsv genome --fields accession,assminfo-refseq-category,assminfo-level,organism-name,assmstats-total-ungapped-len \
+              | grep -v Homo \
+              | tr '\t' ',' \
+              | tee ${taxon}_genomes.csv
             
             echo "Getting additional genomes"
-            ./datasets summary genome taxon "$taxon" --limit 5 --as-json-lines | \
-              ./dataformat tsv genome --fields accession,assminfo-refseq-category,assminfo-level,organism-name,assmstats-total-ungapped-len | \
-              grep -v Homo | \
-              grep -v "Assembly Accession" | \
-              tr '\t' ',' \
-              | tee -a ${organism}_genomes.csv
+            ./datasets summary genome taxon "$organism" --limit 5 --as-json-lines \
+              | ./dataformat tsv genome --fields accession,assminfo-refseq-category,assminfo-level,organism-name,assmstats-total-ungapped-len \
+              | grep -v Homo \
+              | grep -v "Assembly Accession" \
+              | tr '\t' ',' \
+              | tee -a ${taxon}_genomes.csv
           done
           
           head *genomes.csv
