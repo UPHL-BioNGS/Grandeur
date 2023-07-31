@@ -47,12 +47,14 @@ jobs:
           do
             echo "The taxon is now $taxon"
             organism="$(echo $taxon | sed 's/_/ /g')"
-            echo "The organisms is now " "$organism"
+            orgno_sp="$(echo $taxon | sed 's/_sp.*//g' | sed 's/_/ /g')"
+            echo "The organism is now " "$organism"
+            echo "The orgno_sp is now " "$orgno_sp"
 
             echo "Getting the representative genome"
             echo "./datasets summary genome taxon \"$organism\" --reference --limit 5 --as-json-lines"
             
-            ./datasets summary genome taxon "$organism" --reference --limit 5 --as-json-lines \
+            ./datasets summary genome taxon "$orgno_sp" --reference --limit 5 --as-json-lines \
               | ./dataformat tsv genome --fields accession,assminfo-refseq-category,assminfo-level,organism-name,assmstats-total-ungapped-len \
               | grep -v Homo \
               | tr '\t' ',' \
