@@ -32,16 +32,16 @@ jobs:
           
       - name: get accessions
         run: |
-          taxons=("Acinetobacter baumannii",
-            "Burkholderia cenocepacia",
-            "Campylobacter jejuni",
-            "Citrobacter sp",
-            "Elizabethkingia meningoseptica",
-            "Escherichia coli",
-            "Klebsiella oxytoca",
-            "Legionella pneumophila",
-            "Pseudomonas sp",
-            "Raoultella ornithinolytica",
+          taxons=("Acinetobacter baumannii"
+            "Burkholderia cenocepacia"
+            "Campylobacter jejuni"
+            "Citrobacter sp"
+            "Elizabethkingia meningoseptica"
+            "Escherichia coli"
+            "Klebsiella oxytoca"
+            "Legionella pneumophila"
+            "Pseudomonas sp"
+            "Raoultella ornithinolytica"
             "Salmonella enterica")
           
           for taxon in ${taxons[@]} 
@@ -53,7 +53,7 @@ jobs:
             ./datasets summary genome taxon "$taxon" --reference --limit 5 --as-json-lines | \
               ./dataformat tsv genome --fields accession,assminfo-refseq-category,assminfo-level,organism-name,assmstats-total-ungapped-len | \
               grep -v Homo | \
-              tr '\\t' ',' \
+              tr '\t' ',' \
               | tee ${organism}_genomes.csv
             
             echo "Getting additional genomes"
@@ -61,7 +61,7 @@ jobs:
               ./dataformat tsv genome --fields accession,assminfo-refseq-category,assminfo-level,organism-name,assmstats-total-ungapped-len | \
               grep -v Homo | \
               grep -v "Assembly Accession" | \
-              tr '\\t' ',' \
+              tr '\t' ',' \
               | tee -a ${organism}_genomes.csv
           done
           
