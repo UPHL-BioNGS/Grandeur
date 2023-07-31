@@ -14,6 +14,10 @@ jobs:
         
       - name: download datasets
         run: |
+          grep -h container modules/datasets.nf
+          grep -h container modules/datasets.nf | sort | uniq
+          grep -h container modules/datasets.nf | sort | uniq | awk '{print $2}'
+          grep -h container modules/datasets.nf | sort | uniq | head -n 1 | awk '{print $2}' | cut -f 2 -d ":"
           DATASETS_VER=$(grep -h container modules/datasets.nf | sort | uniq | head -n 1 | awk '{print $2}' | cut -f 2 -d ":")
         
           echo "The datasets version is $DATASETS_VER"
