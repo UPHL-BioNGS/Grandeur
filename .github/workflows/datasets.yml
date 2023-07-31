@@ -70,3 +70,22 @@ jobs:
           done
           
           head *genomes.csv
+          
+      - name: combine files
+        run: |
+          cut -f 1 ./assets/genomes.txt  > all_runs.txt
+          grep -h -v Accession *_genomes.csv | cut -f 1 -d , | sort | uniq > this_run.txt
+          cat all_runs.txt this_run.txt | sort | uniq > id_list.txt
+          
+          head all_runs.txt this_run.txt id_list.txt
+          wc -l all_runs.txt this_run.txt id_list.txt
+          
+      - name: download
+        run: |
+          ( datasets download genome accession --inputfile id_list.txt --filename ncbi_dataset.zip unzip -o ncbi_dataset.zip ) || \
+          ( while read line ; do echo "Downloading $line" ; datasets download genome accession $line --filename dataset.zip ; unzip -o dataset.zip ; done < id_list.txt )
+    
+          wc -l ncbi_dataset/data/*/*.fna
+      
+      - name: file tree
+        run: tree .
