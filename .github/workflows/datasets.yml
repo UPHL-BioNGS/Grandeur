@@ -25,7 +25,7 @@ jobs:
             | head -n 1 \
             | awk '{print $2}' \
             | cut -f 2 -d ":" \
-            | sed 's/\'//g')
+            | sed 's/'\''//g')
         
           echo "The datasets version is $DATASETS_VER"
         
