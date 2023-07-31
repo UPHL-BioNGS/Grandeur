@@ -14,7 +14,9 @@ jobs:
         
       - name: download datasets
         run: |
-          DATASETS_VER=$(grep container modules/datasets.nf | sort | uniq | head -n 1 | awk '{print $2}' | sed 's/'\''//g' | cut -f 2 -d ":")
+          DATASETS_VER=$(grep container modules/datasets.nf | sort | uniq | head -n 1 | awk '{print $2}' | cut -f 2 -d ":")
+        
+          echo "The datasets version is $DATASETS_VER"
         
           RUN wget https://github.com/ncbi/datasets/releases/download/v${DATASETS_VER}/linux-amd64.cli.package.zip && \
             unzip linux-amd64.cli.package.zip && \
