@@ -146,8 +146,10 @@ include { test }                        from "./subworkflows/test"              
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
 // Creating the summary files
-summary_script = Channel.fromPath(workflow.projectDir + "/bin/summary.py",     type: "file")
-snpmtrx_script = Channel.fromPath(workflow.projectDir + "/bin/HeatCluster.py", type: "file")
+dataset_script = Channel.fromPath(workflow.projectDir + "/bin/datasets_download.py", type: "file")
+snpmtrx_script = Channel.fromPath(workflow.projectDir + "/bin/HeatCluster.py",       type: "file")
+summary_script = Channel.fromPath(workflow.projectDir + "/bin/summary.py",           type: "file")
+summfle_script = Channel.fromPath(workflow.projectDir + "/bin/summary_file.py",      type: "file")
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
@@ -318,7 +320,8 @@ workflow {
       ch_for_summary.collect(),
       ch_contigs,
       ch_fastani_genomes,
-      ch_genome_ref)
+      ch_genome_ref,
+      dataset_script)
 
     ch_for_summary = ch_for_summary.mix(average_nucleotide_identity.out.for_summary)
     ch_for_flag    = ch_for_flag.mix(average_nucleotide_identity.out.for_flag)
@@ -341,7 +344,8 @@ workflow {
       ch_raw_reads, 
       ch_contigs, 
       ch_for_flag, 
-      ch_size)
+      ch_size,
+      summfle_script)
 
     ch_for_summary = ch_for_summary.mix(information.out.for_summary)
     ch_for_multiqc = ch_for_multiqc.mix(information.out.for_multiqc)
