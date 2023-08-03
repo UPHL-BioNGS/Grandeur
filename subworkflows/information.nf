@@ -29,7 +29,7 @@ workflow information {
 
     // contigs
     mlst(ch_contigs.combine(summfle_script))
-    quast(ch_contigs.combine(summfle_script))
+    quast(ch_contigs)
     plasmidfinder(ch_contigs.combine(summfle_script))
 
     // estimating size of genome for the oganism
