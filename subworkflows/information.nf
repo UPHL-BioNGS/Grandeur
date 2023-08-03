@@ -20,6 +20,7 @@ workflow information {
     ch_contigs
     ch_flag
     ch_size
+    summfle_script
 
   main:
     // fastq files
@@ -27,9 +28,9 @@ workflow information {
     fastqc(ch_reads)
 
     // contigs
-    mlst(ch_contigs)
-    quast(ch_contigs)
-    plasmidfinder(ch_contigs)
+    mlst(ch_contigs.combine(summfle_script))
+    quast(ch_contigs.combine(summfle_script))
+    plasmidfinder(ch_contigs.combine(summfle_script))
 
     // estimating size of genome for the oganism
     size(ch_size.join(quast.out.results, by: 0, remainder: true).map{ it -> tuple(it[0], [ it[1], it[2], it[3], it[4], it[5], it[6], it[7], it[8]])})
@@ -38,13 +39,13 @@ workflow information {
     flag(ch_flag.groupTuple())
 
     amrfinderplus(ch_contigs.join(flag.out.organism,    by:0))
-    emmtyper(ch_contigs.join(flag.out.strepa_flag,      by:0)) 
+    emmtyper(ch_contigs.join(flag.out.strepa_flag,      by:0).combine(summfle_script)) 
     //kaptive(ch_contigs.join(flag.out.klebacin_flag,     by:0))      
-    kleborate(ch_contigs.join(flag.out.klebsiella_flag, by:0))
+    kleborate(ch_contigs.join(flag.out.klebsiella_flag, by:0).combine(summfle_script))
     legsta(ch_contigs.join(flag.out.legionella_flag,    by:0))
     seqsero2(ch_contigs.join(flag.out.salmonella_flag,  by:0))
-    serotypefinder(ch_contigs.join(flag.out.ecoli_flag, by:0))
-    shigatyper(ch_contigs.join(flag.out.ecoli_flag,     by:0))
+    serotypefinder(ch_contigs.join(flag.out.ecoli_flag, by:0).combine(summfle_script))
+    shigatyper(ch_contigs.join(flag.out.ecoli_flag,     by:0).combine(summfle_script))
     pbptyper(ch_contigs.join(flag.out.streppneu_flag,   by:0))
     
     emmtyper.out.collect
