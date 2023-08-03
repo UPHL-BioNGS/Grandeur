@@ -10,6 +10,7 @@ workflow average_nucleotide_identity {
         ch_contigs
         ch_static_fastani_genomes
         ch_genome_ref
+        dataset_script
   
     main:
         if ( params.current_datasets ) {
@@ -20,7 +21,7 @@ workflow average_nucleotide_identity {
                 .map(it -> it.trim())
                 .set{ ch_species_list }
 
-            datasets_summary(ch_species_list)
+            datasets_summary(ch_species_list.combine(dataset_script))
             datasets_download(datasets_summary.out.genomes.collect(), ch_genome_ref)
             ch_fastani_db = datasets_download.out.genomes
 
