@@ -38,4 +38,11 @@ jobs:
 
           nextflow run . -profile docker --maxcpus 2 --medcpus 2
           cat grandeur/grandeur_summary.tsv
-          cat grandeur/emmtyper/emmtyper_summary.tsv
+
+      - name: Check Strep pneumo file
+        run: |
+          for file in grandeur/emmtyper/emmtyper_summary.tsv
+          do
+            head $file
+            wc -l $file
+          done

@@ -31,4 +31,11 @@ jobs:
           mv *fastq.gz reads/.
           nextflow run . -profile docker --maxcpus 2 --medcpus 2
           cat grandeur/grandeur_summary.tsv
-          
+      
+      - name: Check summary files
+        run: |
+          for file in grandeur/mlst/mlst_summary.tsv
+          do
+            head $file
+            wc -l $file
+          done

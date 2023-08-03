@@ -37,5 +37,14 @@ jobs:
           done
 
           nextflow run . -profile docker --maxcpus 2 --medcpus 2
+
           cat grandeur/grandeur_summary.tsv
-          cat grandeur/seqsero2/seqsero2_results.txt
+
+      - name: Check Salmonella file
+        run: |
+          for file in grandeur/seqsero2/seqsero2_results.txt
+          do
+            head $file
+            wc -l $file
+          done
+  
