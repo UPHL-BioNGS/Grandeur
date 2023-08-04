@@ -10,7 +10,7 @@ process mlst {
   //#UPHLICA time '10m'
 
   input:
-  tuple val(sample), file(contig)
+  tuple val(sample), file(contig), file(script)
 
   output:
   path "mlst/${sample}_mlst.tsv"                                 , emit: collect
@@ -28,11 +28,11 @@ process mlst {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    echo -e "sample\\tfilename\\tmatching PubMLST scheme\\tST\\tID1\\tID2\\tID3\\tID4\\tID5\\tID6\\tID7\\tID8\\tID9\\tID10\\tID11\\tID12\\tID13\\tID14\\tID15" > mlst/!{sample}_mlst.tsv
-
     mlst !{params.mlst_options} \
       --threads !{task.cpus} \
-      !{contig} | \
-      awk -v sample=!{sample} '{print sample "\\t" $1 "\\t" $2 "\\t" $3 "\\t" $4 "\\t" $5 "\\t" $6 "\\t" $7 "\\t" $8 "\\t" $9 "\\t" $10 "\\t" $11 "\\t" $12 "\\t" $13 "\\t" $14 "\\t" $15 "\\t" $16 "\\t" $17 "\\t" $18}' >> mlst/!{sample}_mlst.tsv
+      !{contig} \
+      > !{sample}_mlst.txt
+
+    python3 !{script} !{sample}_mlst.txt mlst/!{sample}_mlst.tsv mlst !{sample}
   '''
 }

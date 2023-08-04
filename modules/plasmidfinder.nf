@@ -10,11 +10,11 @@ process plasmidfinder {
   //#UPHLICA time '10m'
 
   input:
-  tuple val(sample), file(file)
+  tuple val(sample), file(file), file(script)
 
   output:
   path "plasmidfinder/${sample}/*"                                    , emit: files
-  path "plasmidfinder/${sample}_plasmidfinder.tsv"                    , emit: collect
+  path "plasmidfinder/${sample}_plasmidfinder.tsv"                    , emit: collect, optional: true
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log"     , emit: log
 
   shell:
@@ -35,7 +35,6 @@ process plasmidfinder {
       --extented_output \
       | tee -a $log_file
 
-    head -n 1 plasmidfinder/!{sample}/results_tab.tsv | awk '{print "sample\\t" $0 }' > plasmidfinder/!{sample}_plasmidfinder.tsv
-    tail -n +2 plasmidfinder/!{sample}/results_tab.tsv | awk -v sample=!{sample} '{print sample "\\t" $0 }' >> plasmidfinder/!{sample}_plasmidfinder.tsv
+    python3 !{script} plasmidfinder/!{sample}/results_tab.tsv plasmidfinder/!{sample}_plasmidfinder.tsv plasmidfinder !{sample}
   '''
 }

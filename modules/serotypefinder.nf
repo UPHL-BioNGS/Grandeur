@@ -14,11 +14,11 @@ process serotypefinder {
   flag =~ 'found'
 
   input:
-  tuple val(sample), file(file), val(flag)
+  tuple val(sample), file(file), val(flag), file(script)
 
   output:
   path "serotypefinder/${sample}/*"                                     , emit: files
-  path "serotypefinder/${sample}_serotypefinder.tsv"                    , emit: collect
+  path "serotypefinder/${sample}_serotypefinder.tsv"                    , emit: collect, optional: true
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log"       , emit: log
 
   shell:
@@ -40,7 +40,6 @@ process serotypefinder {
 
     cp serotypefinder/!{sample}/results_tab.tsv serotypefinder/!{sample}_serotypefinder.tsv
 
-    head -n 1 serotypefinder/!{sample}/results_tab.tsv | awk '{print "sample\\t" $0 }' > serotypefinder/!{sample}_serotypefinder.tsv
-    tail -n +2 serotypefinder/!{sample}/results_tab.tsv | awk -v sample=!{sample} '{print sample "\\t" $0 }' >> serotypefinder/!{sample}_serotypefinder.tsv
+    python3 !{script} serotypefinder/!{sample}/results_tab.tsv serotypefinder/!{sample}_serotypefinder.tsv serotypefinder !{sample}
   '''
 }

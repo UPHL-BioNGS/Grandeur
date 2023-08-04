@@ -42,22 +42,25 @@ process seqsero2 {
       -n !{sample} \
       | tee -a $log_file
 
-    enteritidis_check=$(grep "Enteritidis" seqsero2/!{sample}/SeqSero_result.tsv | head -n 1)
-    sdf_check=$(grep "Detected Sdf" seqsero2/!{sample}/SeqSero_result.tsv | head -n 1 )
+    if [ -f "seqsero2/!{sample}/SeqSero_result.tsv" ]
+    then
+      enteritidis_check=$(grep "Enteritidis" seqsero2/!{sample}/SeqSero_result.tsv | head -n 1)
+      sdf_check=$(grep "Detected Sdf" seqsero2/!{sample}/SeqSero_result.tsv | head -n 1 )
 
-    if [ -n "$enteritidis_check" ] && [ -n "$sdf_check" ]
-    then
-      head -n 1 seqsero2/!{sample}/SeqSero_result.tsv > SeqSero_result.tsv.tmp
-      tail -n 1 seqsero2/!{sample}/SeqSero_result.tsv | awk -F "\\t" -v OFS='\t' '{($9 = $9 " (Sdf+)") ; print $0}' >> SeqSero_result.tsv.tmp
-      mv SeqSero_result.tsv.tmp seqsero2/!{sample}/SeqSero_result.tsv
-    elif [ -n "$enteritidis_check" ] && [ -z "$sdf_check" ]
-    then
-      head -n 1 seqsero2/!{sample}/SeqSero_result.tsv > SeqSero_result.tsv.tmp
-      tail -n 1 seqsero2/!{sample}/SeqSero_result.tsv | awk -F "\\t" -v OFS='\t' '{($9 = $9 " (Sdf-)") ; print $0}' >> SeqSero_result.tsv.tmp
-      mv SeqSero_result.tsv.tmp seqsero2/!{sample}/SeqSero_result.tsv
+      if [ -n "$enteritidis_check" ] && [ -n "$sdf_check" ]
+      then
+        head -n 1 seqsero2/!{sample}/SeqSero_result.tsv > SeqSero_result.tsv.tmp
+        tail -n 1 seqsero2/!{sample}/SeqSero_result.tsv | awk -F "\\t" -v OFS='\t' '{($9 = $9 " (Sdf+)") ; print $0}' >> SeqSero_result.tsv.tmp
+        mv SeqSero_result.tsv.tmp seqsero2/!{sample}/SeqSero_result.tsv
+      elif [ -n "$enteritidis_check" ] && [ -z "$sdf_check" ]
+      then
+        head -n 1 seqsero2/!{sample}/SeqSero_result.tsv > SeqSero_result.tsv.tmp
+        tail -n 1 seqsero2/!{sample}/SeqSero_result.tsv | awk -F "\\t" -v OFS='\t' '{($9 = $9 " (Sdf-)") ; print $0}' >> SeqSero_result.tsv.tmp
+        mv SeqSero_result.tsv.tmp seqsero2/!{sample}/SeqSero_result.tsv
+      fi
+
+      cat seqsero2/!{sample}/SeqSero_result.tsv | sed 's/Sample name/sample/g' > seqsero2/!{sample}/SeqSero_result.tsv.tmp
+      mv seqsero2/!{sample}/SeqSero_result.tsv.tmp seqsero2/!{sample}/SeqSero_result.tsv
     fi
-
-    cat seqsero2/!{sample}/SeqSero_result.tsv | sed 's/Sample name/sample/g' > seqsero2/!{sample}/SeqSero_result.tsv.tmp
-    mv seqsero2/!{sample}/SeqSero_result.tsv.tmp seqsero2/!{sample}/SeqSero_result.tsv
   '''
 }

@@ -15,10 +15,10 @@ process shigatyper {
   flag =~ 'found'
 
   input:
-  tuple val(sample), file(input), val(flag)
+  tuple val(sample), file(input), val(flag), file(script)
 
   output:
-  path "shigatyper/${sample}_shigatyper.tsv"                     , emit: files
+  path "shigatyper/${sample}_shigatyper.tsv",      optional: true, emit: files
   path "shigatyper/${sample}_shigatyper-hits.tsv", optional: true, emit: collect
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
@@ -39,14 +39,8 @@ process shigatyper {
       --name !{sample} \
       | tee -a $log_file
 
-    hits=$(find . -iname "*hits.tsv" | head -n 1)
-    if [ -f "$hits" ]
-    then
-      head -n 1  $hits | awk '{print "sample\\t" $0}' > shigatyper/!{sample}_shigatyper-hits.tsv
-      tail -n +2 $hits | awk -v sample=!{sample} '{print sample "\\t" $0}' >> shigatyper/!{sample}_shigatyper-hits.tsv
-      rm $hits
-    fi
+    python3 !{script} !{sample}-hits.tsv shigatyper/!{sample}_shigatyper-hits.tsv shigatyper !{sample}
 
-    cat *tsv > shigatyper/!{sample}_shigatyper.tsv
+    if [ -f "!{sample}.tsv" ] ; then cp !{sample}.tsv shigatyper/!{sample}_shigatyper.tsv ; fi
   '''
 }

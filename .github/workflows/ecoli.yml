@@ -38,5 +38,12 @@ jobs:
 
           nextflow run . -profile docker --maxcpus 2 --medcpus 2
           cat grandeur/grandeur_summary.tsv
-          cat grandeur/shigatyper/shigatyper_results.txt
-          cat grandeur/serotypefinder/serotypefinder_results.txt
+          
+      - name: Check E. coli file
+        run: |
+          for file in grandeur/shigatyper/shigatyper_results.txt grandeur/serotypefinder/serotypefinder_results.txt
+          do
+            head $file
+            wc -l $file
+          done
+  

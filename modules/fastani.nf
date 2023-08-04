@@ -16,10 +16,10 @@ process fastani {
   tuple val(sample), file(contigs), path(genomes)
 
   output:
-  tuple val(sample), file("fastani/${sample}_fastani.csv")          , emit: results
-  tuple val(sample), env(top_hit), file("top_hit/*"), optional: true, emit: top_hit
-  path "fastani/*"                                                  , emit: everything
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log"   , emit: log
+  tuple val(sample), file("fastani/${sample}_fastani.csv")       , emit: results, optional: true
+  tuple val(sample), env(top_hit), file("top_hit/*")             , emit: top_hit, optional: true
+  path "fastani/*"                                               , emit: everything
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
   '''

@@ -36,9 +36,9 @@ process snp_dists {
 
     genome_length=$(cat !{contigs} | tr "\n" ";" | sed 's/>[^>]*//2g' | tr ";" "\n" | grep -v ">" | wc -c )
 
-    sed '0,/,/s/,/num_samples=!{num_samples};num_core_genes=!{num_core_genes};core_genome_length=$genome_length,/' snp-dists/snp_matrix.txt > snp-dists/snp_matrix_with_qc.txt
+    sed '0,/,/s/,/num_samples=!{num_samples};num_core_genes=!{num_core_genes},/' snp-dists/snp_matrix.txt > snp-dists/snp_matrix_with_qc.txt
 
-    echo "num_samples,num_core_genes,core_genome_length"    >  snp-dists/roary_metrics_mqc.csv
-    echo "!{num_samples},!{num_core_genes},$genome_length" >> snp-dists/roary_metrics_mqc.csv
+    echo "num_samples,num_core_genes,core_genome_length"     >  snp-dists/roary_metrics_mqc.csv
+    echo "!{num_samples},!{num_core_genes},${genome_length}" >> snp-dists/roary_metrics_mqc.csv
   '''
 }

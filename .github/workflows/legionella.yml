@@ -40,4 +40,11 @@ jobs:
           
           cat grandeur/grandeur_summary.tsv
 
-          cat grandeur/legsta/legsta_summary.csv
+      - name: Check Legionella file
+        run: |
+          for file in grandeur/legsta/legsta_summary.csv
+          do
+            head $file
+            wc -l $file
+          done
+  

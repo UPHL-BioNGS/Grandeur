@@ -10,11 +10,11 @@ process emmtyper {
   //#UPHLICA cpus 3
   //#UPHLICA time '24h'
   
-    when:
-    flag =~ 'found'
+  when:
+  flag =~ 'found'
 
   input:
-  tuple val(sample), file(contigs), val(flag)
+  tuple val(sample), file(contigs), val(flag), file(script)
 
   output:
   path "emmtyper/${sample}_emmtyper.txt"                         , emit: collect
@@ -34,12 +34,12 @@ process emmtyper {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
     
-    echo -e "sample\\tIsolate name\\tNumber of BLAST hits\\tNumber of clusters\\tPredicted emm-type\\tPosition(s)\\tPossible emm-like alleles\\temm-like position(s)\\tEMM cluster" > emmtyper/!{sample}_emmtyper.txt
-
     emmtyper !{params.emmtyper_options} \
       --output-format 'verbose' \
       !{contigs} \
       | tee -a $log_file \
-      | awk -v sample=!{sample} '{ print sample "\\t" $0 }' >> emmtyper/!{sample}_emmtyper.txt
+      > !{sample}_emmtyper.txt
+
+    python3 !{script} !{sample}_emmtyper.txt emmtyper/!{sample}_emmtyper.txt emmtyper !{sample}
   '''
 }
