@@ -129,15 +129,15 @@ params.spades_options             = "--isolate"
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
-include { average_nucleotide_identity } from "./subworkflows/average_nucleotide_identity"  addParams(params)
-include { blobtools }                   from "./subworkflows/blobtools"                    addParams(params)
-include { de_novo_alignment }           from "./subworkflows/de_novo_alignment"            addParams(params)
-include { information }                 from "./subworkflows/information"                  addParams(params)
-include { kraken2 }                     from "./subworkflows/kraken2"                      addParams(params)
-include { min_hash_distance }           from "./subworkflows/min_hash_distance"            addParams(params)
-include { phylogenetic_analysis }       from "./subworkflows/phylogenetic_analysis"        addParams(params)
-include { report }                      from "./subworkflows/report"                       addParams(params)
-include { test }                        from "./subworkflows/test"                         addParams(params)
+include { average_nucleotide_identity }   from "./subworkflows/average_nucleotide_identity"   addParams(params)
+include { blobtools }                     from "./subworkflows/blobtools"                     addParams(params)
+include { de_novo_alignment }             from "./subworkflows/de_novo_alignment"             addParams(params)
+include { information }                   from "./subworkflows/information"                   addParams(params)
+include { kmer_taxonomic_classification } from "./subworkflows/kmer_taxonomic_classification" addParams(params)
+include { min_hash_distance }             from "./subworkflows/min_hash_distance"             addParams(params)
+include { phylogenetic_analysis }         from "./subworkflows/phylogenetic_analysis"         addParams(params)
+include { report }                        from "./subworkflows/report"                        addParams(params)
+include { test }                          from "./subworkflows/test"                          addParams(params)
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
@@ -299,16 +299,14 @@ workflow {
     ch_for_flag    = ch_for_flag.mix(blobtools.out.for_flag)
   }
 
-  ch_kraken2_db.view()
-  ch_clean_reads.view()
   // optional subworkflow kraken2 (useful for interspecies contamination)
-  //if (params.kraken2_db) {
-  //  kraken2(ch_clean_reads, ch_kraken2_db)
-  //
-  //  ch_for_multiqc = ch_for_multiqc.mix(kraken2.out.for_multiqc)
-  //  ch_for_summary = ch_for_summary.mix(kraken2.out.for_summary)
-  //  ch_for_flag    = ch_for_flag.mix(kraken2.out.for_flag)
-  //} 
+  if (params.kraken2_db) {
+    kmer_taxonomic_classification(ch_clean_reads, ch_kraken2_db)
+
+    ch_for_multiqc = ch_for_multiqc.mix(kmer_taxonomic_classification.out.for_multiqc)
+    ch_for_summary = ch_for_summary.mix(kmer_taxonomic_classification.out.for_summary)
+    ch_for_flag    = ch_for_flag.mix(kmer_taxonomic_classification.out.for_flag)
+  } 
   
   if (params.extras) {
     // subworkflow mash for species determination
