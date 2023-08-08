@@ -299,14 +299,16 @@ workflow {
     ch_for_flag    = ch_for_flag.mix(blobtools.out.for_flag)
   }
 
+  ch_kraken2_db.view()
+  ch_clean_reads.view()
   // optional subworkflow kraken2 (useful for interspecies contamination)
-  if (params.kraken2_db) {
-    kraken2(ch_clean_reads, ch_contigs, ch_kraken2_db)
-
-    ch_for_multiqc = ch_for_multiqc.mix(kraken2.out.for_multiqc)
-    ch_for_summary = ch_for_summary.mix(kraken2.out.for_summary)
-    ch_for_flag    = ch_for_flag.mix(kraken2.out.for_flag)
-  } 
+  //if (params.kraken2_db) {
+  //  kraken2(ch_clean_reads, ch_kraken2_db)
+  //
+  //  ch_for_multiqc = ch_for_multiqc.mix(kraken2.out.for_multiqc)
+  //  ch_for_summary = ch_for_summary.mix(kraken2.out.for_summary)
+  //  ch_for_flag    = ch_for_flag.mix(kraken2.out.for_flag)
+  //} 
   
   if (params.extras) {
     // subworkflow mash for species determination
