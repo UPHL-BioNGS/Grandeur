@@ -192,7 +192,7 @@ if exists(kraken2) :
     tmp_df = tmp_df[['Sample', 'top_organism']]
     tmp_df = tmp_df.add_prefix(analysis + '_')
 
-    new_df['organism (per fragment)'] = new_df['Scientific name'] + " (" + new_df['Percentage of fragments'] + ' ' + new_df['Type'] + ")"    
+    new_df['organism (per fragment)'] = new_df['Scientific name'] + " (" + new_df['Percentage of fragments'] + ")"    
     new_df = new_df[['Sample', 'organism (per fragment)']]
     new_df = new_df.groupby('Sample', as_index=False).agg({'organism (per fragment)': lambda x: list(x)})
     new_df['warning'] = new_df['organism (per fragment)'].apply(lambda x: "Kraken2 multiple organisms," if ','.join(x).count(',') >= 2 else "")
