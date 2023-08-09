@@ -42,7 +42,7 @@ process species {
       cut -f 7 -d , mash_summary.csv | tail -n+2 >> species.txt
     fi
 
-    grep -v no-hit species.txt | grep -v undef | grep -v name | sort | uniq > datasets/species_list.txt
+    grep -v no-hit species.txt | grep -v undef | grep -v name | grep "_" | sort | uniq > datasets/species_list.txt
   '''
 }
 

@@ -43,38 +43,19 @@ jobs:
             "Raoultella_ornithinolytica"
             "Salmonella_enterica")
           
-          for taxon in ${taxons[@]} 
-          do
-            echo "The taxon is now $taxon"
-            organism="$(echo $taxon | sed 's/_/ /g')"
-            orgno_sp="$(echo $taxon | sed 's/_sp.*//g' | sed 's/_/ /g')"
-            echo "The organism is now " "$organism"
-            echo "The orgno_sp is now " "$orgno_sp"
+          mkdir datasets
 
-            echo "Getting the representative genome"
-            echo "./datasets summary genome taxon \"$organism\" --reference --limit 5 --as-json-lines"
-            
-            ./datasets summary genome taxon "$orgno_sp" --reference --limit 5 --as-json-lines \
-              | ./dataformat tsv genome --fields accession,assminfo-refseq-category,assminfo-level,organism-name,assmstats-total-ungapped-len \
-              | grep -v Homo \
-              | tr '\t' ',' \
-              | tee ${taxon}_genomes.csv
-            
-            echo "Getting additional genomes"
-            ./datasets summary genome taxon "$organism" --limit 5 --as-json-lines \
-              | ./dataformat tsv genome --fields accession,assminfo-refseq-category,assminfo-level,organism-name,assmstats-total-ungapped-len \
-              | grep -v Homo \
-              | grep -v "Assembly Accession" \
-              | tr '\t' ',' \
-              | tee -a ${taxon}_genomes.csv
+          for taxon in ${taxons[@]}
+          do
+            python3 ./bin/datasets_download.py $taxon 2
           done
           
-          head *genomes.csv
+          head datasets/*genomes.csv
           
       - name: combine files
         run: |
           cut -f 1 ./assets/genomes.txt  > all_runs.txt
-          grep -h -v Accession *_genomes.csv | cut -f 1 -d , | sort | uniq > this_run.txt
+          grep -h -v Accession datasets/*_genomes.csv | cut -f 1 -d , | sort | uniq > this_run.txt
           cat all_runs.txt this_run.txt | sort | uniq > id_list.txt
           
           head all_runs.txt this_run.txt id_list.txt
@@ -82,7 +63,7 @@ jobs:
           
       - name: download
         run: |
-          ( ./datasets download genome accession --inputfile id_list.txt --filename ncbi_dataset.zip unzip -o ncbi_dataset.zip ) || \
+          ( ./datasets download genome accession --inputfile id_list.txt --filename ncbi_dataset.zip ; unzip -o ncbi_dataset.zip ) || \
           ( while read line ; do echo "Downloading $line" ; ./datasets download genome accession $line --filename dataset.zip ; unzip -o dataset.zip ; done < id_list.txt )
     
           wc -l ncbi_dataset/data/*/*.fna
