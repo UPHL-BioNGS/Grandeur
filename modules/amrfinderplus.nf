@@ -2,7 +2,7 @@ process amrfinderplus {
   tag           "${sample}"
   label         "medcpus"
   publishDir    params.outdir, mode: 'copy'
-  container     'staphb/ncbi-amrfinderplus:3.11.17-2023-07-13.2'
+  container     'staphb/ncbi-amrfinderplus:3.11.18-2023-08-08.2'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA cpus 7
