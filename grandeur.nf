@@ -21,7 +21,7 @@ nextflow.enable.dsl               = 2
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
 params.config_file                = false
-if (params.config_file) {
+if ( params.config_file ) {
   def src = new File("${workflow.projectDir}/configs/grandeur_template.config")
   def dst = new File("${workflow.launchDir}/edit_me.config")
   dst << src.text
@@ -30,7 +30,7 @@ if (params.config_file) {
 }
 
 params.fastqscan_options = ""
-if (params.fastqscan_options) {
+if ( params.fastqscan_options ) {
   println("WARNING : ${params.fastqscan_options} is depreciated" )
 }
 
@@ -118,7 +118,7 @@ params.shigatyper_options         = ""
 params.snp_dists_options          = "-c"
 params.spades_options             = "--isolate"
 
-// if (params.phoenix_wf) {
+// if ( params.phoenix_wf ) {
 //   println "cp ${workflow.projectDir}/../phoenix/bin/* ${workflow.projectDir}/bin/."
 //   command = ["sh", "-c", "cp ${workflow.projectDir}/../phoenix/bin/* ${workflow.projectDir}/bin/."]
 //   Runtime.getRuntime().exec((String[]) command.toArray())
@@ -445,9 +445,9 @@ ch_mash_db = params.mash_db
   : Channel.empty()
 
 //# user supplied fastani reference genomes
-if (params.fastani_ref) {
+if ( params.fastani_ref ) {
   Channel
-    .of(params.fastani_ref)
+    .of( params.fastani_ref )
     .splitCsv()
     .flatten()
     .map { it -> file(it) }
@@ -457,7 +457,7 @@ if (params.fastani_ref) {
   ch_fastani_genomes = ch_fastani_genomes.mix(ch_fastani_genomes_input)
 }
 
-if (params.fastani_ref_list) {
+if ( params.fastani_ref_list ) {
   Channel.fromPath(params.fastani_ref_list, type: "file")
     .splitText()
     .map( it -> it.trim())
@@ -468,7 +468,7 @@ if (params.fastani_ref_list) {
   ch_fastani_genomes = ch_fastani_genomes.mix(ch_fastani_ref_list)
 }
 
-println("The files and directory for results is " + params.outdir)
+println("The files and directory for results is " + params.outdir )
 println("The maximum number of CPUS for any one process is ${params.maxcpus}")
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
@@ -506,8 +506,8 @@ workflow {
   ch_for_multiqc   = ch_for_multiqc.mix(de_novo_alignment.out.for_multiqc)
 
   // optional subworkflow blobtools (useful for interspecies contamination)
-  if (params.blast_db) {
-    blobtools(ch_clean_reads, ch_contigs, ch_blast_db)
+  if ( params.blast_db ) {
+    blobtools(ch_clean_reads, ch_contigs, ch_blast_db )
 
     ch_for_multiqc = ch_for_multiqc.mix(blobtools.out.for_multiqc)
     ch_for_summary = ch_for_summary.mix(blobtools.out.for_summary)
@@ -515,15 +515,15 @@ workflow {
   }
 
   // optional subworkflow kraken2 (useful for interspecies contamination)
-  if (params.kraken2_db) {
-    kmer_taxonomic_classification(ch_clean_reads, ch_kraken2_db)
+  if ( params.kraken2_db ) {
+    kmer_taxonomic_classification(ch_clean_reads, ch_kraken2_db )
 
     ch_for_multiqc = ch_for_multiqc.mix(kmer_taxonomic_classification.out.for_multiqc)
     ch_for_summary = ch_for_summary.mix(kmer_taxonomic_classification.out.for_summary)
     ch_for_flag    = ch_for_flag.mix(kmer_taxonomic_classification.out.for_flag)
   } 
   
-  if (params.extras) {
+  if (params.extras ) {
     // subworkflow mash for species determination
     min_hash_distance(ch_clean_reads, ch_contigs, ch_mash_db)
 
@@ -577,7 +577,7 @@ workflow {
   }
 
   // getting a summary of everything
-  if (params.extras) { 
+  if (params.extras ) { 
     report(
       ch_raw_reads, 
       ch_fastas, 
