@@ -12,6 +12,7 @@ include { quast }          from '../modules/quast'          addParams(params)
 include { seqsero2 }       from '../modules/seqsero2'       addParams(params)
 include { serotypefinder } from '../modules/serotypefinder' addParams(params)
 include { shigatyper }     from '../modules/shigatyper'     addParams(params)
+include { srst2 }          from '../modules/srst2'          addParams(params)
 include { size }           from '../modules/grandeur'       addParams(params)
 
 workflow information {
@@ -43,38 +44,25 @@ workflow information {
     //kaptive(ch_contigs.join(flag.out.klebacin_flag,     by:0))      
     kleborate(ch_contigs.join(flag.out.klebsiella_flag, by:0).combine(summfle_script))
     legsta(ch_contigs.join(flag.out.legionella_flag,    by:0))
+    pbptyper(ch_contigs.join(flag.out.streppneu_flag,   by:0))
     seqsero2(ch_contigs.join(flag.out.salmonella_flag,  by:0))
     serotypefinder(ch_contigs.join(flag.out.ecoli_flag, by:0).combine(summfle_script))
     shigatyper(ch_contigs.join(flag.out.ecoli_flag,     by:0).combine(summfle_script))
-    pbptyper(ch_contigs.join(flag.out.streppneu_flag,   by:0))
-    
+    srst2(ch_contigs.join(flag.out.vibrio_flag,         by:0).combine(summfle_script))
+
+    amrfinderplus.out.collect
+      .collectFile(name: "amrfinderplus.txt",
+        keepHeader: true,
+        sort: { file -> file.text },
+        storeDir: "${params.outdir}/ncbi-AMRFinderplus")
+      .set{ amrfinderplus_summary }
+
     emmtyper.out.collect
       .collectFile(name: "emmtyper_summary.tsv",
         keepHeader: true,
         sort: { file -> file.text },
         storeDir: "${params.outdir}/emmtyper")
       .set{ emmtyper_summary }
-
-    // kaptive.out.collect
-    //   .collectFile(name: "kaptive_summary.csv",
-    //     keepHeader: true,
-    //     sort: { file -> file.text },
-    //     storeDir: "${params.outdir}/kaptive")
-    //   .set{ kaptive_summary }
-    
-    legsta.out.collect
-      .collectFile(name: "legsta_summary.csv",
-        keepHeader: true,
-        sort: { file -> file.text },
-        storeDir: "${params.outdir}/legsta")
-      .set{ legsta_summary }
-    
-    pbptyper.out.collect
-      .collectFile(name: "pbptyper_summary.tsv",
-        keepHeader: true,
-        sort: { file -> file.text },
-        storeDir: "${params.outdir}/pbptyper")
-      .set{ pbptyper_summary }
 
     fastqc.out.collect
       .collectFile(name: "fastqc_summary.csv",
@@ -90,6 +78,27 @@ workflow information {
         storeDir: "${params.outdir}/flag")
       .set { flag_summary }
 
+    // kaptive.out.collect
+    //   .collectFile(name: "kaptive_summary.csv",
+    //     keepHeader: true,
+    //     sort: { file -> file.text },
+    //     storeDir: "${params.outdir}/kaptive")
+    //   .set{ kaptive_summary }
+
+    kleborate.out.collect
+      .collectFile(name: "kleborate_results.tsv",
+        keepHeader: true,
+        sort: { file -> file.text },
+        storeDir: "${params.outdir}/kleborate")
+      .set{ kleborate_summary }
+
+    legsta.out.collect
+      .collectFile(name: "legsta_summary.csv",
+        keepHeader: true,
+        sort: { file -> file.text },
+        storeDir: "${params.outdir}/legsta")
+      .set{ legsta_summary }
+
     mlst.out.collect
       .collectFile(name: "mlst_summary.tsv",
         keepHeader: true,
@@ -104,19 +113,19 @@ workflow information {
         storeDir: "${params.outdir}/quast")
       .set{ quast_summary }
 
+    pbptyper.out.collect
+      .collectFile(name: "pbptyper_summary.tsv",
+        keepHeader: true,
+        sort: { file -> file.text },
+        storeDir: "${params.outdir}/pbptyper")
+      .set{ pbptyper_summary }
+
     plasmidfinder.out.collect
       .collectFile(name: "plasmidfinder_result.tsv",
         keepHeader: true,
         sort: { file -> file.text },
         storeDir: "${params.outdir}/plasmidfinder")
       .set{ plasmidfinder_summary }
-
-    kleborate.out.collect
-      .collectFile(name: "kleborate_results.tsv",
-        keepHeader: true,
-        sort: { file -> file.text },
-        storeDir: "${params.outdir}/kleborate")
-      .set{ kleborate_summary }
 
     seqsero2.out.collect
       .collectFile(name: "seqsero2_results.txt",
@@ -145,13 +154,6 @@ workflow information {
         sort: { file ->file.text },
         storeDir: "${params.outdir}/size")
       .set{ size_summary }
-
-    amrfinderplus.out.collect
-      .collectFile(name: "amrfinderplus.txt",
-        keepHeader: true,
-        sort: { file -> file.text },
-        storeDir: "${params.outdir}/ncbi-AMRFinderplus")
-      .set{ amrfinderplus_summary }
 
     amrfinderplus_summary
       .mix(emmtyper_summary)
