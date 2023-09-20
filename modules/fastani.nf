@@ -47,6 +47,15 @@ process fastani {
     cat fastani/!{sample}.txt | sed 's/,//g' | tr "\\t" "," | awk -v sample=!{sample} '{ print sample "," $0 }' >> fastani/!{sample}_fastani.csv
 
     top_hit=$(head -n 2 fastani/!{sample}_fastani.csv | tail -n 1 | cut -f 3 -d , )
-    if [ -f "$top_hit" ]; then mkdir -p top_hit ; cp $top_hit top_hit/. ; fi
+    if [ -f "$top_hit" ]
+    then 
+      mkdir -p top_hit
+      new_name=$(echo $top_hit | sed 's/.fasta$/.fna/g' | sed 's/.fa$/.fna/g' | sed 's/.fasta.gz$/.fna.gz/g' | sed 's/.fa.gz$/.fna.gz/g' )
+      cp $top_hit top_hit/$new_name
+      
+      gz_check=$(echo $top_hit | grep .gz$ )
+      if [ -n "$gz_check" ] ; then gzip -d top_hit/* ; fi
+      exit 1
+    fi
   '''
 }
