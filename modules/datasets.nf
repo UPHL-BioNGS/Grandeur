@@ -38,7 +38,7 @@ process datasets_download {
   tag           "Downloading Genomes"
   // because there's no way to specify threads
   label         "medcpus"
-  publishDir = [ path: "${params.outdir}", mode: 'copy', pattern: "{logs/*/*log,datasets/fastani_refs.tar.gz}" ]
+  publishDir = [ path: "${params.outdir}", mode: 'copy', pattern: "logs/*/*log" ]
   container     'quay.io/uphl/datasets:15.12.0'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
@@ -49,11 +49,9 @@ process datasets_download {
   
   input:
   file(ids)
-  file(genomes)
 
   output:
-  path "datasets/fastani_refs.tar.gz"                                    , emit: tar
-  path "genomes"                                                         , emit: genomes
+  path "genomes/*"                                                       , emit: genomes, optional: true
   path "logs/${task.process}/datasets_download.${workflow.sessionId}.log", emit: log
 
   shell:
@@ -68,7 +66,6 @@ process datasets_download {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    cut -f 1 !{genomes} > all_runs.txt
     grep -h -v accession !{ids} | cut -f 1 -d , | sort | uniq > this_run.txt
 
     cat all_runs.txt this_run.txt | sort | uniq > id_list.txt
@@ -82,12 +79,11 @@ process datasets_download {
     do
       echo "Copying $fasta to genomes"
       accession=$(echo $fasta | cut -f 4 -d / | cut -f 1,2 -d _ )
-      organism=$(head -n 1 $fasta | awk '{print $2 "_" $3 }' | sed 's/,//g' )
-      cat $fasta | sed 's/ /_/g' | sed 's/,//g' > genomes/${organism}_${accession}.fna
+      organism=$(head -n 1 $fasta | awk '{print $2 "_" $3 }' | sed 's/,//g' | sed 's/\\]//g' | sed 's/\\[//g' )
+      cat $fasta | sed 's/ /_/g' | sed 's/,//g' > genomes/${organism}_${accession}_ds.fna
+      gzip genomes/${organism}_${accession}_ds.fna
     done  
 
     rm -rf genomes/*:_*
-
-    tar -czvf datasets/fastani_refs.tar.gz genomes/
   '''
 }
