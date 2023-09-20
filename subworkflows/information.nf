@@ -12,7 +12,6 @@ include { quast }          from '../modules/quast'          addParams(params)
 include { seqsero2 }       from '../modules/seqsero2'       addParams(params)
 include { serotypefinder } from '../modules/serotypefinder' addParams(params)
 include { shigatyper }     from '../modules/shigatyper'     addParams(params)
-include { srst2 }          from '../modules/srst2'          addParams(params)
 include { size }           from '../modules/grandeur'       addParams(params)
 
 workflow information {
@@ -48,7 +47,6 @@ workflow information {
     seqsero2(ch_contigs.join(flag.out.salmonella_flag,  by:0))
     serotypefinder(ch_contigs.join(flag.out.ecoli_flag, by:0).combine(summfle_script))
     shigatyper(ch_contigs.join(flag.out.ecoli_flag,     by:0).combine(summfle_script))
-    srst2(ch_contigs.join(flag.out.vibrio_flag,         by:0).combine(summfle_script))
 
     amrfinderplus.out.collect
       .collectFile(name: "amrfinderplus.txt",
