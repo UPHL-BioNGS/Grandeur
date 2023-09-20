@@ -73,7 +73,7 @@ process datasets_download {
 
     cat all_runs.txt this_run.txt | sort | uniq > id_list.txt
 
-    ( datasets download genome accession --inputfile id_list.txt --filename ncbi_dataset.zip unzip -o ncbi_dataset.zip ) || \
+    ( datasets download genome accession --inputfile id_list.txt --filename ncbi_dataset.zip ; unzip -o ncbi_dataset.zip ) || \
     ( while read line ; do echo "Downloading $line" ; datasets download genome accession $line --filename dataset.zip ; unzip -o dataset.zip ; done < id_list.txt )
 
     fastas=$(ls ncbi_dataset/data/*/*.fna )
