@@ -68,6 +68,7 @@ process flag {
   tuple val(sample), env(legionella_flag)                        , emit: legionella_flag
   tuple val(sample), env(klebacin_flag)                          , emit: klebacin_flag
   tuple val(sample), env(strepa_flag)                            , emit: strepa_flag
+  tuple val(sample), env(vibrio_flag)                            , emit: vibrio_flag
   tuple val(sample), env(genus), env(species)                    , emit: organism
   path "flag/${sample}_flag.csv"                                 , emit: collect
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log_files
@@ -110,7 +111,6 @@ process flag {
     klebsiella_flag=''
     find_klebsiella=$(head -n 10 $files smaller_fastani.csv | grep -e "Klebsiella" -e "Enterobacter" -e "Serratia" | tee -a $log_file | head -n 1 )
     if [ -n "$find_klebsiella" ] ; then klebsiella_flag="found" ; else klebsiella_flag="not" ; fi
-
     
     echo "Looking for Strep A organisms:" >> $log_file
     strepa_flag=''
@@ -126,6 +126,11 @@ process flag {
     legionella_flag=''
     find_legionella=$(head -n 10 $files smaller_fastani.csv | grep "Legionella" | tee -a $log_file | head -n 1 )
     if [ -n "$find_legionella" ] ; then legionella_flag='found' ; else legionella_flag='not' ; fi
+
+    echo "Looking for Vibrio organisms:" >> $log_file
+    vibrio_flag=''
+    find_vibrio=$(head -n 10 $files smaller_fastani.csv | grep "Vibrio" | tee -a $log_file | head -n 1 )
+    if [ -n "$find_vibrio" ] ; then vibrio_flag='found' ; else vibrio_flag='not' ; fi
 
     echo "Looking for Klebsiella or Acinetobacter:" >> $log_file
     klebacin_flag=''
