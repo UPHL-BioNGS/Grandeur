@@ -4,7 +4,7 @@ process fastani {
   stageInMode   "copy"
   publishDir    path: params.outdir, mode: 'copy', pattern: 'logs/*/*log'
   publishDir    path: params.outdir, mode: 'copy', pattern: 'fastani/*' 
-  container     'staphb/fastani:1.33'
+  container     'staphb/fastani:1.34'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-large'
