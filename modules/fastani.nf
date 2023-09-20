@@ -13,7 +13,7 @@ process fastani {
   //#UPHLICA time '10m'
   
   input:
-  tuple val(sample), file(contigs), path(genomes)
+  tuple val(sample), file(contigs), file(genomes)
 
   output:
   tuple val(sample), file("fastani/${sample}_fastani.csv")       , emit: results, optional: true
@@ -33,8 +33,8 @@ process fastani {
     fastANI --version 2>> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
-    
-    find !{genomes} -iname "*.fna" -o -iname "*.fasta" -o -iname "*.fa" > reference_list.txt
+
+    echo !{genomes} | tr " " "\\n" | sort > reference_list.txt
 
     fastANI !{params.fastani_options} \
       --threads !{task.cpus} \
@@ -44,9 +44,9 @@ process fastani {
       | tee -a $log_file
 
     echo "sample,query,reference,ANI estimate,total query sequence fragments,fragments aligned as orthologous matches" > fastani/!{sample}_fastani.csv
-    cat fastani/!{sample}.txt | sed 's/,//g' | sed 's/!{genomes}\\///g' | tr "\\t" "," | awk -v sample=!{sample} '{ print sample "," $0 }' >> fastani/!{sample}_fastani.csv
+    cat fastani/!{sample}.txt | sed 's/,//g' | tr "\\t" "," | awk -v sample=!{sample} '{ print sample "," $0 }' >> fastani/!{sample}_fastani.csv
 
     top_hit=$(head -n 2 fastani/!{sample}_fastani.csv | tail -n 1 | cut -f 3 -d , )
-    if [ -f "!{genomes}/$top_hit" ]; then mkdir -p top_hit ; cp !{genomes}/$top_hit top_hit/. ; fi
+    if [ -f "$top_hit" ]; then mkdir -p top_hit ; cp $top_hit top_hit/. ; fi
   '''
 }
