@@ -50,11 +50,6 @@ params.maxcpus                    = 12
 params.medcpus                    = 4
 params.minimum_reads              = 10000
 
-// connecting to phoenix (in development)
-// params.phoenix_wf                 = false
-// params.phoenix_dir                = workflow.projectDir + "/../phoenix/workflows/phoenix.nf"
-// params.input                      = ""
-
 // connecting to Donut Falls (in development)
 params.donut_falls_wf             = false
 
@@ -492,8 +487,6 @@ workflow {
     ch_raw_reads = ch_reads.mix(ch_input_reads)
   }
 
-  // running PHOENIX first (under development)
-  // if ( params.phoenix_wf )      { PHOENIX(input) }
   // running DONUT FALLS first (under development)
   // if ( params.donut_falls_wf )  { donut_falls(input) }
 
