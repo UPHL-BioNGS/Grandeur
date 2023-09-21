@@ -55,7 +55,6 @@ process fastani {
       
       gz_check=$(echo $top_hit | grep .gz$ )
       if [ -n "$gz_check" ] ; then gzip -d top_hit/* ; fi
-      exit 1
     fi
   '''
 }
