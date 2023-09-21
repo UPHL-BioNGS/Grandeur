@@ -23,11 +23,11 @@
         },
         "blast_db": {
             "type": "string",
-            "default": "nt",
             "description": "directory with blast database"
         },
         "blast_db_type": {
             "type": "string",
+            "default": "nt",
             "description": "type of blast database (i.e. 'nt')"
         },
         "blastn_options": {
@@ -106,7 +106,12 @@
         "fastani_ref": {
             "type": "string",
             "hidden": true,
-            "description": "pre-prepared fastani references"
+            "description": "additional fasta files for fastani references"
+        },
+        "fastani_ref_list": {
+            "type": "string",
+            "hidden": true,
+            "description": "list of genomes for fastani references"
         },
         "fastas": {
             "type": "string",
@@ -128,16 +133,6 @@
             "type": "string",
             "hidden": true,
             "description": "additional options for editing for process"
-        },
-        "fastqscan_options": {
-            "type": "string",
-            "hidden": true,
-            "description": "additional options for editing for process"
-        },
-        "genome_references": {
-            "type": "string",
-            "hidden": true,
-            "description": "file containing list of genomes to always download"
         },
         "genome_sizes": {
             "type": "string",
@@ -251,11 +246,6 @@
             "type": "string",
             "hidden": true,
             "description": "additional options for editing for process"
-        },
-        "phoenix_wf": {
-            "type": "string",
-            "hidden": true,
-            "description": "directory to phoenix"
         },
         "plasmidfinder_options": {
             "type": "string",

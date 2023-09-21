@@ -46,47 +46,6 @@ process species {
   '''
 }
 
-process decompression {
-  tag           "Decompressing genome file"
-  publishDir    params.outdir, mode: 'copy'
-  container     'quay.io/uphl/seaborn:0.12.2-2'
-  maxForks      10
-  stageInMode   'copy'
-  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
-  //#UPHLICA memory 1.GB
-  //#UPHLICA cpus 3
-  //#UPHLICA time '10m'
-
-  input:
-  file(compressed)
-
-  output:
-  path "genomes"                                                       , emit: decompressed                                    
-  path "logs/${task.process}/${task.process}.${workflow.sessionId}.log", emit: log
-
-  shell:
-  '''
-    mkdir -p logs/!{task.process}
-    log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
-
-    # time stamp + capturing tool versions
-    date > $log_file
-    echo "container : !{task.container}" >> $log_file
-    echo "Nextflow command : " >> $log_file
-    cat .command.sh >> $log_file
-
-    zcat !{compressed} | tar -xvf -
-    rm !{compressed}
-
-    if [ ! -d "genomes" ]
-    then
-      filename=$(ls -d * | grep -v logs)
-      mv $filename genomes
-    fi
-  '''
-}
-
 process flag {
   tag           "${sample}"
   publishDir    params.outdir, mode: 'copy'
@@ -109,6 +68,7 @@ process flag {
   tuple val(sample), env(legionella_flag)                        , emit: legionella_flag
   tuple val(sample), env(klebacin_flag)                          , emit: klebacin_flag
   tuple val(sample), env(strepa_flag)                            , emit: strepa_flag
+  tuple val(sample), env(vibrio_flag)                            , emit: vibrio_flag
   tuple val(sample), env(genus), env(species)                    , emit: organism
   path "flag/${sample}_flag.csv"                                 , emit: collect
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log_files
@@ -151,7 +111,6 @@ process flag {
     klebsiella_flag=''
     find_klebsiella=$(head -n 10 $files smaller_fastani.csv | grep -e "Klebsiella" -e "Enterobacter" -e "Serratia" | tee -a $log_file | head -n 1 )
     if [ -n "$find_klebsiella" ] ; then klebsiella_flag="found" ; else klebsiella_flag="not" ; fi
-
     
     echo "Looking for Strep A organisms:" >> $log_file
     strepa_flag=''
@@ -167,6 +126,11 @@ process flag {
     legionella_flag=''
     find_legionella=$(head -n 10 $files smaller_fastani.csv | grep "Legionella" | tee -a $log_file | head -n 1 )
     if [ -n "$find_legionella" ] ; then legionella_flag='found' ; else legionella_flag='not' ; fi
+
+    echo "Looking for Vibrio organisms:" >> $log_file
+    vibrio_flag=''
+    find_vibrio=$(head -n 10 $files smaller_fastani.csv | grep "Vibrio" | tee -a $log_file | head -n 1 )
+    if [ -n "$find_vibrio" ] ; then vibrio_flag='found' ; else vibrio_flag='not' ; fi
 
     echo "Looking for Klebsiella or Acinetobacter:" >> $log_file
     klebacin_flag=''
@@ -227,7 +191,7 @@ process size {
       then
         genus=$(head     -n 2 !{sample}_fastani.csv | tail -n 1 | cut -f 3 -d "," | cut -f 1 -d "_" )
         species=$(head   -n 2 !{sample}_fastani.csv | tail -n 1 | cut -f 3 -d "," | cut -f 2 -d "_" )
-        accession=$(head -n 2 !{sample}_fastani.csv | tail -n 1 | sed 's/.*_GC/GC/g' | cut -f 1,2 -d '.' )
+        accession=$(head -n 2 !{sample}_fastani.csv | tail -n 1 | sed 's/.*_GC/GC/g' | cut -f 1,2 -d '.' | sed 's/_ds$//g' )
       fi
     fi
 
