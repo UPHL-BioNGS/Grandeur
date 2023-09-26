@@ -65,7 +65,7 @@
         "current_datasets": {
             "type": "boolean",
             "hidden": true,
-            "default": true,
+            "default": false,
             "description": "toggles whether or not genomes are downloaded from NCBI"
         },
         "datasets_max_genomes": {
