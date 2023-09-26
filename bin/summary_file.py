@@ -20,7 +20,7 @@ coms = 0
 tabs = 0
 with open(sys.argv[1]) as file:
     first_line = file.readline()
-    coms = first_line.count('\t')
+    coms = first_line.count(',')
     tabs = first_line.count('\t')
 
 if tabs > coms:
