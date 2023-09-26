@@ -63,6 +63,10 @@ The README got too long, so it's been moved to a [wiki](https://github.com/UPHL-
 - [User supplied reference files and databases (optional)](https://github.com/UPHL-BioNGS/Grandeur/wiki/User-supplied-reference-files-and-databases)
 - [FAQ](https://github.com/UPHL-BioNGS/Grandeur/wiki/FAQ)
 
+## Problems
+
+Please submit any issues and problems to [issues](https://github.com/UPHL-BioNGS/Grandeur/issues) (or find us on SLACK).
+
 ## Acknowledgements
 
 Grandeur wouldn't be possible without the following tools:
