@@ -58,6 +58,7 @@ params.reads                      = workflow.launchDir + "/reads"
 params.fastas                     = workflow.launchDir + "/fastas"
 params.gff                        = workflow.launchDir + "/gff"
 params.sample_sheet               = ""
+params.fasta_list                 = ""
 
 // external files
 params.kraken2_db                 = ""
@@ -358,9 +359,19 @@ for (genome in included_genomes) {
 ch_input_reads = params.sample_sheet
   ? Channel
     .fromPath("${params.sample_sheet}", type: "file")
-      .view { "Sample sheet found : ${it}" }
-      .splitCsv( header: true, sep: ',' )
-      .map { row -> tuple( "${row.sample}", [ file("${row.fastq_1}"), file("${row.fastq_2}") ]) }
+    .view { "Sample sheet found : ${it}" }
+    .splitCsv( header: true, sep: ',' )
+    .map { row -> tuple( "${row.sample}", [ file("${row.fastq_1}"), file("${row.fastq_2}") ]) }
+  : Channel.empty()
+
+// using a sample sheet for fasta files (no header)
+ch_input_fastas = params.fasta_list
+  ? Channel
+    .fromPath("${params.fasta_list}", type: "file")
+    .view { "Fasta list found : ${it}" }
+    .splitText()
+    .map( it -> it.trim())
+    .map{ it -> file(it) }
   : Channel.empty()
 
 // Getting the fastq files
@@ -493,7 +504,7 @@ workflow {
   // either phoenix or de_novo_alignment is required
   de_novo_alignment(ch_raw_reads)
   
-  ch_contigs       = ch_fastas.mix(de_novo_alignment.out.contigs)
+  ch_contigs       = ch_fastas.mix(de_novo_alignment.out.contigs).mix(ch_input_fastas)
   ch_clean_reads   = de_novo_alignment.out.clean_reads
 
   ch_for_multiqc   = ch_for_multiqc.mix(de_novo_alignment.out.for_multiqc)
