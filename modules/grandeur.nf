@@ -1,51 +1,3 @@
-process species {
-  tag           "Creating list of species"
-  publishDir    params.outdir, mode: 'copy'
-  container     'quay.io/uphl/seaborn:0.12.2-2'
-  maxForks      10
-  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
-  //#UPHLICA memory 1.GB
-  //#UPHLICA cpus 3
-  //#UPHLICA time '10m'
-  
-  input:
-  file(results)
-
-  output:
-  path "datasets/species_list.txt"                                     , emit: species                                    
-  path "logs/${task.process}/${task.process}.${workflow.sessionId}.log", emit: log
-
-  shell:
-  '''
-    mkdir -p datasets logs/!{task.process}
-    log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
-
-    # time stamp + capturing tool versions
-    date > $log_file
-    echo "container : !{task.container}" >> $log_file
-    echo "Nextflow command : " >> $log_file
-    cat .command.sh >> $log_file
-
-    if [ -f "blobtools_species.txt" ]
-    then 
-      cut -f 2 blobtools_species.txt >> species.txt
-    fi
-
-    if [ -f "kraken2_summary.csv" ]
-    then 
-      cut -f 8 -d , kraken2_summary.csv >> species.txt
-    fi
-
-    if [ -f "mash_summary.csv" ]
-    then
-      cut -f 7 -d , mash_summary.csv | tail -n+2 >> species.txt
-    fi
-
-    grep -v no-hit species.txt | grep -v undef | grep -v name | grep "_" | sort | uniq > datasets/species_list.txt
-  '''
-}
-
 process flag {
   tag           "${sample}"
   publishDir    params.outdir, mode: 'copy'
@@ -150,6 +102,38 @@ process flag {
   '''
 }
 
+process names {
+  tag           "${sample}"
+  container     'quay.io/uphl/seaborn:0.12.2-2'
+  maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
+  //#UPHLICA memory 1.GB
+  //#UPHLICA cpus 3
+  //#UPHLICA time '10m'
+  
+  input:
+  tuple val(sample), file(input)
+
+  output:
+  path "summary/${sample}_names.csv"                              , emit: collect
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
+
+  shell:
+  '''
+    mkdir -p summary logs/!{task.process}
+    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+
+    date > $log_file
+    echo "container : !{task.container}" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
+
+    echo "sample,file,version" > summary/!{sample}_names.csv
+    echo "!{sample},!{input},!{workflow.manifest.version}" >> summary/!{sample}_names.csv
+  '''
+}
+
 process size {
   tag           "${sample}"
   publishDir    params.outdir, mode: 'copy'
@@ -189,16 +173,16 @@ process size {
     then
       if [ "$(wc -l !{sample}_fastani.csv | awk '{print $1}' )" -gt 1 ]
       then
-        genus=$(head     -n 2 !{sample}_fastani.csv | tail -n 1 | cut -f 3 -d "," | cut -f 1 -d "_" )
-        species=$(head   -n 2 !{sample}_fastani.csv | tail -n 1 | cut -f 3 -d "," | cut -f 2 -d "_" )
-        accession=$(head -n 2 !{sample}_fastani.csv | tail -n 1 | sed 's/.*_GC/GC/g' | cut -f 1,2 -d '.' | sed 's/_ds$//g' )
+        genus=$(head     -n 2 !{sample}_fastani.csv | tail -n 1 | cut -f 3 -d "," | cut -f 1  -d "_" )
+        species=$(head   -n 2 !{sample}_fastani.csv | tail -n 1 | cut -f 3 -d "," | cut -f 2  -d "_" )
+        accession=$(head -n 2 !{sample}_fastani.csv | tail -n 1 | cut -f 3 -d "," | cut -f 3- -d "_" | sed 's/.*_GC/GC/g' | cut -f 1,2 -d '.' | sed 's/_ds$//g' )
       fi
     fi
 
     if [ -z "$genus" ] && [ -f "!{sample}.summary.mash.csv" ]
     then
-      genus=$(head -n 2 !{sample}.summary.mash.csv | tail -n 1 | cut -f 7 -d "," | cut -f 1 -d "_" )
-      species=$(head -n 2 !{sample}.summary.mash.csv | tail -n 1 | cut -f 7 -d "," | cut -f 2 -d "_" )
+      genus=$(head     -n 2 !{sample}.summary.mash.csv | tail -n 1 | cut -f 7 -d "," | cut -f 1   -d "_" )
+      species=$(head   -n 2 !{sample}.summary.mash.csv | tail -n 1 | cut -f 7 -d "," | cut -f 2   -d "_" )
       accession=$(head -n 2 !{sample}.summary.mash.csv | tail -n 1 | cut -f 2 -d "," | cut -f 1,2 -d '_' )
     fi
     
@@ -294,42 +278,6 @@ process size {
   '''
 }
 
-process representative {
-  tag           "${accession}"
-  container     'quay.io/uphl/seaborn:0.12.2-2'
-  maxForks      10
-  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
-  //#UPHLICA memory 1.GB
-  //#UPHLICA cpus 3
-  //#UPHLICA time '10m'
-
-  input:
-  tuple val(accession), path(genomes)
-
-  output:
-  tuple path("representative/*"), env(genus), env(species), val(accession), emit: representative
-  path "logs/${task.process}/${accession}.${workflow.sessionId}.log"      , emit: log_files
-
-  shell:
-  '''
-    mkdir -p representative logs/!{task.process}
-    log_file=logs/!{task.process}/!{accession}.!{workflow.sessionId}.log
-
-    # time stamp + capturing tool versions
-    date > $log_file
-    echo "container : !{task.container}" >> $log_file
-    echo "Nextflow command : " >> $log_file
-    cat .command.sh >> $log_file
-
-    fasta=$(ls !{genomes}/*!{accession}* | head -n 1 | cut -f 2 -d "/")
-    genus=$(echo $fasta | cut -f 1 -d "_" )
-    species=$(echo $fasta | cut -f 2 -d "_" )
-
-    cp !{genomes}/*!{accession}* representative/.
-  '''
-}
-
 process snp_matrix_heatmap {
   tag           "heatmap"
   publishDir    params.outdir, mode: 'copy'
@@ -366,4 +314,85 @@ process snp_matrix_heatmap {
   '''
 }
 
+process species {
+  tag           "Creating list of species"
+  publishDir    params.outdir, mode: 'copy'
+  container     'quay.io/uphl/seaborn:0.12.2-2'
+  maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
+  //#UPHLICA memory 1.GB
+  //#UPHLICA cpus 3
+  //#UPHLICA time '10m'
+  
+  input:
+  file(results)
 
+  output:
+  path "datasets/species_list.txt"                                     , emit: species                                    
+  path "logs/${task.process}/${task.process}.${workflow.sessionId}.log", emit: log
+
+  shell:
+  '''
+    mkdir -p datasets logs/!{task.process}
+    log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
+
+    # time stamp + capturing tool versions
+    date > $log_file
+    echo "container : !{task.container}" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
+
+    if [ -f "blobtools_species.txt" ]
+    then 
+      cut -f 2 blobtools_species.txt >> species.txt
+    fi
+
+    if [ -f "kraken2_summary.csv" ]
+    then 
+      cut -f 8 -d , kraken2_summary.csv >> species.txt
+    fi
+
+    if [ -f "mash_summary.csv" ]
+    then
+      cut -f 7 -d , mash_summary.csv | tail -n+2 >> species.txt
+    fi
+
+    grep -v no-hit species.txt | grep -v undef | grep -v name | grep "_" | sort | uniq > datasets/species_list.txt
+  '''
+}
+
+process summary {
+  tag           "Creating summary files"
+  publishDir    params.outdir, mode: 'copy'
+  container     'quay.io/uphl/seaborn:0.12.2-2'
+  maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
+  //#UPHLICA memory 1.GB
+  //#UPHLICA cpus 3
+  //#UPHLICA time '10m'
+
+  input:
+  file(input)
+
+  output:
+  path "grandeur_summary.tsv"                                  , emit: summary_tsv
+  path "grandeur_summary.txt"                                  , emit: summary_txt
+  path "summary/grandeur_extended_summary.tsv"                 , emit: extended_tsv
+  path "summary/grandeur_extended_summary.txt"                 , emit: extended_txt
+  path "logs/${task.process}/summary.${workflow.sessionId}.log", emit: log
+
+  shell:
+  '''
+    mkdir -p summary logs/!{task.process}
+    log_file=logs/!{task.process}/summary.!{workflow.sessionId}.log
+
+    date > $log_file
+    echo "container : !{task.container}" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
+
+    python summary.py | tee -a $log_file
+  '''
+}
