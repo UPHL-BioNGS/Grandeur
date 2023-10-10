@@ -370,8 +370,9 @@ ch_input_fastas = params.fasta_list
     .fromPath("${params.fasta_list}", type: "file")
     .view { "Fasta list found : ${it}" }
     .splitText()
-    .map( it -> it.trim())
+    .map{ it -> it.trim()}
     .map{ it -> file(it) }
+    .map{ it -> tuple(it.baseName, it) }
   : Channel.empty()
 
 // Getting the fastq files
