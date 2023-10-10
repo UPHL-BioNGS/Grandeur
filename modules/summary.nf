@@ -35,7 +35,6 @@ process summary {
 
 process names {
   tag           "${sample}"
-  publishDir    params.outdir, mode: 'copy'
   container     'quay.io/uphl/seaborn:0.12.2-2'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
