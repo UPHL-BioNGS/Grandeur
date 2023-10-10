@@ -86,7 +86,7 @@ params.datasets_max_genomes       = 5
 params.emmtyper_options           = ''
 params.extras                     = true
 params.fastani_include            = true
-params.fastani_options            = "--matrix"
+params.fastani_options            = ""
 params.fasterqdump_options        = ""
 params.fastp_options              = "--detect_adapter_for_pe"
 params.fastqc_options             = ""
@@ -545,9 +545,6 @@ workflow {
     ch_for_flag    = ch_for_flag.mix(average_nucleotide_identity.out.for_flag)
     ch_top_hit     = ch_top_hit.mix(average_nucleotide_identity.out.top_hit)
     ch_datasets    = average_nucleotide_identity.out.datasets_summary.ifEmpty('none')
-
-    ch_top_hit_files = ch_top_hit.map {it -> tuple(it[0], it[1])}
-    ch_top_hit_hit   = ch_top_hit.map {it -> tuple(it[0], it[2])}
 
     ch_contigs
       .join(min_hash_distance.out.mash_err)
