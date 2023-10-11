@@ -17,7 +17,7 @@ process fastani {
 
   output:
   tuple val(sample), file("fastani/${sample}_fastani.csv")       , emit: results, optional: true
-  tuple val(sample), env(top_hit), file("top_hit/*")             , emit: top_hit, optional: true
+  tuple val(sample), env(top_hit), path("top_hit/*")             , emit: top_hit, optional: true
   path "fastani/*"                                               , emit: everything
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
@@ -48,13 +48,10 @@ process fastani {
 
     top_hit=$(head -n 2 fastani/!{sample}_fastani.csv | tail -n 1 | cut -f 3 -d , )
     if [ -f "$top_hit" ]
-    then 
+    then
       mkdir -p top_hit
-      new_name=$(echo $top_hit | sed 's/.fasta$/.fna/g' | sed 's/.fa$/.fna/g' | sed 's/.fasta.gz$/.fna.gz/g' | sed 's/.fa.gz$/.fna.gz/g' )
-      cp $top_hit top_hit/$new_name
-      
-      gz_check=$(echo $top_hit | grep .gz$ )
-      if [ -n "$gz_check" ] ; then gzip -d top_hit/* ; fi
+      cp $top_hit top_hit/.
+      gzip -d top_hit/*.gz || ls top_hit
     fi
   '''
 }

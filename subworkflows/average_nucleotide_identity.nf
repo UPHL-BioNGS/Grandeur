@@ -1,7 +1,7 @@
-include { datasets_summary }    from '../modules/datasets'  addParams(params)
-include { datasets_download }   from '../modules/datasets'  addParams(params)
-include { fastani }             from '../modules/fastani'   addParams(params)
-include { species }             from '../modules/grandeur'  addParams(params)
+include { datasets_summary }  from '../modules/datasets'  addParams(params)
+include { datasets_download } from '../modules/datasets'  addParams(params)
+include { fastani }           from '../modules/fastani'   addParams(params)
+include { species }           from '../modules/grandeur'  addParams(params)
 
 workflow average_nucleotide_identity {
     take:
