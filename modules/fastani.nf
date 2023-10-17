@@ -52,6 +52,7 @@ process fastani {
       mkdir -p top_hit
       cp $top_hit top_hit/.
       gzip -d top_hit/*.gz || ls top_hit
+      chmod 664 top_hit/*
     fi
   '''
 }
