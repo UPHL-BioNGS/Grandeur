@@ -251,6 +251,8 @@ included_genomes = [
   'Haemophilus_haemolyticus_GCF_900477945.1.fna.gz',
   'Haemophilus_influenzae_GCF_000931575.1.fna.gz',
   'Haemophilus_parainfluenzae_ATCC_33392_GCF_000191405.1.fna.gz',
+  'Hafnia_alvei_GCF_011617105.1.fna.gz',
+  'Hafnia_paralvei_GCF_020150375.1.fna.gz',
   'Klebsiella_aerogenes_GCF_007632255.1.fna.gz',
   'Klebsiella_michiganensis_GCF_015139575.1.fna.gz',
   'Klebsiella_oxytoca_GCF_003812925.1.fna.gz',
