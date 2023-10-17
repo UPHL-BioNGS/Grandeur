@@ -20,7 +20,7 @@ workflow phylogenetic_analysis {
 
       if ( params.fastani_include ) {
         ch_top_hit
-          .map { it -> tuple( it[1].split("_", 3)[2], it[2], it[1].split("_")[0, 1]) }
+          .map { it -> if (it) { tuple( it[1].split("_", 3)[2], it[2], it[1].split("_")[0, 1]) }}
           .groupTuple(by: 0)
           .map { it -> tuple( it[1][0].baseName, it[1][0], it[2][0] ) }
           .unique()
