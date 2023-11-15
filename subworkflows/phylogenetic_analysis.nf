@@ -1,8 +1,9 @@
-include { iqtree2 }            from '../modules/iqtree2'    addParams(params)
-include { phytreeviz }         from '../modules/phytreeviz' addParams(params)
-include { prokka }             from '../modules/prokka'     addParams(params)
-include { roary }              from '../modules/roary'      addParams(params)
-include { snp_dists }          from '../modules/snp-dists'  addParams(params)
+include { heatcluster }        from '../modules/heatcluster' addParams(params)
+include { iqtree2 }            from '../modules/iqtree2'     addParams(params)
+include { phytreeviz }         from '../modules/phytreeviz'  addParams(params)
+include { prokka }             from '../modules/prokka'      addParams(params)
+include { roary }              from '../modules/roary'       addParams(params)
+include { snp_dists }          from '../modules/snp-dists'   addParams(params)
 
 workflow phylogenetic_analysis {
   take:
