@@ -278,42 +278,6 @@ process size {
   '''
 }
 
-process snp_matrix_heatmap {
-  tag           "heatmap"
-  publishDir    params.outdir, mode: 'copy'
-  container     'quay.io/uphl/seaborn:0.12.2-2'
-  maxForks      10
-  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
-  //#UPHLICA memory 1.GB
-  //#UPHLICA cpus 3
-  //#UPHLICA time '10m'
-
-  input:
-  tuple file(snp_matrix), file(script)
-
-  output:
-  path "snp-dists/SNP_matrix*", optional : true
-  path "snp-dists/SNP_matrix_mqc.png", optional : true, emit: for_multiqc
-  path "logs/${task.process}/snp_matrix.${workflow.sessionId}.log", emit: log_files
-
-  shell:
-  '''
-    mkdir -p snp-dists logs/!{task.process}
-    log_file=logs/!{task.process}/snp_matrix.!{workflow.sessionId}.log
-
-    # time stamp + capturing tool versions
-    date > $log_file
-    echo "container : !{task.container}" >> $log_file
-    echo "Nextflow command : " >> $log_file
-    cat .command.sh >> $log_file
-
-    python3 !{script}
-
-    mv SNP* snp-dists/.
-  '''
-}
-
 process species {
   tag           "Creating list of species"
   publishDir    params.outdir, mode: 'copy'
