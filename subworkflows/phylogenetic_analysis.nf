@@ -50,5 +50,5 @@ workflow phylogenetic_analysis {
     phytreeviz(iqtree.out.newick)
 
   emit:
-    for_multiqc = prokka.out.for_multiqc.mix(snp_dists.out.for_multiqc).mix(snp_matrix_heatmap.out.for_multiqc)
+    for_multiqc = prokka.out.for_multiqc.mix(snp_dists.out.for_multiqc).mix(heatcluster.out.for_multiqc).mix(phytreeviz.out.for_multiqc)
 }
