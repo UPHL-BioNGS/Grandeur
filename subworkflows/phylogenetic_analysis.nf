@@ -1,8 +1,8 @@
-include { iqtree2 }            from '../modules/iqtree2'   addParams(params)
-include { prokka }             from '../modules/prokka'    addParams(params)
-include { roary }              from '../modules/roary'     addParams(params)
-include { snp_dists }          from '../modules/snp-dists' addParams(params)
-include { snp_matrix_heatmap } from '../modules/grandeur'  addParams(params)
+include { iqtree2 }            from '../modules/iqtree2'    addParams(params)
+include { phytreeviz }         from '../modules/phytreeviz' addParams(params)
+include { prokka }             from '../modules/prokka'     addParams(params)
+include { roary }              from '../modules/roary'      addParams(params)
+include { snp_dists }          from '../modules/snp-dists'  addParams(params)
 
 workflow phylogenetic_analysis {
   take:
@@ -46,7 +46,8 @@ workflow phylogenetic_analysis {
 
     iqtree2(ch_core_genome)
     snp_dists(roary.out.core_gene_alignment)
-    snp_matrix_heatmap(snp_dists.out.snp_matrix.combine(snpmtrx_script))
+    heatcluster(snp_dists.out.snp_matrix)
+    phytreeviz(iqtree.out.newick)
 
   emit:
     for_multiqc = prokka.out.for_multiqc.mix(snp_dists.out.for_multiqc).mix(snp_matrix_heatmap.out.for_multiqc)
