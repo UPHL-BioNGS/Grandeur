@@ -1,7 +1,7 @@
 process quast {
   tag           "${sample}"
   publishDir    params.outdir, mode: 'copy'
-  container     'staphb/quast:5.0.2'
+  container     'staphb/quast:5.2.0'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-xlarge'
