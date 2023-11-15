@@ -1,7 +1,7 @@
 process datasets_summary {
   tag           "${taxon}"
   publishDir    params.outdir, mode: 'copy'
-  container     'quay.io/uphl/datasets:15.24.0'
+  container     'quay.io/uphl/datasets:15.27.1-2023-11-14'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
@@ -39,7 +39,7 @@ process datasets_download {
   // because there's no way to specify threads
   label         "medcpus"
   publishDir = [ path: "${params.outdir}", mode: 'copy', pattern: "logs/*/*log" ]
-  container     'quay.io/uphl/datasets:15.24.0'
+  container     'quay.io/uphl/datasets:15.27.1-2023-11-14'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
