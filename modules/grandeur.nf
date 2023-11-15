@@ -21,6 +21,7 @@ process flag {
   tuple val(sample), env(klebacin_flag)                          , emit: klebacin_flag
   tuple val(sample), env(strepa_flag)                            , emit: strepa_flag
   tuple val(sample), env(vibrio_flag)                            , emit: vibrio_flag
+  tuple val(sample), env(myco_flag)                              , emit: myco_flag
   tuple val(sample), env(genus), env(species)                    , emit: organism
   path "flag/${sample}_flag.csv"                                 , emit: collect
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log_files
@@ -93,6 +94,11 @@ process flag {
       find_acin=$(head -n 10 $files smaller_fastani.csv | grep "Acinetobacter" | tee -a $log_file | head -n 1 )
       if [ -n "$find_acin" ] ; then klebacin_flag='found' ; else klebacin_flag='not' ; fi
     fi
+
+    echo "Looking for Mycobacterium"
+    myco_flag=''
+    find_myco=$(head -n 10 $files smaller_fastani.csv | grep "Mycobacterium" | tee -a $log_file | head -n 1 )
+    if [ -n "$find_myco" ] ; then myco_flag='found' ; else myco_flag='not' ; fi
 
     if [ -z "$genus" ]   ; then genus=unknown ; fi
     if [ -z "$species" ] ; then species=unknown ; fi
