@@ -91,6 +91,11 @@
             "default": true,
             "description": "turns off blobtools, kraken2, fastani, mash, and report generation subworkflows"
         },
+        "fasta_list": {
+            "type": "string",
+            "hidden": true,
+            "description": "A sample sheet for fasta files"
+        },
         "fastani_include": {
             "type": "boolean",
             "hidden": true,
@@ -100,7 +105,6 @@
         "fastani_options": {
             "type": "string",
             "hidden": true,
-            "default": "--matrix",
             "description": "additional options for editing for process"
         },
         "fastani_ref": {
@@ -145,6 +149,12 @@
             "default": "gff",
             "description": "directory of prokka-annotated gff files (only for use with msa)"
         },
+        "heatcluster_options": {
+            "type": "string",
+            "hidden": true,
+            "default": "-t png",
+            "description": "additional options for editing for process"
+        },
         "iqtree2_options": {
             "type": "string",
             "hidden": true,
@@ -177,6 +187,11 @@
             "description": "additional options for editing for process"
         },
         "legsta_options": {
+            "type": "string",
+            "hidden": true,
+            "description": "additonal options for editing for process"
+        },
+        "mashtree_options": {
             "type": "string",
             "hidden": true,
             "description": "additonal options for editing for process"
@@ -221,6 +236,12 @@
             "default": 10000,
             "description": "the minimum number of reads in a fastq file required to move to de novo alignment"
         },
+        "min_core_genes": {
+            "type": "number",
+            "hidden": true,
+            "default": 1500,
+            "description": "minimum number of genes in core genome alignment for iqtree2"
+        },
         "mlst_options": {
             "type": "string",
             "hidden": true,
@@ -242,12 +263,23 @@
             "description": "result output directory",
             "default": "grandeur"
         },
+        "panaroo_options": {
+            "type": "string",
+            "hidden": true,
+            "default":	"--clean-mode strict --remove-invalid-genes",
+            "description": "additional options for editing for process"
+        },
         "pbptyper_options": {
             "type": "string",
             "hidden": true,
             "description": "additional options for editing for process"
         },
         "plasmidfinder_options": {
+            "type": "string",
+            "hidden": true,
+            "description": "additional options for editing for process"
+        },
+        "phytreeviz_options": {
             "type": "string",
             "hidden": true,
             "description": "additional options for editing for process"
@@ -267,12 +299,6 @@
             "type": "string",
             "default": "reads",
             "description": "directory of reads"
-        },
-        "roary_min_genes": {
-            "type": "number",
-            "hidden": true,
-            "default": 1500,
-            "description": "minimum number of genes in core genome alignment for iqtree2"
         },
         "roary_options": {
             "type": "string",
