@@ -1,3 +1,41 @@
+process core_genome_evaluation {
+  tag           "Evaluating core genome"
+  publishDir    params.outdir, mode: 'copy'
+  container     'quay.io/biocontainers/pandas:1.5.2'
+  maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
+  //#UPHLICA memory 1.GB
+  //#UPHLICA cpus 3
+  //#UPHLICA time '10m'
+
+  input:
+  tuple file(fasta), file(summary), file(script)
+
+  output:
+  tuple file(fasta), env(num_samples), env(num_core_genes)     , emit: evaluation
+  path "core_genome_evaluation/core_genome_evaluation.csv"     , emit: for_multiqc
+  path "logs/${task.process}/${task.process}.${workflow.sessionId}.log", emit: log
+
+  shell:
+  '''
+    mkdir -p core_genome_evaluation logs/!{task.process}
+    log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
+
+    # time stamp + capturing tool versions
+    date > $log_file
+    echo "container : !{task.container}" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
+
+    python !{script} | tee -a $log_file
+
+    num_samples=$(wc -l core_genome_evaluation.csv | awk '{print $1}' )
+    num_core_genes=$(cut -f 3 core_genome_evaluation.csv -d "," | tail -n 1 | cut -f 1 -d "." )
+    cp core_genome_evaluation.csv core_genome_evaluation/core_genome_evaluation.csv
+  '''
+}
+
 process flag {
   tag           "${sample}"
   publishDir    params.outdir, mode: 'copy'
