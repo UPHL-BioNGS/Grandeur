@@ -14,10 +14,10 @@ process roary {
   file(contigs)
 
   output:
-  path "roary/*"                                                                    , emit: roary_files
-  path "roary/fixed_input_files/*"                                                  , emit: roary_input_files
-  tuple path("roary/core_gene_alignment.aln"), env(num_samples), env(num_core_genes), emit: core_gene_alignment
-  path "logs/${task.process}/${task.process}.${workflow.sessionId}.log"             , emit: log_files
+  path "roary/*"                                                                       , emit: roary_files
+  path "roary/fixed_input_files/*"                                                     , emit: roary_input_files
+  tuple path("roary/core_gene_alignment.aln"), path("roary/gene_presence_absence.Rtab"), emit: core_gene_alignment
+  path "logs/${task.process}/${task.process}.${workflow.sessionId}.log"                , emit: log_files
 
   shell:
   '''
@@ -31,16 +31,11 @@ process roary {
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    echo "There are $(ls *gff | wc -l) files for alignment" >> $log_file
-
     roary !{params.roary_options} \
       -p !{task.cpus} \
       -f roary \
       -e -n \
       *.gff \
       | tee -a $log_file
-
-    num_samples=$(grep ">" roary/core_gene_alignment.aln | wc -l )
-    num_core_genes=$(head -n 1 roary/summary_statistics.txt | cut -f 3 )
   '''
 }
