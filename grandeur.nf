@@ -29,14 +29,19 @@ if ( params.config_file ) {
   exit 0
 }
 
-params.fastqscan_options = ""
+params.fastqscan_options = false
 if ( params.fastqscan_options ) {
-  println("WARNING : ${params.fastqscan_options} is depreciated" )
+  println("WARNING : params.fastqscan_options is depreciated" )
 }
 
-params.genome_references = ""
+params.genome_references = false
 if (params.genome_references ) {
-  println("WARNING : ${params.genome_references} is depreciated" )
+  println("WARNING : params.genome_references is depreciated" )
+}
+
+params.roary_min_genes = false
+if (params.genome_references ) {
+  println("WARNING : params.roary_min_genes is depreciated, use params.min_core_genes instead!")
 }
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
@@ -90,6 +95,7 @@ params.fastani_options            = ""
 params.fasterqdump_options        = ""
 params.fastp_options              = "--detect_adapter_for_pe"
 params.fastqc_options             = ""
+params.heatcluster_options        = "-t png"
 params.iqtree2_options            = "-t RANDOM -m GTR+F+I -bb 1000 -alrt 1000"
 params.iqtree2_outgroup           = ""
 params.kaptive_options            = ''
@@ -99,15 +105,18 @@ params.legsta_options             = ""
 params.mash_sketch_options        = "-m 2"
 params.mash_dist_options          = "-v 0 -d 0.5"
 params.mash_max_hits              = 25
-params.msa                        = false
+params.mashtree_options           = ""
+params.min_core_genes             = 1500
 params.mlst_options               = ""
+params.msa                        = false
 params.multiqc_options            = ""
+params.panaroo_options            = "--clean-mode strict --remove-invalid-genes"
 params.pbptyper_options           = ''
 params.plasmidfinder_options      = ""
+params.phytreeviz_options         = ""
 params.prokka_options             = "--mincontiglen 500 --compliant --locustag locus_tag --centre STAPHB"
 params.quast_options              = ""
 params.roary_options              = ""
-params.roary_min_genes            = 1500
 params.seqsero2_options           = "-m a -b mem"
 params.serotypefinder_options     = ""
 params.shigatyper_options         = ""
@@ -148,7 +157,7 @@ include { test }                          from "./subworkflows/test"            
 
 // Creating the summary files
 dataset_script = Channel.fromPath(workflow.projectDir + "/bin/datasets_download.py", type: "file")
-snpmtrx_script = Channel.fromPath(workflow.projectDir + "/bin/HeatCluster.py",       type: "file")
+evaluat_script = Channel.fromPath(workflow.projectDir + "/bin/evaluate.py",          type: "file")
 summary_script = Channel.fromPath(workflow.projectDir + "/bin/summary.py",           type: "file")
 summfle_script = Channel.fromPath(workflow.projectDir + "/bin/summary_file.py",      type: "file")
 
@@ -575,14 +584,14 @@ workflow {
   } 
 
   // optional subworkflow for comparing shared genes
-  if ( params.msa ) { 
+  if ( params.msa ) {
     phylogenetic_analysis(
-      snpmtrx_script,
+      evaluat_script, 
       ch_contigs.ifEmpty([]), 
       ch_gffs.ifEmpty([]), 
       ch_top_hit.ifEmpty([]))
     
-    ch_for_multiqc   = ch_for_multiqc.mix(phylogenetic_analysis.out.for_multiqc)
+//    ch_for_multiqc   = ch_for_multiqc.mix(phylogenetic_analysis.out.for_multiqc)
   }
 
   // getting a summary of everything

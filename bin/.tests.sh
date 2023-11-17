@@ -1,18 +1,18 @@
 #/bin/bash
 
 # just a bunch of tests with local directories
-# /home/eriny/sandbox/Grandeur/bin/.tests.sh
+# /Volumes/IDGenomics_NAS/Bioinformatics/eriny/Grandeur/bin/.tests.sh
 
 # default with input
-nextflow run /home/eriny/sandbox/Grandeur \
+nextflow run /Volumes/IDGenomics_NAS/Bioinformatics/eriny/Grandeur \
   -profile singularity \
-  --sample_sheet /home/eriny/sandbox/Grandeur/bin/sample_sheet.csv \
+  --sample_sheet /Volumes/IDGenomics_NAS/Bioinformatics/eriny/Grandeur/bin/sample_sheet.csv \
   --outdir grandeur_sample_sheet \
   -resume  \
   -with-tower
 
 # default with reads
-nextflow run /home/eriny/sandbox/Grandeur \
+nextflow run /Volumes/IDGenomics_NAS/Bioinformatics/eriny/Grandeur \
   -profile singularity \
   --reads  /home/eriny/sandbox/test_files/grandeur/reads \
   --outdir grandeur_fastq_channel \
@@ -20,7 +20,7 @@ nextflow run /home/eriny/sandbox/Grandeur \
   -with-tower
 
 # default with fastas
-nextflow run /home/eriny/sandbox/Grandeur \
+nextflow run /Volumes/IDGenomics_NAS/Bioinformatics/eriny/Grandeur \
   -profile singularity \
   --fastas /home/eriny/sandbox/test_files/grandeur/fastas \
   --outdir grandeur_fasta_channel \
@@ -28,7 +28,7 @@ nextflow run /home/eriny/sandbox/Grandeur \
   -with-tower
 
 # default with reads and fastas
-nextflow run /home/eriny/sandbox/Grandeur \
+nextflow run /Volumes/IDGenomics_NAS/Bioinformatics/eriny/Grandeur \
   -profile singularity \
   --reads  /home/eriny/sandbox/test_files/grandeur/reads \
   --fastas /home/eriny/sandbox/test_files/grandeur/fastas \
@@ -37,12 +37,13 @@ nextflow run /home/eriny/sandbox/Grandeur \
   -with-tower
 
 # multiple sequence alignment
-nextflow run /home/eriny/sandbox/Grandeur \
+nextflow run /Volumes/IDGenomics_NAS/Bioinformatics/eriny/Grandeur \
   -profile singularity,msa \
   --gff    /home/eriny/sandbox/test_files/grandeur/msa \
   --fastas /home/eriny/sandbox/test_files/grandeur/msa \
   --reads  /home/eriny/sandbox/test_files/grandeur/msa \
   --outdir grandeur_msa_fastani \
+  --min_core_genes 50 \
   -resume  \
   -with-tower
 
@@ -50,7 +51,7 @@ for profile in "singularity" "uphl"
 do
   for ver in "test0" "test1" "test2" "test3" "test4" "test5" "test6"
   do
-    nextflow run /home/eriny/sandbox/Grandeur \
+    nextflow run /Volumes/IDGenomics_NAS/Bioinformatics/eriny/Grandeur \
       -profile $profile,$ver \
       --outdir grandeur_${ver}_$profile \
       -resume  \
@@ -59,7 +60,7 @@ do
 done
 
 # with nothing
-nextflow run /home/eriny/sandbox/Grandeur \
+nextflow run /Volumes/IDGenomics_NAS/Bioinformatics/eriny/Grandeur \
   -profile singularity \
   --gff    wontexist \
   --fastas shouldntexit \

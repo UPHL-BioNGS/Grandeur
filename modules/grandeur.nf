@@ -1,7 +1,45 @@
+process core_genome_evaluation {
+  tag           "Evaluating core genome"
+  publishDir    params.outdir, mode: 'copy'
+  container     'quay.io/biocontainers/pandas:1.5.2'
+  maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
+  //#UPHLICA memory 1.GB
+  //#UPHLICA cpus 3
+  //#UPHLICA time '10m'
+
+  input:
+  tuple file(fasta), file(summary), file(script)
+
+  output:
+  tuple file(fasta), env(num_samples), env(num_core_genes)     , emit: evaluation
+  path "core_genome_evaluation/core_genome_evaluation.csv"     , emit: for_multiqc
+  path "logs/${task.process}/${task.process}.${workflow.sessionId}.log", emit: log
+
+  shell:
+  '''
+    mkdir -p core_genome_evaluation logs/!{task.process}
+    log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
+
+    # time stamp + capturing tool versions
+    date > $log_file
+    echo "container : !{task.container}" >> $log_file
+    echo "Nextflow command : " >> $log_file
+    cat .command.sh >> $log_file
+
+    python !{script} | tee -a $log_file
+
+    num_samples=$(wc -l core_genome_evaluation.csv | awk '{print $1}' )
+    num_core_genes=$(cut -f 3 core_genome_evaluation.csv -d "," | tail -n 1 | cut -f 1 -d "." )
+    cp core_genome_evaluation.csv core_genome_evaluation/core_genome_evaluation.csv
+  '''
+}
+
 process flag {
   tag           "${sample}"
   publishDir    params.outdir, mode: 'copy'
-  container     'quay.io/uphl/seaborn:0.12.2-2'
+  container     'quay.io/biocontainers/pandas:1.5.2'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
@@ -21,6 +59,7 @@ process flag {
   tuple val(sample), env(klebacin_flag)                          , emit: klebacin_flag
   tuple val(sample), env(strepa_flag)                            , emit: strepa_flag
   tuple val(sample), env(vibrio_flag)                            , emit: vibrio_flag
+  tuple val(sample), env(myco_flag)                              , emit: myco_flag
   tuple val(sample), env(genus), env(species)                    , emit: organism
   path "flag/${sample}_flag.csv"                                 , emit: collect
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log_files
@@ -94,6 +133,11 @@ process flag {
       if [ -n "$find_acin" ] ; then klebacin_flag='found' ; else klebacin_flag='not' ; fi
     fi
 
+    echo "Looking for Mycobacterium"
+    myco_flag=''
+    find_myco=$(head -n 10 $files smaller_fastani.csv | grep "Mycobacterium" | tee -a $log_file | head -n 1 )
+    if [ -n "$find_myco" ] ; then myco_flag='found' ; else myco_flag='not' ; fi
+
     if [ -z "$genus" ]   ; then genus=unknown ; fi
     if [ -z "$species" ] ; then species=unknown ; fi
 
@@ -104,7 +148,7 @@ process flag {
 
 process names {
   tag           "${sample}"
-  container     'quay.io/uphl/seaborn:0.12.2-2'
+  container     'quay.io/biocontainers/pandas:1.5.2'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
@@ -278,46 +322,10 @@ process size {
   '''
 }
 
-process snp_matrix_heatmap {
-  tag           "heatmap"
-  publishDir    params.outdir, mode: 'copy'
-  container     'quay.io/uphl/seaborn:0.12.2-2'
-  maxForks      10
-  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
-  //#UPHLICA memory 1.GB
-  //#UPHLICA cpus 3
-  //#UPHLICA time '10m'
-
-  input:
-  tuple file(snp_matrix), file(script)
-
-  output:
-  path "snp-dists/SNP_matrix*", optional : true
-  path "snp-dists/SNP_matrix_mqc.png", optional : true, emit: for_multiqc
-  path "logs/${task.process}/snp_matrix.${workflow.sessionId}.log", emit: log_files
-
-  shell:
-  '''
-    mkdir -p snp-dists logs/!{task.process}
-    log_file=logs/!{task.process}/snp_matrix.!{workflow.sessionId}.log
-
-    # time stamp + capturing tool versions
-    date > $log_file
-    echo "container : !{task.container}" >> $log_file
-    echo "Nextflow command : " >> $log_file
-    cat .command.sh >> $log_file
-
-    python3 !{script}
-
-    mv SNP* snp-dists/.
-  '''
-}
-
 process species {
   tag           "Creating list of species"
   publishDir    params.outdir, mode: 'copy'
-  container     'quay.io/uphl/seaborn:0.12.2-2'
+  container     'quay.io/biocontainers/pandas:1.5.2'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
@@ -365,7 +373,7 @@ process species {
 process summary {
   tag           "Creating summary files"
   publishDir    params.outdir, mode: 'copy'
-  container     'quay.io/uphl/seaborn:0.12.2-2'
+  container     'quay.io/biocontainers/pandas:1.5.2'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'

@@ -1,8 +1,8 @@
-process roary {
+process panaroo {
   tag           "Core Genome Alignment"
   label         'maxcpus'
   publishDir    params.outdir, mode: 'copy'
-  container     'staphb/roary:3.13.0'
+  container     'quay.io/biocontainers/panaroo:1.3.4--pyhdfd78af_0'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'hicpu-small'
@@ -14,10 +14,9 @@ process roary {
   file(contigs)
 
   output:
-  path "roary/*"                                                                       , emit: roary_files
-  path "roary/fixed_input_files/*"                                                     , emit: roary_input_files
-  tuple path("roary/core_gene_alignment.aln"), path("roary/gene_presence_absence.Rtab"), emit: core_gene_alignment
-  path "logs/${task.process}/${task.process}.${workflow.sessionId}.log"                , emit: log_files
+  path "panaroo/*"                                                                         , emit: files
+  tuple path("panaroo/core_gene_alignment.aln"), path("panaroo/gene_presence_absence.Rtab"), emit: core_gene_alignment
+  path "logs/${task.process}/${task.process}.${workflow.sessionId}.log"                    , emit: log_files
 
   shell:
   '''
@@ -26,16 +25,16 @@ process roary {
 
     # time stamp + capturing tool versions
     date > $log_file
-    roary -a >> $log_file
+    panaroo --version >> $log_file
     echo "container : !{task.container}" >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    roary !{params.roary_options} \
-      -p !{task.cpus} \
-      -f roary \
-      -e -n \
-      *.gff \
-      | tee -a $log_file
+    panaroo !{params.panaroo_options} \
+        -t !{task.cpus} \
+        -o panaroo \
+        -i !{contigs} \
+        -a core \
+        | tee -a $log_file
   '''
 }

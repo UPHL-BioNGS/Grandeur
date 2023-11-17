@@ -1,12 +1,16 @@
-include { iqtree2 }            from '../modules/iqtree2'   addParams(params)
-include { prokka }             from '../modules/prokka'    addParams(params)
-include { roary }              from '../modules/roary'     addParams(params)
-include { snp_dists }          from '../modules/snp-dists' addParams(params)
-include { snp_matrix_heatmap } from '../modules/grandeur'  addParams(params)
+include { core_genome_evaluation } from '../modules/grandeur'    addParams(params)
+include { heatcluster }            from '../modules/heatcluster' addParams(params)
+include { iqtree2 }                from '../modules/iqtree2'     addParams(params)
+include { mashtree }               from '../modules/mashtree'    addParams(params)
+include { panaroo }                from '../modules/panaroo'     addParams(params)
+include { phytreeviz }             from '../modules/phytreeviz'  addParams(params)
+include { prokka }                 from '../modules/prokka'      addParams(params)
+include { roary }                  from '../modules/roary'       addParams(params)
+include { snp_dists }              from '../modules/snp-dists'   addParams(params)
 
 workflow phylogenetic_analysis {
   take:
-    snpmtrx_script
+    evaluat_script
     ch_contigs
     ch_gff
     ch_top_hit
@@ -36,18 +40,23 @@ workflow phylogenetic_analysis {
 
     prokka(for_prokka)
 
-    roary(prokka.out.gffs.concat(ch_gff).unique().collect())
+    // panaroo(prokka.out.gffs.concat(ch_gff).unique().collect())
+    // core_genome_evaluation(panaroo.out.core_gene_alignment.combine(evaluat_script))
 
-    roary.out.core_gene_alignment
-      .filter ({ it[1] as int >= 4 })
-      .filter ({ it[2] as int >= params.roary_min_genes })
+    roary(prokka.out.gffs.concat(ch_gff).unique().collect())
+    core_genome_evaluation(roary.out.core_gene_alignment.combine(evaluat_script))
+
+    core_genome_evaluation.out.evaluation
+      .filter({it[1] as int >= 4})
+      .filter({it[2] as int >= params.min_core_genes})
       .map ( it -> it[0] )
       .set{ ch_core_genome }
 
     iqtree2(ch_core_genome)
-    snp_dists(roary.out.core_gene_alignment)
-    snp_matrix_heatmap(snp_dists.out.snp_matrix.combine(snpmtrx_script))
+    snp_dists(core_genome_evaluation.out.evaluation.map(it->it[0]))
+    heatcluster(snp_dists.out.snp_matrix)
+    phytreeviz(iqtree2.out.newick)
 
   emit:
-    for_multiqc = prokka.out.for_multiqc.mix(snp_dists.out.for_multiqc).mix(snp_matrix_heatmap.out.for_multiqc)
+    for_multiqc = prokka.out.for_multiqc.mix(snp_dists.out.snp_matrix).mix(heatcluster.out.for_multiqc).mix(phytreeviz.out.for_multiqc).mix(core_genome_evaluation.out.for_multiqc)
 }
