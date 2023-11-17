@@ -14,8 +14,7 @@ process phytreeviz {
   file(newick)
 
   output:
-  path "phytreeviz/tree.png"
-  path "phytreeviz/tree_mqc.png"                                       , emit: for_multiqc
+  path "phytreeviz/tree.png",                                            emit: for_multiqc
   path "logs/${task.process}/${task.process}.${workflow.sessionId}.log", emit: log
 
   shell:
@@ -33,7 +32,5 @@ process phytreeviz {
     phytreeviz !{params.phytreeviz_options} \
         -i !{newick} \
         -o phytreeviz/tree.png
-
-    if [ -f "phytreeviz/tree.png" ] ; then cp phytreeviz/tree.png phytreeviz/tree_mqc.png ; fi 
   '''
 }
