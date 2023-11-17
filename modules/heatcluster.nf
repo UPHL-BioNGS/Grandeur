@@ -10,31 +10,28 @@ process heatcluster {
   //#UPHLICA time '10m'
 
   input:
-  tuple file(snp_matrix)
+  file(matrix)
 
   output:
-  path "sheatcluster/heatcluster*"      , optional : true
-  path "heatcluster/heatcluster_mqc.png", optional : true         , emit: for_multiqc
-  path "logs/${task.process}/snp_matrix.${workflow.sessionId}.log", emit: log_files
+  path "heatcluster/heatcluster*"   , optional : true
+  path "heatcluster/heatcluster.png", optional : true              , emit: for_multiqc
+  path "logs/${task.process}/heatcluster.${workflow.sessionId}.log", emit: log_files
 
   shell:
   '''
-    mkdir -p snp-dists logs/!{task.process}
-    log_file=logs/!{task.process}/snp_matrix.!{workflow.sessionId}.log
+    mkdir -p heatcluster logs/!{task.process}
+    log_file=logs/!{task.process}/heatcluster.!{workflow.sessionId}.log
 
     # time stamp + capturing tool versions
     date > $log_file
-    HeatCluster.py -v >> $log_file
+    heatcluster.py -v >> $log_file
     echo "container : !{task.container}" >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    HeatCluster.py !{heatcluster_options} \
+    heatcluster.py !{params.heatcluster_options} \
         -i !{matrix} \
         -o heatcluster/heatcluster \
         | tee -a $log_file
-
-
-    if [ -f "heatcluster/heatcluster.png" ] ; then cp heatcluster/heatcluster.png heatcluster/heatcluster_mqc.png ; fi
   '''
 }
