@@ -1,5 +1,5 @@
 process snp_dists {
-  tag "SNP matrix"
+  tag           "SNP matrix"
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/snp-dists:0.8.2'
   maxForks      10
@@ -10,12 +10,10 @@ process snp_dists {
   //#UPHLICA time '24h'
   
   input:
-  tuple file(contigs), val(num_samples), val(num_core_genes)
+  file(contigs)
 
   output:
   path "snp-dists/snp_matrix.txt"                                      , emit: snp_matrix
-  path "snp-dists/snp_matrix_with_qc.txt"
-  path "snp-dists/roary_metrics_mqc.csv"                               , emit: for_multiqc                                      
   path "logs/${task.process}/${task.process}.${workflow.sessionId}.log", emit: log_files
 
   shell:
@@ -33,12 +31,5 @@ process snp_dists {
     snp-dists !{params.snp_dists_options} \
       !{contigs} \
       > snp-dists/snp_matrix.txt
-
-    genome_length=$(cat !{contigs} | tr "\n" ";" | sed 's/>[^>]*//2g' | tr ";" "\n" | grep -v ">" | wc -c )
-
-    sed '0,/,/s/,/num_samples=!{num_samples};num_core_genes=!{num_core_genes},/' snp-dists/snp_matrix.txt > snp-dists/snp_matrix_with_qc.txt
-
-    echo "num_samples,num_core_genes,core_genome_length"     >  snp-dists/roary_metrics_mqc.csv
-    echo "!{num_samples},!{num_core_genes},${genome_length}" >> snp-dists/roary_metrics_mqc.csv
   '''
 }
