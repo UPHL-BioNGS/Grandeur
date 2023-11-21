@@ -1,6 +1,5 @@
 process phytreeviz {
-  tag           "Tree visualization"
-  label         "maxcpus"
+  tag           "${analysis}"
   publishDir    params.outdir, mode: 'copy'
   container     'quay.io/uphl/phytreeviz:0.1.0-2023-11-15'
   maxForks      10
@@ -11,16 +10,16 @@ process phytreeviz {
   //#UPHLICA time '24h'
   
   input:
-  file(newick)
+  tuple val(analysis), file(newick)
 
   output:
-  path "phytreeviz/tree.png",                                            emit: for_multiqc
-  path "logs/${task.process}/${task.process}.${workflow.sessionId}.log", emit: log
+  path "phytreeviz/${analysis}_tree.png",                                            emit: for_multiqc
+  path "logs/${task.process}/${analysis}.${task.process}.${workflow.sessionId}.log", emit: log
 
   shell:
   '''
     mkdir -p phytreeviz logs/!{task.process}
-    log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
+    log_file=logs/!{task.process}/!{analysis}.!{task.process}.!{workflow.sessionId}.log
 
     # time stamp + capturing tool versions
     date > $log_file
@@ -31,6 +30,6 @@ process phytreeviz {
 
     phytreeviz !{params.phytreeviz_options} \
         -i !{newick} \
-        -o phytreeviz/tree.png
+        -o phytreeviz/!{analysis}_tree.png
   '''
 }
