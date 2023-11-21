@@ -1,6 +1,7 @@
 process core_genome_evaluation {
   tag           "Evaluating core genome"
-  publishDir    params.outdir, mode: 'copy'
+  publishDir    path: params.outdir, mode: 'copy', pattern: 'logs/*/*log'
+  publishDir    path: params.outdir, mode: 'copy', pattern: 'core_genome_evaluation/core_genome_evaluation.csv'
   container     'quay.io/biocontainers/pandas:1.5.2'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
