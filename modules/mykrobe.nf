@@ -2,7 +2,7 @@ process mykrobe {
   tag           "${sample}"
   stageInMode   "copy"
   publishDir    path: params.outdir, mode: 'copy'
-  container     'quay.io/biocontainers/mykrobe:0.13.0--py38h2214202_0'
+  container     'staphb/mykrobe:0.13.0'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
@@ -17,12 +17,13 @@ process mykrobe {
   tuple val(sample), file(contigs), val(flag)
 
   output:
-  path "mykrobe/${sample}_mykrobe.csv"                           , emit: collect
+  path "mykrobe/${sample}.csv"                                   , emit: collect
+  path "mykrobe/${sample}.json"
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
   '''
-    mkdir -p mykrobe logs/!{task.process}
+    mkdir -p tmp/ logs/!{task.process}
     log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
 
     # time stamp + capturing tool versions
@@ -41,7 +42,5 @@ process mykrobe {
       --threads !{task.cpus} \
       --format json_and_csv \
       | tee -a $log_file
-
-    exit 1
   '''
 }
