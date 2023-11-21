@@ -19,7 +19,7 @@ process prokka {
   output:
   path "prokka/${sample}/*"                                      , emit: prokka_files
   path "prokka/${sample}/${sample}.txt"                          , emit: for_multiqc
-  path "gff/${sample}.gff"                                       , emit: gffs
+  path "gff/${sample}.gff"                                       , emit: gffs, optional: true
   path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
 
   shell:
