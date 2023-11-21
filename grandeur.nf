@@ -593,7 +593,7 @@ workflow {
       ch_gffs.ifEmpty([]), 
       ch_top_hit.ifEmpty([]))
     
-//    ch_for_multiqc   = ch_for_multiqc.mix(phylogenetic_analysis.out.for_multiqc)
+    ch_for_multiqc   = ch_for_multiqc.mix(phylogenetic_analysis.out.for_multiqc)
   }
 
   // getting a summary of everything
