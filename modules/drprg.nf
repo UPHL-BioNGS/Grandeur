@@ -2,7 +2,7 @@ process drprg {
   tag           "${sample}"
   stageInMode   "copy"
   publishDir    path: params.outdir, mode: 'copy'
-  container     'quay.io/biocontainers/drprg:0.1.1--h5076881_1'
+  container     'staphb/drprg:0.1.1'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
@@ -17,8 +17,9 @@ process drprg {
   tuple val(sample), file(contigs), val(flag)
 
   output:
-  path "drprg/${sample}_drprg.csv"                             , emit: collect
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
+  tuple val(sample), val("drprg"), file("drprg/${sample}/${sample}.drprg.json"), emit: collect
+  path "drprg/${sample}/*"
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log"              , emit: log
 
   shell:
   '''
@@ -29,17 +30,14 @@ process drprg {
     date > $log_file
     echo "container : !{task.container}" >> $log_file
     drprg --version >> $log_file
-    drprg index --list >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
     
     drprg predict !{params.drprg_options} \
-      !{contigs} \
       -x /drprg/mtb/mtb \
       -i !{contigs} \
-      -o drprg/ \
+      -o drprg/!{sample} \
+      --sample !{sample} \
       | tee =a $log_file
-
-    exit 1
   '''
 }
