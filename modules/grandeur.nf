@@ -38,7 +38,7 @@ process core_genome_evaluation {
 
 process flag {
   tag           "${sample}"
-  publishDir    params.outdir, mode: 'copy'
+  //publishDir    params.outdir, mode: 'copy'
   container     'quay.io/biocontainers/pandas:1.5.2'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
@@ -133,16 +133,43 @@ process flag {
       if [ -n "$find_acin" ] ; then klebacin_flag='found' ; else klebacin_flag='not' ; fi
     fi
 
-    echo "Looking for Mycobacterium"
+    echo "Looking for Mycobacterium/Mycobacteria"
     myco_flag=''
-    find_myco=$(head -n 10 $files smaller_fastani.csv | grep "Mycobacterium" | tee -a $log_file | head -n 1 )
+    find_myco=$(head -n 10 $files smaller_fastani.csv | grep "Mycobacteri" | tee -a $log_file | head -n 1 )
     if [ -n "$find_myco" ] ; then myco_flag='found' ; else myco_flag='not' ; fi
 
-    if [ -z "$genus" ]   ; then genus=unknown ; fi
+    if [ -z "$genus" ]   ; then genus=unknown   ; fi
     if [ -z "$species" ] ; then species=unknown ; fi
 
-    echo "sample,genus,species,salmonella_flag,ecoli_flag,klebsiella_flag" > flag/!{sample}_flag.csv
-    echo "!{sample},$genus,$species,$salmonella_flag,$ecoli_flag,$klebsiella_flag" >> flag/!{sample}_flag.csv
+    echo "sample,genus,species,salmonella_flag,ecoli_flag,klebsiella_flag,klebacin_flag,myco_flag,strepa_flag,streppneu_flag,legionella_flag,vibrio_flag" > flag/!{sample}_flag.csv
+    echo "!{sample},$genus,$species,$salmonella_flag,$ecoli_flag,$klebsiella_flag,$klebacin_flag,$myco_flag,$strepa_flag,$streppneu_flag,$legionella_flag,$vibrio_flag" >> flag/!{sample}_flag.csv
+  '''
+}
+
+process json_convert {
+  tag           "${sample}"
+  // no publishDir
+  container     'quay.io/biocontainers/pandas:1.5.2'
+  maxForks      10
+  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
+  //#UPHLICA memory 1.GB
+  //#UPHLICA cpus 3
+  //#UPHLICA time '10m'
+
+  input:
+  tuple val(sample), val(analysis), file(json), file(script)
+
+  output:
+  path "${analysis}/${sample}_${analysis}_summary.csv"           , emit: collect
+  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log_files
+
+  shell:
+  '''
+    mkdir -p ${analysis} logs/!{task.process}
+
+    python3 !{script} !{analysis} !{json} 
+
   '''
 }
 
