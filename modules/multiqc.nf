@@ -96,6 +96,7 @@ process multiqc {
     if [ -f "heatcluster.png" ]            ; then cp heatcluster.png heatcluster_mqc.png ; fi
     if [ -f "snp_matrix.txt" ]             ; then cp snp_matrix.txt snp_matrix_mqc.txt ; fi
     if [ -f "tree.png" ]                   ; then cp tree.png phytreeviz_tree_mqc.png ; fi 
+    if [ -f "mykrobe_summary.csv" ]        ; then cp mykrobe_summary.csv mykrobe_summary_mqc.csv ; fi 
     
     multiqc !{params.multiqc_options} \
       --outdir multiqc \
