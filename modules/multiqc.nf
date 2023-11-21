@@ -94,8 +94,9 @@ process multiqc {
     if [ -f 'serotypefinder_results.txt' ] ; then cut -f 1-6 serotypefinder_results.txt > serotypefinder_mqc.txt  ; fi
     if [ -f 'core_genome_evaluation.csv' ] ; then cp core_genome_evaluation.csv core_genome_evaluation_mqc.csv  ; fi
     if [ -f "heatcluster.png" ]            ; then cp heatcluster.png heatcluster_mqc.png ; fi
-    if [ -f "snp_matrix.txt" ]             ; then cp snp_matrix.txt snp_matrix_mqc.txt ; fi
-    if [ -f "tree.png" ]                   ; then cp tree.png phytreeviz_tree_mqc.png ; fi 
+    if [ -f "snp_matrix.txt" ]             ; then cp snp_matrix.txt snpdists_matrix_mqc.txt ; fi
+    if [ -f "iqtree_tree.png" ]            ; then cp iqtree_tree.png phytreeviz_iqtree2_mqc.png ; fi 
+    if [ -f "mashtree_tree.png" ]          ; then cp mashtree_tree.png phytreeviz_mashtree_mqc.png ; fi 
     if [ -f "mykrobe_summary.csv" ]        ; then cp mykrobe_summary.csv mykrobe_summary_mqc.csv ; fi 
     
     multiqc !{params.multiqc_options} \
