@@ -15,7 +15,7 @@ process mashtree {
 
   output:
   path "mashtree/*"                                                    , emit: tree
-  path "mashtree/mashtree.nwk", optional: true                         , emit: newick
+  tuple val("mashtree"), file("mashtree/mashtree.nwk"), optional: true , emit: newick
   path "logs/${task.process}/${task.process}.${workflow.sessionId}.log", emit: log
 
   shell:
