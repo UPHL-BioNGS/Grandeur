@@ -41,12 +41,12 @@ workflow information {
     flag(ch_flag.groupTuple())
 
     amrfinderplus(ch_contigs.join(flag.out.organism,    by:0))
-    //drprg(ch_contigs.join(flag.out.myco_flag,           by:0))
+    drprg(ch_contigs.join(flag.out.myco_flag,           by:0))
     emmtyper(ch_contigs.join(flag.out.strepa_flag,      by:0).combine(summfle_script)) 
     //kaptive(ch_contigs.join(flag.out.klebacin_flag,     by:0))      
     kleborate(ch_contigs.join(flag.out.klebsiella_flag, by:0).combine(summfle_script))
     legsta(ch_contigs.join(flag.out.legionella_flag,    by:0))
-    //mykrobe(ch_contigs.join(flag.out.myco_flag,         by:0))
+    mykrobe(ch_contigs.join(flag.out.myco_flag,         by:0))
     pbptyper(ch_contigs.join(flag.out.streppneu_flag,   by:0))
     seqsero2(ch_contigs.join(flag.out.salmonella_flag,  by:0))
     serotypefinder(ch_contigs.join(flag.out.ecoli_flag, by:0).combine(summfle_script))
@@ -115,12 +115,12 @@ workflow information {
         storeDir: "${params.outdir}/mlst")
       .set{ mlst_summary }
 
-    // mykrobe.out.collect
-    //   .collectFile(name: "mykrobe_summary.txt",
-    //     keepHeader: true,
-    //     sort: { file -> file.text },
-    //     storeDir: "${params.outdir}/mykrobe")
-    //   .set{ mykrobe_summary }
+    mykrobe.out.collect
+      .collectFile(name: "mykrobe_summary.csv",
+        keepHeader: true,
+        sort: { file -> file.text },
+        storeDir: "${params.outdir}/mykrobe")
+      .set{ mykrobe_summary }
 
     quast.out.collect
       .collectFile(name: "quast_report.tsv",
@@ -179,7 +179,7 @@ workflow information {
       .mix(kleborate_summary)
       .mix(legsta_summary)
       .mix(mlst_summary)
-      //.mix(mykrobe_summary)
+      .mix(mykrobe_summary)
       .mix(pbptyper_summary)
       .mix(plasmidfinder_summary)
       .mix(quast_summary)
