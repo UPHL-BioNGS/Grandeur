@@ -88,6 +88,7 @@ params.blobtools_plot_options     = "--format png -r species"
 params.blobtools_bbmap_options    = ""
 params.current_datasets           = false
 params.datasets_max_genomes       = 5
+params.drprg_options              = ""
 params.emmtyper_options           = ''
 params.extras                     = true
 params.fastani_include            = true
@@ -110,6 +111,7 @@ params.min_core_genes             = 1500
 params.mlst_options               = ""
 params.msa                        = false
 params.multiqc_options            = ""
+params.mykrobe_options            = ""
 params.panaroo_options            = "--clean-mode strict --remove-invalid-genes"
 params.pbptyper_options           = ''
 params.plasmidfinder_options      = ""
@@ -591,7 +593,7 @@ workflow {
       ch_gffs.ifEmpty([]), 
       ch_top_hit.ifEmpty([]))
     
-//    ch_for_multiqc   = ch_for_multiqc.mix(phylogenetic_analysis.out.for_multiqc)
+    ch_for_multiqc   = ch_for_multiqc.mix(phylogenetic_analysis.out.for_multiqc)
   }
 
   // getting a summary of everything

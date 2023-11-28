@@ -26,6 +26,7 @@ kraken2        = 'kraken2_summary.csv'
 legsta         = 'legsta_summary.csv'
 mash           = 'mash_summary.csv'
 mlst           = 'mlst_summary.tsv'
+mykrobe        = 'mykrobe_summary.csv'
 pbptyper       = 'pbptyper_summary.tsv'
 plasmidfinder  = 'plasmidfinder_result.tsv'
 quast          = 'quast_report.tsv'
@@ -44,7 +45,7 @@ extended       = 'summary/grandeur_extended_summary'
 # grouping similar files                 #
 ##########################################
 
-csv_files = [ legsta ]
+csv_files = [ legsta, mykrobe ]
 tsv_files = [ quast, seqsero2, kleborate, mlst, emmtyper , pbptyper]
 top_hit   = [ fastani ]
 
@@ -402,6 +403,9 @@ final_columns = [
 'seqsero2_Predicted_serotype',
 'emmtyper_Predicted_emm-type',
 'kleborate_virulence_score',
+'mykrobe_phylo_group',
+'mykrobe_species',
+'mykrobe_lineage',
 'pbptyper_pbptype',
 'legsta_SBT',
 'serotypefinder_Serotype_O',
