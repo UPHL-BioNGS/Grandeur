@@ -1,5 +1,5 @@
 process mashtree {
-  tag           "Pylogenetic Analysis"
+  tag           "Phylogenetic analysis"
   label         "maxcpus"
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/mashtree:1.2.0'
