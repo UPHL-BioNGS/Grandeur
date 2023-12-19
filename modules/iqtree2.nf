@@ -1,5 +1,5 @@
 process iqtree2 {
-  tag           "Pylogenetic Analysis"
+  tag           "Phylogenetic analysis"
   label         "maxcpus"
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/iqtree2:2.2.2.6'

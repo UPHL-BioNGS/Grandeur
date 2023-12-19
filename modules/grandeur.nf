@@ -209,7 +209,7 @@ process names {
 process size {
   tag           "${sample}"
   publishDir    params.outdir, mode: 'copy'
-  container     'quay.io/uphl/seaborn:0.12.2-2'
+  container     'quay.io/biocontainers/pandas:1.5.2'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
