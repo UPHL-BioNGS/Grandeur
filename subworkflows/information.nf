@@ -1,20 +1,21 @@
-include { amrfinderplus }  from '../modules/amrfinderplus'  addParams(params)
-include { drprg }          from '../modules/drprg'          addParams(params)
-include { emmtyper }       from '../modules/emmtyper'       addParams(params)
-include { fastqc }         from '../modules/fastqc'         addParams(params)
-include { flag }           from '../modules/grandeur'       addParams(params)
-include { kaptive }        from '../modules/kaptive'        addParams(params)
-include { kleborate }      from '../modules/kleborate'      addParams(params)
-include { legsta }         from '../modules/legsta'         addParams(params)
-include { mlst }           from '../modules/mlst'           addParams(params)
-include { mykrobe }        from '../modules/mykrobe'        addParams(params)
-include { pbptyper }       from '../modules/pbptyper'       addParams(params)
-include { plasmidfinder }  from '../modules/plasmidfinder'  addParams(params)
-include { quast }          from '../modules/quast'          addParams(params)
-include { seqsero2 }       from '../modules/seqsero2'       addParams(params)
-include { serotypefinder } from '../modules/serotypefinder' addParams(params)
-include { shigatyper }     from '../modules/shigatyper'     addParams(params)
-include { size }           from '../modules/grandeur'       addParams(params)
+include { amrfinderplus }  from '../modules/local/amrfinderplus'  addParams(params)
+include { drprg }          from '../modules/local/drprg'          addParams(params)
+include { elgato }         from '../modules/local/elgato'         addParams(params)
+include { emmtyper }       from '../modules/local/emmtyper'       addParams(params)
+include { fastqc }         from '../modules/local/fastqc'         addParams(params)
+include { flag }           from '../modules/local/grandeur'       addParams(params)
+include { kaptive }        from '../modules/local/kaptive'        addParams(params)
+include { kleborate }      from '../modules/local/kleborate'      addParams(params)
+include { legsta }         from '../modules/local/legsta'         addParams(params)
+include { mlst }           from '../modules/local/mlst'           addParams(params)
+include { mykrobe }        from '../modules/local/mykrobe'        addParams(params)
+include { pbptyper }       from '../modules/local/pbptyper'       addParams(params)
+include { plasmidfinder }  from '../modules/local/plasmidfinder'  addParams(params)
+include { quast }          from '../modules/local/quast'          addParams(params)
+include { seqsero2 }       from '../modules/local/seqsero2'       addParams(params)
+include { serotypefinder } from '../modules/local/serotypefinder' addParams(params)
+include { shigatyper }     from '../modules/local/shigatyper'     addParams(params)
+include { size }           from '../modules/local/grandeur'       addParams(params)
 
 workflow information {
   take:
@@ -45,7 +46,7 @@ workflow information {
     emmtyper(ch_contigs.join(flag.out.strepa_flag,      by:0).combine(summfle_script)) 
     //kaptive(ch_contigs.join(flag.out.klebacin_flag,     by:0))      
     kleborate(ch_contigs.join(flag.out.klebsiella_flag, by:0).combine(summfle_script))
-    legsta(ch_contigs.join(flag.out.legionella_flag,    by:0))
+    elgato(ch_contigs.join(flag.out.legionella_flag,    by:0))
     mykrobe(ch_contigs.join(flag.out.myco_flag,         by:0))
     pbptyper(ch_contigs.join(flag.out.streppneu_flag,   by:0))
     seqsero2(ch_contigs.join(flag.out.salmonella_flag,  by:0))
@@ -65,6 +66,13 @@ workflow information {
     //     sort: { file -> file.text },
     //     storeDir: "${params.outdir}/drprg")
     //   .set{ drprg_summary }
+
+    elgato.out.collect
+      .collectFile(name: "elgato_summary.tsv",
+        keepHeader: true,
+        sort: { file -> file.text },
+        storeDir: "${params.outdir}/elgato")
+      .set{ elgato_summary }
 
     emmtyper.out.collect
       .collectFile(name: "emmtyper_summary.tsv",
@@ -101,12 +109,12 @@ workflow information {
         storeDir: "${params.outdir}/kleborate")
       .set{ kleborate_summary }
 
-    legsta.out.collect
-      .collectFile(name: "legsta_summary.csv",
-        keepHeader: true,
-        sort: { file -> file.text },
-        storeDir: "${params.outdir}/legsta")
-      .set{ legsta_summary }
+    // legsta.out.collect
+    //   .collectFile(name: "legsta_summary.csv",
+    //     keepHeader: true,
+    //     sort: { file -> file.text },
+    //     storeDir: "${params.outdir}/legsta")
+    //   .set{ legsta_summary }
 
     mlst.out.collect
       .collectFile(name: "mlst_summary.tsv",
@@ -173,11 +181,12 @@ workflow information {
 
     amrfinderplus_summary
       //.mix(drprg_summary)
+      .mix(elgato_summary)
       .mix(emmtyper_summary)
       .mix(fastqc_summary)
       //.mix(kaptive_summary)
       .mix(kleborate_summary)
-      .mix(legsta_summary)
+      //.mix(legsta_summary)
       .mix(mlst_summary)
       .mix(mykrobe_summary)
       .mix(pbptyper_summary)

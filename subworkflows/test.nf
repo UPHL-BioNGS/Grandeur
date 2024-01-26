@@ -1,4 +1,4 @@
-include { download_sra }  from '../modules/download_sra' addParams(params)
+include { download_sra }  from '../modules/local/download_sra' addParams(params)
 
 workflow test {
     take:

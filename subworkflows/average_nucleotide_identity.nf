@@ -1,7 +1,8 @@
-include { datasets_summary }  from '../modules/datasets'  addParams(params)
-include { datasets_download } from '../modules/datasets'  addParams(params)
-include { fastani }           from '../modules/fastani'   addParams(params)
-include { species }           from '../modules/grandeur'  addParams(params)
+include { datasets_summary }  from '../modules/local/datasets'  addParams(params)
+include { datasets_download } from '../modules/local/datasets'  addParams(params)
+include { fastani }           from '../modules/local/fastani'   addParams(params)
+include { references }        from '../modules/local/grandeur'  addParams(params)
+include { species }           from '../modules/local/grandeur'  addParams(params)
 
 workflow average_nucleotide_identity {
     take:
@@ -21,6 +22,7 @@ workflow average_nucleotide_identity {
 
             datasets_summary(ch_species_list.combine(dataset_script))
             datasets_download(datasets_summary.out.genomes.collect())
+
             ch_fastani_ref = ch_fastani_ref.mix(datasets_download.out.genomes.flatten())
 
             datasets_summary.out.genomes
@@ -35,7 +37,10 @@ workflow average_nucleotide_identity {
             datasets_summary = Channel.empty()
         }
 
+        references()
+
         ch_fastani_ref
+            .mix(references.out.fastas.flatten())
             .unique()
             .collect()
             .map { it -> tuple([it])}

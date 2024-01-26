@@ -1,4 +1,4 @@
-include { kraken2 }  from '../modules/kraken2' addParams(params)
+include { kraken2 }  from '../modules/local/kraken2' addParams(params)
 
 workflow kmer_taxonomic_classification {
     take:

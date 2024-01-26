@@ -1,12 +1,12 @@
-include { core_genome_evaluation } from '../modules/grandeur'    addParams(params)
-include { heatcluster }            from '../modules/heatcluster' addParams(params)
-include { iqtree2 }                from '../modules/iqtree2'     addParams(params)
-include { mashtree }               from '../modules/mashtree'    addParams(params)
-include { panaroo }                from '../modules/panaroo'     addParams(params)
-include { phytreeviz }             from '../modules/phytreeviz'  addParams(params)
-include { prokka }                 from '../modules/prokka'      addParams(params)
-include { roary }                  from '../modules/roary'       addParams(params)
-include { snp_dists }              from '../modules/snp-dists'   addParams(params)
+include { core_genome_evaluation } from '../modules/local/grandeur'    addParams(params)
+include { heatcluster }            from '../modules/local/heatcluster' addParams(params)
+include { iqtree2 }                from '../modules/local/iqtree2'     addParams(params)
+include { mashtree }               from '../modules/local/mashtree'    addParams(params)
+include { panaroo }                from '../modules/local/panaroo'     addParams(params)
+include { phytreeviz }             from '../modules/local/phytreeviz'  addParams(params)
+include { prokka }                 from '../modules/local/prokka'      addParams(params)
+include { roary }                  from '../modules/local/roary'       addParams(params)
+include { snp_dists }              from '../modules/local/snp-dists'   addParams(params)
 
 workflow phylogenetic_analysis {
   take:
