@@ -19,30 +19,30 @@ process roary {
   path "roary/fixed_input_files/*"                                                     , emit: roary_input_files
   tuple path("roary/core_gene_alignment.aln"), path("roary/gene_presence_absence.Rtab"), emit: core_gene_alignment
   path "logs/${task.process}/${task.process}.${workflow.sessionId}.log"                , emit: log_files
-path  "versions.yml"                          , emit: versions
+  path "versions.yml"                          , emit: versions
 
   when:
   task.ext.when == null || task.ext.when
 
   shell:
-      def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
-  '''
-    mkdir -p logs/!{task.process}
-    log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
+  def args = task.ext.args ?: ''
+   def prefix = task.ext.prefix ?: "${meta.id}"
+  """
+    mkdir -p logs/${task.process}
+    log_file=logs/${task.process}/${task.process}.${workflow.sessionId}.log
 
     # time stamp + capturing tool versions
     date > $log_file
     roary -a >> $log_file
-    echo "container : !{task.container}" >> $log_file
+    echo "container : ${task.container}" >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    roary !{params.roary_options} \
-      -p !{task.cpus} \
+    roary ${params.roary_options} \
+      -p ${task.cpus} \
       -f roary \
       -e -n \
       *.gff \
       | tee -a $log_file
-  '''
+  """
 }

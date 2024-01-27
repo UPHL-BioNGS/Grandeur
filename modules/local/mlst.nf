@@ -11,11 +11,11 @@ process mlst {
   //#UPHLICA time '10m'
 
   input:
-  tuple val(sample), file(contig), file(script)
+  tuple val(meta), file(contig), file(script)
 
   output:
-  path "mlst/${sample}_mlst.tsv"                                 , emit: collect
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
+  path "mlst/${prefix}_mlst.tsv"                                 , emit: collect
+  path "logs/${task.process}/${prefix}.${workflow.sessionId}.log", emit: log
   path  "versions.yml"                          , emit: versions
 
   when:
@@ -24,22 +24,22 @@ process mlst {
   shell:
       def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-  '''
-    mkdir -p mlst logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+  """
+    mkdir -p mlst logs/${task.process}
+    log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
     # time stamp + capturing tool versions
     date > $log_file
-    echo "container : !{task.container}" >> $log_file
+    echo "container : ${task.container}" >> $log_file
     mlst --version >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    mlst !{params.mlst_options} \
-      --threads !{task.cpus} \
-      !{contig} \
-      > !{sample}_mlst.txt
+    mlst ${params.mlst_options} \
+      --threads ${task.cpus} \
+      ${contig} \
+      > ${prefix}_mlst.txt
 
-    python3 !{script} !{sample}_mlst.txt mlst/!{sample}_mlst.tsv mlst !{sample}
-  '''
+    python3 ${script} ${prefix}_mlst.txt mlst/${prefix}_mlst.tsv mlst ${prefix}
+  """
 }

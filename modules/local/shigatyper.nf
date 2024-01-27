@@ -1,7 +1,6 @@
 process shigatyper {
-  tag           "${sample}"
+  tag           "${meta.id}"
   label         "process_medium"
-  label         "medcpus"
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/shigatyper:2.0.5'
   stageInMode   'copy'
@@ -12,42 +11,39 @@ process shigatyper {
   //#UPHLICA cpus 7
   //#UPHLICA time '10m'
   
-  when:
-  flag =~ 'found'
-
   input:
-  tuple val(sample), file(input), val(flag), file(script)
+  tuple val(meta), file(input), val(flag), file(script)
 
   output:
-  path "shigatyper/${sample}_shigatyper.tsv",      optional: true, emit: files
-  path "shigatyper/${sample}_shigatyper-hits.tsv", optional: true, emit: collect
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
-  path  "versions.yml"                          , emit: versions
+  path "shigatyper/*_shigatyper.tsv",      optional: true, emit: files
+  path "shigatyper/*_shigatyper-hits.tsv", optional: true, emit: collect
+  path "logs/${task.process}/*.log", emit: log
+  path "versions.yml", emit: versions
 
   when:
-  task.ext.when == null || task.ext.when
+  (task.ext.when == null || task.ext.when) && flag =~ 'found'
 
   shell:
-      def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
-  '''
-    mkdir -p shigatyper logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+  def args = task.ext.args ?: ''
+  def prefix = task.ext.prefix ?: "${meta.id}"
+  """
+    mkdir -p shigatyper logs/${task.process}
+    log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
     # time stamp + capturing tool versions
     date > $log_file
-    echo "container : !{task.container}" >> $log_file
+    echo "container : ${task.container}" >> $log_file
     shigatyper --version >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    shigatyper !{params.shigatyper_options} \
-      --SE !{input} \
-      --name !{sample} \
+    shigatyper ${params.shigatyper_options} \
+      --SE ${input} \
+      --name ${prefix} \
       | tee -a $log_file
 
-    python3 !{script} !{sample}-hits.tsv shigatyper/!{sample}_shigatyper-hits.tsv shigatyper !{sample}
+    python3 ${script} ${prefix}-hits.tsv shigatyper/${prefix}_shigatyper-hits.tsv shigatyper ${prefix}
 
-    if [ -f "!{sample}.tsv" ] ; then cp !{sample}.tsv shigatyper/!{sample}_shigatyper.tsv ; fi
-  '''
+    if [ -f "${prefix}.tsv" ] ; then cp ${prefix}.tsv shigatyper/${prefix}_shigatyper.tsv ; fi
+  """
 }

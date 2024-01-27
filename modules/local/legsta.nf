@@ -18,35 +18,35 @@ process legsta {
   task.ext.when == null || task.ext.when
 
   input:
-  tuple val(sample), file(contigs), val(flag)
+  tuple val(meta), file(contigs), val(flag)
 
   output:
-  path "legsta/${sample}_legsta.csv"                             , emit: collect
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
+  path "legsta/${prefix}_legsta.csv"                             , emit: collect
+  path "logs/${task.process}/${prefix}.${workflow.sessionId}.log", emit: log
   path  "versions.yml"                          , emit: versions
 
   shell:
       def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-  '''
-    mkdir -p legsta logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+  """
+    mkdir -p legsta logs/${task.process}
+    log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
     # time stamp + capturing tool versions
     date > $log_file
-    echo "container : !{task.container}" >> $log_file
+    echo "container : ${task.container}" >> $log_file
     legsta --version >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
     
-    cat !{contigs} | awk '{($1=$1); print $0}' > !{sample}.fasta.tmp
-    mv !{sample}.fasta.tmp !{sample}.fasta
+    cat ${contigs} | awk '{($1=$1); print $0}' > ${prefix}.fasta.tmp
+    mv ${prefix}.fasta.tmp ${prefix}.fasta
 
-    legsta !{params.legsta_options} \
-      !{sample}.fasta \
+    legsta ${params.legsta_options} \
+      ${prefix}.fasta \
       --csv \
       | tee -a $log_file \
-      | awk -v sample=!{sample} '{print sample "," $0 }' \
-      | sed '0,/!{sample}/{s/!{sample}/sample/}' > legsta/!{sample}_legsta.csv
-  '''
+      | awk -v sample=${prefix} '{print sample "," $0 }' \
+      | sed '0,/${prefix}/{s/${prefix}/sample/}' > legsta/${prefix}_legsta.csv
+  """
 }

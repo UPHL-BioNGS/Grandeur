@@ -26,22 +26,22 @@ path  "versions.yml"                          , emit: versions
   shell:
       def args = task.ext.args ?: '--clean-mode strict --remove-invalid-genes'
     def prefix = task.ext.prefix ?: "${meta.id}"
-  '''
-    mkdir -p logs/!{task.process}
-    log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
+  """
+    mkdir -p logs/${task.process}
+    log_file=logs/${task.process}/${task.process}.${workflow.sessionId}.log
 
     # time stamp + capturing tool versions
     date > $log_file
     panaroo --version >> $log_file
-    echo "container : !{task.container}" >> $log_file
+    echo "container : ${task.container}" >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    panaroo !{params.panaroo_options} \
-        -t !{task.cpus} \
+    panaroo ${params.panaroo_options} \
+        -t ${task.cpus} \
         -o panaroo \
-        -i !{contigs} \
+        -i ${contigs} \
         -a core \
         | tee -a $log_file
-  '''
+  """
 }

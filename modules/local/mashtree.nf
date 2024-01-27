@@ -26,21 +26,21 @@ process mashtree {
   shell:
       def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-  '''
-    mkdir -p mashtree logs/!{task.process}
-    log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
+  """
+    mkdir -p mashtree logs/${task.process}
+    log_file=logs/${task.process}/${task.process}.${workflow.sessionId}.log
 
     # time stamp + capturing tool versions
     date > $log_file
     mashtree --version >> $log_file
-    echo "container : !{task.container}" >> $log_file
+    echo "container : ${task.container}" >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    mashtree !{params.mashtree_options} \
-      --numcpus !{task.cpus} \
-      !{contigs} \
+    mashtree ${params.mashtree_options} \
+      --numcpus ${task.cpus} \
+      ${contigs} \
       --outtree mashtree/mashtree.nwk \
       | tee -a $log_file
-  '''
+  """
 }

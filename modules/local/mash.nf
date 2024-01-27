@@ -47,7 +47,7 @@ process mash_sketch_fasta {
   time          '10m'
 
   input:
-  tuple val(sample), file(fasta)
+  tuple val(meta), file(fasta)
 
   output:
   tuple val(meta), file("mash/*.msh"), emit: msh
@@ -113,7 +113,7 @@ process mash_dist {
       ${msh} \
       > mash/${prefix}.mashdist.txt.tmp
 
-    if [ ! -s "mash/${prefix}.mashdist.txt.tmp" ]
+    if [ $ -s "mash/${prefix}.mashdist.txt.tmp" ]
     then
       echo "No mash dist results with args ${args}. Trying again without them."  | tee -a \$log_file
       mash dist \
@@ -149,7 +149,7 @@ process mash_dist {
       ${msh} \
       > mash/${prefix}.mashdist.txt.tmp
 
-    if [ ! -s "mash/${prefix}.mashdist.txt.tmp" ]
+    if [ $ -s "mash/${prefix}.mashdist.txt.tmp" ]
     then
       echo "No mash dist results with args ${args}. Trying again without them." | tee -a \$log_file
       mash dist \

@@ -15,11 +15,11 @@ process kaptive {
   flag =~ 'found'
 
   input:
-  tuple val(sample), file(contigs), val(flag)
+  tuple val(meta), file(contigs), val(flag)
 
   output:
-  path "kaptive/${sample}_kaptive.csv"                           , emit: collect
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
+  path "kaptive/${prefix}_kaptive.csv"                           , emit: collect
+  path "logs/${task.process}/${prefix}.${workflow.sessionId}.log", emit: log
   path  "versions.yml"                          , emit: versions
 
   when:
@@ -28,18 +28,18 @@ process kaptive {
   shell:
       def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-  '''
+  """
     echo "1"
-    mkdir -p kaptive logs/!{task.process}
+    mkdir -p kaptive logs/${task.process}
     echo "2"
-    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+    log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
     echo "3"
     # time stamp + capturing tool versions
     echo "4"
     date > $log_file
     echo "5"
-    echo "container : !{task.container}" >> $log_file
+    echo "container : ${task.container}" >> $log_file
     echo "6"
     kaptive --version >> $log_file
     echo "7"
@@ -51,12 +51,12 @@ process kaptive {
     for reference in /kaptive/reference_database/*
     do
       echo $reference    
-        kaptive !{params.kaptive_options} \
+        kaptive ${params.kaptive_options} \
             --k_refs $reference \
-            --assembly !{contigs} \
+            --assembly ${contigs} \
             | tee -a $log_file 
 
     done
     exit 1
-  '''
+  """
 }

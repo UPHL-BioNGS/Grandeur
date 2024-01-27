@@ -26,21 +26,21 @@ process fastqc {
   shell:
   def args = task.ext.args ?: ''
   def prefix = task.ext.prefix ?: "${meta.id}"
-  '''
-    mkdir -p fastqc logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+  """
+    mkdir -p fastqc logs/${task.process}
+    log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
     # time stamp + capturing tool versions
     date > $log_file
-    echo "container : !{task.container}" >> $log_file
+    echo "container : ${task.container}" >> $log_file
     fastqc --version >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    fastqc !{params.fastqc_options} \
+    fastqc ${params.fastqc_options} \
       --outdir fastqc \
-      --threads !{task.cpus} \
-      !{fastq} \
+      --threads ${task.cpus} \
+      ${fastq} \
       --extract \
       | tee -a $log_file
 
@@ -48,12 +48,12 @@ process fastqc {
 
     for data in fastqc/*_fastqc/fastqc_data.txt
     do
-      if [ ! -f "fastqc/!{sample}_summary.csv" ]
+      if [ $ -f "fastqc/${prefix}_summary.csv" ]
       then
-        head -n 10 $data | cut -f 1 | tr "\\n" "," | sed 's/,$/\\n/' | sed 's/#//g' | sed 's/>//g' | awk '{print "sample," $0}' > fastqc/!{sample}_summary.csv
+        head -n 10 $data | cut -f 1 | tr "\\n" "," | sed 's/,$/\\n/' | sed 's/#//g' | sed 's/>//g' | awk '{print "sample," $0}' > fastqc/${prefix}_summary.csv
       fi
 
-      head -n 10 $data | cut -f 2 | tr "\\n" "," | sed 's/,$/\\n/' | awk -v sample=!{sample} '{print sample "," $0}' >> fastqc/!{sample}_summary.csv
+      head -n 10 $data | cut -f 2 | tr "\\n" "," | sed 's/,$/\\n/' | awk -v sample=${prefix} '{print sample "," $0}' >> fastqc/${prefix}_summary.csv
     done
-  '''
+  """
 }

@@ -24,26 +24,26 @@ process download_sra {
   shell:
       def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-  '''
-    mkdir -p reads logs/!{task.process}
-    log_file=logs/!{task.process}/!{SRR}.!{workflow.sessionId}.log
+  """
+    mkdir -p reads logs/${task.process}
+    log_file=logs/${task.process}/${SRR}.${workflow.sessionId}.log
 
     # time stamp + capturing tool versions
     date > $log_file
-    echo "container : !{task.container}" >> $log_file
+    echo "container : ${task.container}" >> $log_file
     fasterq-dump --version >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    fasterq-dump !{params.fasterqdump_options} \
-      !{SRR} \
+    fasterq-dump ${params.fasterqdump_options} \
+      ${SRR} \
       --split-files \
-      --threads !{task.cpus} \
+      --threads ${task.cpus} \
       --outdir reads | \
       tee -a $log_file
 
-    gzip reads/!{SRR}_1.fastq
-    gzip reads/!{SRR}_2.fastq
-  '''
+    gzip reads/${SRR}_1.fastq
+    gzip reads/${SRR}_2.fastq
+  """
 }
 

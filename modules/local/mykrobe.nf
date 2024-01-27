@@ -15,13 +15,13 @@ process mykrobe {
   flag =~ 'found'
 
   input:
-  tuple val(sample), file(contigs), val(flag)
+  tuple val(meta), file(contigs), val(flag)
 
   output:
-  path "mykrobe/${sample}.csv"                                   , emit: collect
-  path "mykrobe/${sample}.json"
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
-  path  "versions.yml"                          , emit: versions
+  path "mykrobe/*.csv"                                   , emit: collect
+  path "mykrobe/*.json"
+  path "logs/${task.process}/*.log", emit: log
+  path "versions.yml"                          , emit: versions
 
   when:
   task.ext.when == null || task.ext.when
@@ -29,25 +29,25 @@ process mykrobe {
   shell:
       def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-  '''
-    mkdir -p tmp/ logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+  """
+    mkdir -p tmp/ logs/${task.process}
+    log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
     # time stamp + capturing tool versions
     date > $log_file
-    echo "container : !{task.container}" >> $log_file
+    echo "container : ${task.container}" >> $log_file
     mykrobe --version >> $log_file
     mykrobe panels describe >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    mykrobe predict !{params.mykrobe_options} \
+    mykrobe predict ${params.mykrobe_options} \
       --species tb \
-      --sample !{sample} \
-      --output mykrobe/!{sample} \
-      --seq !{contigs} \
-      --threads !{task.cpus} \
+      --prefix ${prefix} \
+      --output mykrobe/${prefix} \
+      --seq ${contigs} \
+      --threads ${task.cpus} \
       --format json_and_csv \
       | tee -a $log_file
-  '''
+  """
 }

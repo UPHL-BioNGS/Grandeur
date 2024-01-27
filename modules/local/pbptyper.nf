@@ -15,35 +15,35 @@ process pbptyper {
   flag =~ 'found'
 
   input:
-  tuple val(sample), file(contigs), val(flag)
+  tuple val(meta), file(contigs), val(flag)
 
   output:
-  path "pbptyper/${sample}.tsv"                                  , emit: collect
-  path "pbptyper/${sample}*"                                     , emit: all
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
-  path  "versions.yml"                          , emit: versions
+  path "pbptyper/*.tsv"                                  , emit: collect
+  path "pbptyper/*"                                     , emit: all
+  path "logs/${task.process}/*.log", emit: log
+  path "versions.yml"                          , emit: versions
 
   when:
   task.ext.when == null || task.ext.when
 
   shell:
-      def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
-  '''
-    mkdir -p pbptyper logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+  def args = task.ext.args ?: ''
+  def prefix = task.ext.prefix ?: "${meta.id}"
+  """
+    mkdir -p pbptyper logs/${task.process}
+    log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
     # time stamp + capturing tool versions
     date > $log_file
-    echo "container : !{task.container}" >> $log_file
+    echo "container : ${task.container}" >> $log_file
     pbptyper --version >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
     
-    pbptyper !{params.pbptyper_options} \
-      --assembly !{contigs} \
-      --prefix !{sample} \
+    pbptyper ${params.pbptyper_options} \
+      --assembly ${contigs} \
+      --prefix ${prefix} \
       --outdir pbptyper \
       | tee -a $log_file 
-  '''
+  """
 }

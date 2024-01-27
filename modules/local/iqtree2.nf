@@ -25,28 +25,28 @@ process iqtree2 {
   shell:
       def args = task.ext.args ?: '-t RANDOM -m GTR+F+I -bb 1000 -alrt 1000'
     def prefix = task.ext.prefix ?: "${meta.id}"
-  '''
-    mkdir -p iqtree2 logs/!{task.process}
-    log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
+  """
+    mkdir -p iqtree2 logs/${task.process}
+    log_file=logs/${task.process}/${task.process}.${workflow.sessionId}.log
 
     # time stamp + capturing tool versions
     date > $log_file
     iqtree2 -v >> $log_file
-    echo "container : !{task.container}" >> $log_file
+    echo "container : ${task.container}" >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
     outgroup=''
-    if [ -n "!{params.iqtree2_outgroup}" ] ; then outgroup="-o !{params.iqtree2_outgroup}" ; fi
+    if [ -n "${params.iqtree2_outgroup}" ] ; then outgroup="-o ${params.iqtree2_outgroup}" ; fi
 
-    iqtree2 !{params.iqtree2_options} \
-      -s !{msa} \
+    iqtree2 ${params.iqtree2_options} \
+      -s ${msa} \
       -pre iqtree2/iqtree \
       -nt AUTO \
-      -ntmax !{task.cpus} \
+      -ntmax ${task.cpus} \
       $outgroup \
       | tee -a $log_file
 
     if [ -f "iqtree2/iqtree.treefile" ]; then cp iqtree2/iqtree.treefile iqtree2/iqtree.treefile.nwk ; fi
-  '''
+  """
 }

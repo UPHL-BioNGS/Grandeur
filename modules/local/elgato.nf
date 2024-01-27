@@ -14,11 +14,11 @@ process elgato {
   flag =~ 'found'
 
   input:
-  tuple val(sample), file(contigs), val(flag)
+  tuple val(meta), file(contigs), val(flag)
 
   output:
-  path "legsta/${sample}_legsta.csv"                             , emit: collect
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
+  path "legsta/${prefix}_legsta.csv"                             , emit: collect
+  path "logs/${task.process}/${prefix}.${workflow.sessionId}.log", emit: log
   path  "versions.yml"                          , emit: versions
 
   when:
@@ -27,23 +27,23 @@ process elgato {
   shell:
       def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-  '''
-    mkdir -p elgato logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+  """
+    mkdir -p elgato logs/${task.process}
+    log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
     # time stamp + capturing tool versions
     date > $log_file
-    echo "container : !{task.container}" >> $log_file
+    echo "container : ${task.container}" >> $log_file
     elgato --version >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
     
-    el_gato.py !{params.elgato_options} \
-        --assembly !{contigs} \
-        --out elgato/!{sample} \
-        --threads !{task.cpus} \
+    el_gato.py ${params.elgato_options} \
+        --assembly ${contigs} \
+        --out elgato/${prefix} \
+        --threads ${task.cpus} \
         | tee -a $log_file
 
     exit 1
-  '''
+  """
 }

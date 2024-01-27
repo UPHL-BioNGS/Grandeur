@@ -26,12 +26,12 @@ process multiqc {
       def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
   '''
-    mkdir -p multiqc quast logs/!{task.process}
-    log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
+    mkdir -p multiqc quast logs/${task.process}
+    log_file=logs/${task.process}/${task.process}.${workflow.sessionId}.log
 
     # time stamp + capturing tool versions
     date > $log_file
-    echo "container : !{task.container}" >> $log_file
+    echo "container : ${task.container}" >> $log_file
     multiqc --version >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
@@ -106,7 +106,7 @@ process multiqc {
     if [ -f "mashtree_tree.png" ]          ; then cp mashtree_tree.png phytreeviz_mashtree_mqc.png ; fi 
     if [ -f "mykrobe_summary.csv" ]        ; then cp mykrobe_summary.csv mykrobe_summary_mqc.csv ; fi 
     
-    multiqc !{params.multiqc_options} \
+    multiqc ${params.multiqc_options} \
       --outdir multiqc \
       --cl_config "prokka_fn_snames: True"  \
       . \

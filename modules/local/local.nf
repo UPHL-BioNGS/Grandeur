@@ -22,26 +22,26 @@ process core_genome_evaluation {
   shell:
       def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-  '''
-    mkdir -p core_genome_evaluation logs/!{task.process}
-    log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
+  """
+    mkdir -p core_genome_evaluation logs/${task.process}
+    log_file=logs/${task.process}/${task.process}.${workflow.sessionId}.log
 
     # time stamp + capturing tool versions
     date > $log_file
-    echo "container : !{task.container}" >> $log_file
+    echo "container : ${task.container}" >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    python !{script} | tee -a $log_file
+    python ${script} | tee -a $log_file
 
     num_samples=$(wc -l core_genome_evaluation.csv | awk '{print $1}' )
     num_core_genes=$(cut -f 3 core_genome_evaluation.csv -d "," | tail -n 1 | cut -f 1 -d "." )
     cp core_genome_evaluation.csv core_genome_evaluation/core_genome_evaluation.csv
-  '''
+  """
 }
 
 process flag {
-  tag           "${sample}"
+  tag           "${prefix}"
   label         "process_single"
   //publishDir    params.outdir, mode: 'copy'
   container     'quay.io/biocontainers/pandas:1.5.2'
@@ -53,47 +53,47 @@ process flag {
   //#UPHLICA time '10m'
 
   input:
-  tuple val(sample), file(files)
+  tuple val(meta), file(files)
 
   output:
-  tuple val(sample), env(salmonella_flag)                        , emit: salmonella_flag
-  tuple val(sample), env(klebsiella_flag)                        , emit: klebsiella_flag
-  tuple val(sample), env(ecoli_flag)                             , emit: ecoli_flag
-  tuple val(sample), env(streppneu_flag)                         , emit: streppneu_flag
-  tuple val(sample), env(legionella_flag)                        , emit: legionella_flag
-  tuple val(sample), env(klebacin_flag)                          , emit: klebacin_flag
-  tuple val(sample), env(strepa_flag)                            , emit: strepa_flag
-  tuple val(sample), env(vibrio_flag)                            , emit: vibrio_flag
-  tuple val(sample), env(myco_flag)                              , emit: myco_flag
-  tuple val(sample), env(genus), env(species)                    , emit: organism
-  path "flag/${sample}_flag.csv"                                 , emit: collect
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log_files
+  tuple val(meta), env(salmonella_flag)                        , emit: salmonella_flag
+  tuple val(meta), env(klebsiella_flag)                        , emit: klebsiella_flag
+  tuple val(meta), env(ecoli_flag)                             , emit: ecoli_flag
+  tuple val(meta), env(streppneu_flag)                         , emit: streppneu_flag
+  tuple val(meta), env(legionella_flag)                        , emit: legionella_flag
+  tuple val(meta), env(klebacin_flag)                          , emit: klebacin_flag
+  tuple val(meta), env(strepa_flag)                            , emit: strepa_flag
+  tuple val(meta), env(vibrio_flag)                            , emit: vibrio_flag
+  tuple val(meta), env(myco_flag)                              , emit: myco_flag
+  tuple val(meta), env(genus), env(species)                    , emit: organism
+  path "flag/${prefix}_flag.csv"                                 , emit: collect
+  path "logs/${task.process}/${prefix}.${workflow.sessionId}.log", emit: log_files
 
   shell:
       def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-  '''
-    mkdir -p flag logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+  """
+    mkdir -p flag logs/${task.process}
+    log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
     # time stamp + capturing tool versions
     date > $log_file
-    echo "container : !{task.container}" >> $log_file
+    echo "container : ${task.container}" >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    if [ -f "!{sample}_fastani.csv" ]
+    if [ -f "${prefix}_fastani.csv" ]
     then 
-      awk -F "," '{if ($4 > 90) print $0}' !{sample}_fastani.csv > smaller_fastani.csv
-      genus=$(head   -n 2 !{sample}_fastani.csv | tail -n 1 | cut -f 2 -d , | cut -f 2 -d '/' | cut -f 1 -d "_")
-      species=$(head -n 2 !{sample}_fastani.csv | tail -n 1 | cut -f 2 -d , | cut -f 2 -d '/' | cut -f 2 -d "_")
+      awk -F "," '{if ($4 > 90) print $0}' ${prefix}_fastani.csv > smaller_fastani.csv
+      genus=$(head   -n 2 ${prefix}_fastani.csv | tail -n 1 | cut -f 2 -d , | cut -f 2 -d '/' | cut -f 1 -d "_")
+      species=$(head -n 2 ${prefix}_fastani.csv | tail -n 1 | cut -f 2 -d , | cut -f 2 -d '/' | cut -f 2 -d "_")
     else
       touch smaller_fastani.csv
       genus="unknown"
       species="unknown"
     fi
 
-    files=$(ls !{files} | grep -v fastani)
+    files=$(ls ${files} | grep -v fastani)
 
     echo "Looking for Salmonella:" >> $log_file
     salmonella_flag=''
@@ -148,13 +148,13 @@ process flag {
     if [ -z "$genus" ]   ; then genus=unknown   ; fi
     if [ -z "$species" ] ; then species=unknown ; fi
 
-    echo "sample,genus,species,salmonella_flag,ecoli_flag,klebsiella_flag,klebacin_flag,myco_flag,strepa_flag,streppneu_flag,legionella_flag,vibrio_flag" > flag/!{sample}_flag.csv
-    echo "!{sample},$genus,$species,$salmonella_flag,$ecoli_flag,$klebsiella_flag,$klebacin_flag,$myco_flag,$strepa_flag,$streppneu_flag,$legionella_flag,$vibrio_flag" >> flag/!{sample}_flag.csv
-  '''
+    echo "sample,genus,species,salmonella_flag,ecoli_flag,klebsiella_flag,klebacin_flag,myco_flag,strepa_flag,streppneu_flag,legionella_flag,vibrio_flag" > flag/${prefix}_flag.csv
+    echo "${prefix},$genus,$species,$salmonella_flag,$ecoli_flag,$klebsiella_flag,$klebacin_flag,$myco_flag,$strepa_flag,$streppneu_flag,$legionella_flag,$vibrio_flag" >> flag/${prefix}_flag.csv
+  """
 }
 
 process json_convert {
-  tag           "${sample}"
+  tag           "${prefix}"
   label         "process_single"
   // no publishDir
   container     'quay.io/biocontainers/pandas:1.5.2'
@@ -166,25 +166,25 @@ process json_convert {
   //#UPHLICA time '10m'
 
   input:
-  tuple val(sample), val(analysis), file(json), file(script)
+  tuple val(meta), val(analysis), file(json), file(script)
 
   output:
-  path "${analysis}/${sample}_${analysis}_summary.csv"           , emit: collect
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log_files
+  path "${analysis}/${prefix}_${analysis}_summary.csv"           , emit: collect
+  path "logs/${task.process}/${prefix}.${workflow.sessionId}.log", emit: log_files
 
   shell:
       def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-  '''
-    mkdir -p ${analysis} logs/!{task.process}
+  """
+    mkdir -p ${analysis} logs/${task.process}
 
-    python3 !{script} !{analysis} !{json} 
+    python3 ${script} ${analysis} ${json} 
 
-  '''
+  """
 }
 
 process names {
-  tag           "${sample}"
+  tag           "${prefix}"
   container     'quay.io/biocontainers/pandas:1.5.2'
   maxForks      10
   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
@@ -194,11 +194,11 @@ process names {
   //#UPHLICA time '10m'
   
   input:
-  tuple val(sample), file(input)
+  tuple val(meta), file(input)
 
   output:
-  path "summary/${sample}_names.csv"                              , emit: collect
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log" , emit: log
+  path "summary/${prefix}_names.csv"                              , emit: collect
+  path "logs/${task.process}/${prefix}.${workflow.sessionId}.log" , emit: log
 
   when:
   task.ext.when == null || task.ext.when
@@ -206,18 +206,18 @@ process names {
   shell:
       def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-  '''
-    mkdir -p summary logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+  """
+    mkdir -p summary logs/${task.process}
+    log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
     date > $log_file
-    echo "container : !{task.container}" >> $log_file
+    echo "container : ${task.container}" >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    echo "sample,file,version" > summary/!{sample}_names.csv
-    echo "!{sample},!{input},!{workflow.manifest.version}" >> summary/!{sample}_names.csv
-  '''
+    echo "sample,file,version" > summary/${prefix}_names.csv
+    echo "${prefix},${input},${workflow.manifest.version}" >> summary/${prefix}_names.csv
+  """
 }
 
 process references {
@@ -242,7 +242,7 @@ process references {
 }
 
 process size {
-  tag           "${sample}"
+  tag           "${prefix}"
   publishDir    params.outdir, mode: 'copy'
   container     'quay.io/biocontainers/pandas:1.5.2'
   maxForks      10
@@ -253,12 +253,12 @@ process size {
   //#UPHLICA time '10m'
     
   input:
-  tuple val(sample), file(results)
+  tuple val(meta), file(results)
   // results should include the mash results, the mash err files, the fastani results, the genome sizes file, the genomes file, the quast file
 
   output:
-  path "size/${sample}_size.csv"                                 , emit: collect
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log_files
+  path "size/${prefix}_size.csv"                                 , emit: collect
+  path "logs/${task.process}/${prefix}.${workflow.sessionId}.log", emit: log_files
 
   when:
   task.ext.when == null || task.ext.when
@@ -266,13 +266,13 @@ process size {
   shell:
       def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-  '''
-    mkdir -p size logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+  """
+    mkdir -p size logs/${task.process}
+    log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
     # time stamp + capturing tool versions
     date > $log_file
-    echo "container : !{task.container}" >> $log_file
+    echo "container : ${task.container}" >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
@@ -281,21 +281,21 @@ process size {
     species=""
     accession=""
 
-    if [ -f "!{sample}_fastani.csv" ] 
+    if [ -f "${prefix}_fastani.csv" ] 
     then
-      if [ "$(wc -l !{sample}_fastani.csv | awk '{print $1}' )" -gt 1 ]
+      if [ "$(wc -l ${prefix}_fastani.csv | awk '{print $1}' )" -gt 1 ]
       then
-        genus=$(head     -n 2 !{sample}_fastani.csv | tail -n 1 | cut -f 3 -d "," | cut -f 1  -d "_" )
-        species=$(head   -n 2 !{sample}_fastani.csv | tail -n 1 | cut -f 3 -d "," | cut -f 2  -d "_" )
-        accession=$(head -n 2 !{sample}_fastani.csv | tail -n 1 | cut -f 3 -d "," | cut -f 3- -d "_" | sed 's/.*_GC/GC/g' | cut -f 1,2 -d '.' | sed 's/_ds$//g' )
+        genus=$(head     -n 2 ${prefix}_fastani.csv | tail -n 1 | cut -f 3 -d "," | cut -f 1  -d "_" )
+        species=$(head   -n 2 ${prefix}_fastani.csv | tail -n 1 | cut -f 3 -d "," | cut -f 2  -d "_" )
+        accession=$(head -n 2 ${prefix}_fastani.csv | tail -n 1 | cut -f 3 -d "," | cut -f 3- -d "_" | sed 's/.*_GC/GC/g' | cut -f 1,2 -d '.' | sed 's/_ds$//g' )
       fi
     fi
 
-    if [ -z "$genus" ] && [ -f "!{sample}.summary.mash.csv" ]
+    if [ -z "$genus" ] && [ -f "${prefix}.summary.mash.csv" ]
     then
-      genus=$(head     -n 2 !{sample}.summary.mash.csv | tail -n 1 | cut -f 7 -d "," | cut -f 1   -d "_" )
-      species=$(head   -n 2 !{sample}.summary.mash.csv | tail -n 1 | cut -f 7 -d "," | cut -f 2   -d "_" )
-      accession=$(head -n 2 !{sample}.summary.mash.csv | tail -n 1 | cut -f 2 -d "," | cut -f 1,2 -d '_' )
+      genus=$(head     -n 2 ${prefix}.summary.mash.csv | tail -n 1 | cut -f 7 -d "," | cut -f 1   -d "_" )
+      species=$(head   -n 2 ${prefix}.summary.mash.csv | tail -n 1 | cut -f 7 -d "," | cut -f 2   -d "_" )
+      accession=$(head -n 2 ${prefix}.summary.mash.csv | tail -n 1 | cut -f 2 -d "," | cut -f 1,2 -d '_' )
     fi
     
     # Step 2 : Using this information to get the estimated genome size
@@ -334,13 +334,13 @@ process size {
     fi
 
     mash_header="mash_size"
-    if [ -f "!{sample}.!{workflow.sessionId}.err" ]
+    if [ -f "${prefix}.${workflow.sessionId}.err" ]
     then
-      mash_check=$(grep "Estimated genome size" !{sample}.!{workflow.sessionId}.err | head -n 1)
+      mash_check=$(grep "Estimated genome size" ${prefix}.${workflow.sessionId}.err | head -n 1)
       
       if [ -n "$mash_check" ]
       then
-        mash_sizes=($(grep "Estimated genome size" !{sample}.!{workflow.sessionId}.err | awk '{print $4 }'))
+        mash_sizes=($(grep "Estimated genome size" ${prefix}.${workflow.sessionId}.err | awk '{print $4 }'))
         i=1
       
         for err_size in ${mash_sizes[@]}
@@ -359,9 +359,9 @@ process size {
       fi
     fi
 
-    if [ -f "!{sample}_quast_report.tsv" ]
+    if [ -f "${prefix}_quast_report.tsv" ]
     then
-      quast_size=$(grep "Total length" !{sample}_quast_report.tsv | grep -v "=" | awk '{print $3}')
+      quast_size=$(grep "Total length" ${prefix}_quast_report.tsv | grep -v "=" | awk '{print $3}')
       echo "The total length from quast is $quast_size" | tee -a $log_file
     fi
 
@@ -385,9 +385,9 @@ process size {
     echo "The final size is $size" | tee -a $log_file
     
     # Step 4. Putting it in a file
-    echo "sample,genus,species,accession,size,datasets_size,expected_size,$mash_header,quast_size" > size/!{sample}_size.csv
-    echo "!{sample},$genus,$species,$accession,$size,$datasets_size,$expected_size,$mash_size,$quast_size" >> size/!{sample}_size.csv
-  '''
+    echo "sample,genus,species,accession,size,datasets_size,expected_size,$mash_header,quast_size" > size/${prefix}_size.csv
+    echo "${prefix},$genus,$species,$accession,$size,$datasets_size,$expected_size,$mash_size,$quast_size" >> size/${prefix}_size.csv
+  """
 }
 
 process species {
@@ -414,13 +414,13 @@ process species {
   shell:
       def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-  '''
-    mkdir -p datasets logs/!{task.process}
-    log_file=logs/!{task.process}/!{task.process}.!{workflow.sessionId}.log
+  """
+    mkdir -p datasets logs/${task.process}
+    log_file=logs/${task.process}/${task.process}.${workflow.sessionId}.log
 
     # time stamp + capturing tool versions
     date > $log_file
-    echo "container : !{task.container}" >> $log_file
+    echo "container : ${task.container}" >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
@@ -440,7 +440,7 @@ process species {
     fi
 
     grep -v no-hit species.txt | grep -v undef | grep -v name | grep "_" | sort | uniq > datasets/species_list.txt
-  '''
+  """
 }
 
 process summary {
@@ -471,15 +471,15 @@ process summary {
   shell:
       def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-  '''
-    mkdir -p summary logs/!{task.process}
-    log_file=logs/!{task.process}/summary.!{workflow.sessionId}.log
+  """
+    mkdir -p summary logs/${task.process}
+    log_file=logs/${task.process}/summary.${workflow.sessionId}.log
 
     date > $log_file
-    echo "container : !{task.container}" >> $log_file
+    echo "container : ${task.container}" >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
     python summary.py | tee -a $log_file
-  '''
+  """
 }

@@ -24,19 +24,19 @@ process datasets_summary {
   shell:
       def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-  '''
-    mkdir -p datasets logs/!{task.process}
-    log_file=logs/!{task.process}/!{taxon}.!{workflow.sessionId}.log
+  """
+    mkdir -p datasets logs/${task.process}
+    log_file=logs/${task.process}/${taxon}.${workflow.sessionId}.log
 
     # time stamp + capturing tool versions
     date > $log_file
-    echo "container : !{task.container}" >> $log_file
+    echo "container : ${task.container}" >> $log_file
     datasets --version 2>> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    python3 !{script} !{taxon} !{params.datasets_max_genomes}
-  '''
+    python3 ${script} ${taxon} ${params.datasets_max_genomes}
+  """
 }
 
 // It is faster if datasets can download the entire list at a time, but there is a 20 minute timeout for downloading.
@@ -66,18 +66,18 @@ process datasets_download {
   task.ext.when == null || task.ext.when
 
   shell:
-  '''
-    mkdir -p datasets genomes logs/!{task.process}
-    log_file=logs/!{task.process}/datasets_download.!{workflow.sessionId}.log
+  """
+    mkdir -p datasets genomes logs/${task.process}
+    log_file=logs/${task.process}/datasets_download.${workflow.sessionId}.log
 
     # time stamp + capturing tool versions
     date > $log_file
-    echo "container : !{task.container}" >> $log_file
+    echo "container : ${task.container}" >> $log_file
     datasets --version 2>> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    grep -h -v accession !{ids} | cut -f 1 -d , | sort | uniq > this_run.txt
+    grep -h -v accession ${ids} | cut -f 1 -d , | sort | uniq > this_run.txt
 
     cat all_runs.txt this_run.txt | sort | uniq > id_list.txt
 
@@ -96,5 +96,5 @@ process datasets_download {
     done  
 
     rm -rf genomes/*:_*
-  '''
+  """
 }

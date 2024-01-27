@@ -14,12 +14,12 @@ process kleborate {
   flag =~ 'found'
 
   input:
-  tuple val(sample), file(contig), val(flag), file(script)
+  tuple val(meta), file(contig), val(flag), file(script)
 
   output:
-  path "kleborate/${sample}_results.tsv"                         , emit: collect, optional: true
-  path "kleborate/${sample}_results.txt"                         , emit: result
-  path "logs/${task.process}/${sample}.${workflow.sessionId}.log", emit: log
+  path "kleborate/${prefix}_results.tsv"                         , emit: collect, optional: true
+  path "kleborate/${prefix}_results.txt"                         , emit: result
+  path "logs/${task.process}/${prefix}.${workflow.sessionId}.log", emit: log
   path  "versions.yml"                          , emit: versions
 
   when:
@@ -28,22 +28,22 @@ process kleborate {
   shell:
       def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-  '''
-    mkdir -p kleborate logs/!{task.process}
-    log_file=logs/!{task.process}/!{sample}.!{workflow.sessionId}.log
+  """
+    mkdir -p kleborate logs/${task.process}
+    log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
     # time stamp + capturing tool versions
     date > $log_file
-    echo "container : !{task.container}" >> $log_file
+    echo "container : ${task.container}" >> $log_file
     kleborate --version >> $log_file
     echo "Nextflow command : " >> $log_file
     cat .command.sh >> $log_file
 
-    kleborate !{params.kleborate_options} \
-      -o kleborate/!{sample}_results.txt \
-      -a !{contig} \
+    kleborate ${params.kleborate_options} \
+      -o kleborate/${prefix}_results.txt \
+      -a ${contig} \
       | tee -a $log_file
 
-    python3 !{script} kleborate/!{sample}_results.txt kleborate/!{sample}_results.tsv kleborate !{sample}
-  '''
+    python3 ${script} kleborate/${prefix}_results.txt kleborate/${prefix}_results.tsv kleborate ${prefix}
+  """
 }
