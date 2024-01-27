@@ -87,21 +87,10 @@ include { min_hash }             from "./subworkflows/min_hash"             addP
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
-// Creating the summary files
-Channel
-  .fromPath([
-    workflow.projectDir + "/bin/datasets_download.py",
-    workflow.projectDir + "/bin/evaluate.py",
-    workflow.projectDir + "/bin/summary.py",
-    workflow.projectDir + "/bin/summary_file.py"],
-    type: "file"  
-  )
-  .set{ch_scripts}
-
-//dataset_script = Channel.fromPath(workflow.projectDir + "/bin/datasets_download.py", type: "file")
-//evaluat_script = Channel.fromPath(workflow.projectDir + "/bin/evaluate.py",          type: "file")
-//summary_script = Channel.fromPath(workflow.projectDir + "/bin/summary.py",           type: "file")
-//summfle_script = Channel.fromPath(workflow.projectDir + "/bin/summary_file.py",      type: "file")
+dataset_script = Channel.fromPath(workflow.projectDir + "/bin/datasets_download.py", type: "file")
+evaluat_script = Channel.fromPath(workflow.projectDir + "/bin/evaluate.py",          type: "file")
+summary_script = Channel.fromPath(workflow.projectDir + "/bin/summary.py",           type: "file")
+summfle_script = Channel.fromPath(workflow.projectDir + "/bin/summary_file.py",      type: "file")
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
@@ -160,14 +149,15 @@ if (params.sample_sheet) {
 
 //   // TODO : Make sure this works
 //   // getting fastas from a directory
-//   Channel
+// ch_fastas = params.fastas
+// ? Channel
 //     .fromPath("${params.fastas}/*{.fa,.fasta,.fna}")
 //     .map { it ->
 //       meta: [id: it.baseName]
 //       tuple (meta, file(it, checkIfExists: true))
 //     }
 //     .unique()
-//     .set { ch_fastas }
+//     : Channel.empty()
 // }
 
 ch_fastas = Channel.empty()
@@ -293,7 +283,7 @@ workflow {
   // ch_contigs       = ch_fastas.mix(de_novo_alignment.out.contigs)
   ch_clean_reads   = de_novo_alignment.out.clean_reads
 
-  // // optional subworkflow blobtools (useful for interspecies contamination)
+  // optional subworkflow blobtools (useful for interspecies contamination)
   // if ( params.blast_db ) {
   //   blobtools(ch_clean_reads, ch_contigs, ch_blast_db )
 
@@ -304,6 +294,8 @@ workflow {
 
   // optional subworkflow kraken2 (useful for interspecies contamination)
   if ( params.kraken2_db ) {
+    // TODO : figure out where the kraken2 fastq files are
+
     kmer_taxonomic_classification(ch_clean_reads, ch_kraken2_db )
 
     ch_for_multiqc = ch_for_multiqc.mix(kmer_taxonomic_classification.out.for_multiqc)
