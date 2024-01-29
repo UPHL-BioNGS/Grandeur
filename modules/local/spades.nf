@@ -1,9 +1,9 @@
 process spades {
-  tag           "$meta.id"
+  tag           "${meta.id}"
   label         "process_high"
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/spades:3.15.5'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time          '5h'
   
   input:
