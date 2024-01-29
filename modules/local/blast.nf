@@ -1,5 +1,5 @@
 process blastn {
-  tag           "$meta.id"
+  tag           "${meta.id}"
   label         "process_medium"
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/blast:2.15.0'
@@ -18,7 +18,7 @@ process blastn {
   task.ext.when == null || task.ext.when
 
   shell:
-  def args = task.ext.args ?: '-max_target_seqs 10 -max_hsps 1 -evalue 1e-25'
+  def args   = task.ext.args   ?: '-max_target_seqs 10 -max_hsps 1 -evalue 1e-25'
   def prefix = task.ext.prefix ?: "${meta.id}"
   """
     mkdir -p blastn logs/${task.process}
@@ -33,5 +33,10 @@ process blastn {
       | tee -a \$log_file
 
     exit 1
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        blast: \$(blastn -version 2>&1 | sed 's/^.*blastn: //; s/ .*\$//')
+    END_VERSIONS
   """
 }
