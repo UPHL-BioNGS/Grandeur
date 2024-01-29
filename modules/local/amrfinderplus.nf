@@ -1,5 +1,5 @@
 process amrfinderplus {
-  tag           "$meta.id"
+  tag           "${meta.id}"
   label         "process_medium"
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/ncbi-amrfinderplus:3.11.26-2023-11-15.1'
@@ -12,7 +12,7 @@ process amrfinderplus {
   output:
   path "ncbi-AMRFinderplus/*_amrfinder_plus.txt", emit: collect
   path "logs/${task.process}/*.log",              emit: log
-  path "versions.yml",                           emit: versions
+  path "versions.yml",                            emit: versions
 
   when:
   task.ext.when == null || task.ext.when
@@ -25,11 +25,11 @@ process amrfinderplus {
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
     organism=\$(amrfinder -l | tr " " "\\n" | grep -i ${genus} | grep -i ${species} | sed 's/,//g' | head -n 1 )
-    if [ -z "\$organism" ] ; then organism=$(amrfinder -l | tr " " "\\n" | grep -i ${genus} | sed 's/,//g' | head -n 1 ) ; fi
+    if [ -z "\$organism" ] ; then organism=\$(amrfinder -l | tr " " "\\n" | grep -i ${genus} | sed 's/,//g' | head -n 1 ) ; fi
     if [ -n "\$organism" ]
     then
-      organism_check="--organism $organism"
-      echo "Top organism result of ${genus} ${species} matched with $organism" >> \$log_file
+      organism_check="--organism \$organism"
+      echo "Top organism result of ${genus} ${species} matched with \$organism" >> \$log_file
     elif [ "${genus}" == "Shigella" ]
     then
       organism_check="--organism Escherichia"
@@ -48,6 +48,10 @@ process amrfinderplus {
       --plus \
       | tee -a \$log_file
 
-    exit 1
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        amrfinderplus: \$(amrfinder --version)
+        amrfinderplus-database: \$(echo \$(echo \$(amrfinder --database amrfinderdb --database_version 2> stdout) | rev | cut -f 1 -d ' ' | rev))
+    END_VERSIONS
   """
 }
