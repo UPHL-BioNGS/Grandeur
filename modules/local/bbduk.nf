@@ -1,5 +1,5 @@
 process bbduk {
-  tag           "$meta.id"
+  tag           "${meta.id}"
   label         "process_medium"
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/bbtools:39.01'
