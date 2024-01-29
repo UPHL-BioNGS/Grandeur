@@ -1,10 +1,10 @@
 process fastp {
-  tag           "$meta.id"
+  tag           "${meta.id}"
   label         "process_low"
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/fastp:0.23.4'
   time          '30m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   tuple val(meta), file(reads)
