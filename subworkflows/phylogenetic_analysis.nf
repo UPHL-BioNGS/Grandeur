@@ -1,4 +1,4 @@
-include { core_genome_evaluation } from '../modules/local/grandeur'    addParams(params)
+include { core_genome_evaluation } from '../modules/local/local'    addParams(params)
 include { heatcluster }            from '../modules/local/heatcluster' addParams(params)
 include { iqtree2 }                from '../modules/local/iqtree2'     addParams(params)
 include { mashtree }               from '../modules/local/mashtree'    addParams(params)
@@ -40,11 +40,11 @@ workflow phylogenetic_analysis {
 
     prokka(for_prokka)
 
-    // panaroo(prokka.out.gffs.concat(ch_gff).unique().collect())
-    // core_genome_evaluation(panaroo.out.core_gene_alignment.combine(evaluat_script))
+    panaroo(prokka.out.gffs.concat(ch_gff).unique().collect())
+    core_genome_evaluation(panaroo.out.core_gene_alignment.combine(evaluat_script))
 
-    roary(prokka.out.gffs.concat(ch_gff).unique().collect())
-    core_genome_evaluation(roary.out.core_gene_alignment.combine(evaluat_script))
+    // roary(prokka.out.gffs.concat(ch_gff).unique().collect())
+    // core_genome_evaluation(roary.out.core_gene_alignment.combine(evaluat_script))
 
     core_genome_evaluation.out.evaluation
       .filter({it[1] as int >= 4})
