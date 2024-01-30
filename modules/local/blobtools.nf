@@ -1,5 +1,5 @@
 process blobtools_create {
-  tag           "$meta.id"
+  tag           "${meta.id}"
   label         "process_medium"
   publishDir    params.outdir, mode: 'copy'
   container     'chrishah/blobtools:v1.1.1'
@@ -10,124 +10,110 @@ process blobtools_create {
   tuple val(meta), file(contig), file(blastn), file(bam)
 
   output:
-  tuple val(meta), file("blobtools/${prefix}.blobDB.json")     , emit: json
-  path "blobtools/${prefix}.${prefix}*.bam.cov"                  , emit: files
-  path "logs/${task.process}/${prefix}.${workflow.sessionId}.log", emit: log
-  path  "versions.yml"                          , emit: versions
+  tuple val(meta), file("blobtools/*.blobDB.json"), emit: json
+  path "blobtools/*.bam.cov"                      , emit: files
+  path "logs/${task.process}/*.log"               , emit: log
+  path "versions.yml"                             , emit: versions
 
   when:
   task.ext.when == null || task.ext.when
 
   shell:
-      def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+  def args   = task.ext.args   ?: ''
+  def prefix = task.ext.prefix ?: "${meta.id}"
   """
     mkdir -p blobtools logs/${task.process}
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
-    # time stamp + capturing tool versions
-    date > $log_file
-    echo "container : ${task.container}" >> $log_file
-    echo "blobtools version $(blobtools -v)" >> $log_file
-    echo "Nextflow command : " >> $log_file
-    cat .command.sh >> $log_file
-
-    blobtools create ${params.blobtools_create_options} \
+    blobtools create ${args} \
       -o blobtools/${prefix} \
       -i ${contig} \
       -b ${bam[0]} \
       -t ${blastn} \
-      | tee -a $log_file
+      | tee -a \$log_file
+    
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        blobtools: \$(blobtools -v)
+    END_VERSIONS
   """
 }
 
 process blobtools_view {
-  tag           "${prefix}"
+  tag           "${meta.id}"
   publishDir    params.outdir, mode: 'copy'
   container     'chrishah/blobtools:v1.1.1'
-  maxForks      10
-  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
-  //#UPHLICA cpus 3
-  //#UPHLICA memory 1.GB
-  //#UPHLICA time '10m'
+  time          '10m'
+  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   tuple val(meta), file(json)
 
   output:
-  tuple val(meta), file("blobtools/${prefix}.blobDB.table.txt"), emit: file
-  path "logs/${task.process}/${prefix}.${workflow.sessionId}.log", emit: log
-  path  "versions.yml"                          , emit: versions
+  tuple val(meta), file("blobtools/*.blobDB.table.txt"), emit: file
+  path "logs/${task.process}/*.log"                    , emit: log
+  path "versions.yml"                                  , emit: versions
 
   shell:
   """
     mkdir -p blobtools logs/${task.process}
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
-    # time stamp + capturing tool versions
-    date > $log_file
-    echo "container : ${task.container}" >> $log_file
-    echo "blobtools version $(blobtools -v)" >> $log_file
-    echo "Nextflow command : " >> $log_file
-    cat .command.sh >> $log_file
-
-    blobtools view ${params.blobtools_view_options} \
+    blobtools view ${args} \
       -i ${json} \
       -o blobtools/ \
-      | tee -a $log_file
+      | tee -a \$log_file
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        blobtools: \$(blobtools -v)
+    END_VERSIONS
   """
 }
 
 process blobtools_plot {
-  tag           "${prefix}"
+  tag           "${meta.id}"
   publishDir    params.outdir, mode: 'copy'
   container     'chrishah/blobtools:v1.1.1'
-  maxForks      10
-  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
-  //#UPHLICA cpus 3
-  //#UPHLICA memory 1.GB
-  //#UPHLICA time '10m'
+  time          '10m'
+  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   tuple val(meta), file(json)
 
   output:
-  path "blobtools/${prefix}.*"                                   , emit: files
-  tuple val(meta), file("blobtools/${prefix}_blobtools.txt")   , emit: results
-  path "blobtools/${prefix}_summary.txt"                         , emit: collect
-  path "logs/${task.process}/${prefix}.${workflow.sessionId}.log", emit: log
-  path  "versions.yml"                          , emit: versions
+  path "blobtools/*"                                , emit: files
+  tuple val(meta), file("blobtools/*_blobtools.txt"), emit: results
+  path "blobtools/*_summary.txt"                    , emit: collect
+  path "logs/${task.process}/*.log"                 , emit: log
+  path  "versions.yml"                              , emit: versions
 
   shell:
   """
     mkdir -p blobtools logs/${task.process}
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
-    # time stamp + capturing tool versions
-    date > $log_file
-    echo "container : ${task.container}" >> $log_file
-    echo "blobtools version $(blobtools -v)" >> $log_file
-    echo "Nextflow command : " >> $log_file
-    cat .command.sh >> $log_file
-
-    blobtools plot ${params.blobtools_plot_options} \
+    blobtools plot ${args} \
       -i ${json} \
       -o blobtools/ \
-      | tee -a $log_file
+      | tee -a \$log_file
 
     grep "^# " blobtools/${prefix}*.stats.txt | \
       sed 's/# //g' | \
-      awk '{print "sample\t" $0 }' > blobtools/${prefix}_summary.txt
+      awk '{print "sample\t" \$0 }' > blobtools/${prefix}_summary.txt
 
     grep -v "^#" blobtools/${prefix}*.stats.txt | \
       sed 's/%//g' | \
       tr " " "_" | \
-      awk -v sample=${prefix} '{if ($13 >= 5.0 ) print sample "\\t" $0}' | \
+      awk -v sample=${prefix} '{if (\$13 >= 5.0 ) print sample "\\t" \$0}' | \
       tr " " "\\t" | \
       sort -k 14rn,14 >> blobtools/${prefix}_summary.txt
 
     grep -vw all blobtools/${prefix}_summary.txt > blobtools/${prefix}_blobtools.txt
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        blobtools: \$(blobtools -v)
+    END_VERSIONS
   """
 }

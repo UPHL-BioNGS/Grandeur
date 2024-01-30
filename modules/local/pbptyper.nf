@@ -1,18 +1,11 @@
 process pbptyper {
-  tag           "$meta.id"
+  tag           "${meta.id}"
   label         "process_medium"
   stageInMode   "copy"
   publishDir    path: params.outdir, mode: 'copy'
   container     'staphb/pbptyper:1.0.4'
-  maxForks      10
-  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'standard-medium'
-  //#UPHLICA memory 1.GB
-  //#UPHLICA cpus 3
-  //#UPHLICA time '24h'
-  
-  when:
-  flag =~ 'found'
+  time          '1h'
+  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   tuple val(meta), file(contigs), val(flag)
@@ -24,26 +17,24 @@ process pbptyper {
   path "versions.yml"                          , emit: versions
 
   when:
-  task.ext.when == null || task.ext.when
+  (task.ext.when == null || task.ext.when) && flag =~ 'found'
 
   shell:
-  def args = task.ext.args ?: ''
+  def args   = task.ext.args   ?: ''
   def prefix = task.ext.prefix ?: "${meta.id}"
   """
     mkdir -p pbptyper logs/${task.process}
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
-
-    # time stamp + capturing tool versions
-    date > $log_file
-    echo "container : ${task.container}" >> $log_file
-    pbptyper --version >> $log_file
-    echo "Nextflow command : " >> $log_file
-    cat .command.sh >> $log_file
     
-    pbptyper ${params.pbptyper_options} \
+    pbptyper ${args} \
       --assembly ${contigs} \
       --prefix ${prefix} \
       --outdir pbptyper \
-      | tee -a $log_file 
+      | tee -a \$log_file
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        pbptyper: \$(echo \$(pbptyper --version 2>&1) | sed 's/^.*pbptyper, version //;' )
+    END_VERSIONS
   """
 }

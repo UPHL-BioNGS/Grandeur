@@ -1,9 +1,9 @@
 process mash_sketch_fastq {
-  tag           "$meta.id"
+  tag           "${meta.id}"
   label         "process_medium"
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/mash:2.3'
-  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time          '10m'
 
   input:
@@ -39,11 +39,11 @@ process mash_sketch_fastq {
 }
 
 process mash_sketch_fasta {
-  tag           "$meta.id"
+  tag           "${meta.id}"
   label         "process_medium"
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/mash:2.3'
-  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time          '10m'
 
   input:
@@ -84,7 +84,7 @@ process mash_dist {
   label         "process_medium"
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/mash:2.3'
-  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time          '10m'
 
   input:
@@ -113,7 +113,7 @@ process mash_dist {
       ${msh} \
       > mash/${prefix}.mashdist.txt.tmp
 
-    if [ $ -s "mash/${prefix}.mashdist.txt.tmp" ]
+    if [ ! -s "mash/${prefix}.mashdist.txt.tmp" ]
     then
       echo "No mash dist results with args ${args}. Trying again without them."  | tee -a \$log_file
       mash dist \
@@ -149,7 +149,7 @@ process mash_dist {
       ${msh} \
       > mash/${prefix}.mashdist.txt.tmp
 
-    if [ $ -s "mash/${prefix}.mashdist.txt.tmp" ]
+    if [ ! -s "mash/${prefix}.mashdist.txt.tmp" ]
     then
       echo "No mash dist results with args ${args}. Trying again without them." | tee -a \$log_file
       mash dist \
@@ -178,7 +178,7 @@ process mash_dist {
 }
 
 // process mash_screen {
-//   tag           "$meta.id"
+//   tag           "${meta.id}"
 //   label         "process_medium"
 //   publishDir    params.outdir, mode: 'copy'
 //   container     'staphb/mash:2.3'

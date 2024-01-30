@@ -1,15 +1,11 @@
 process prokka {
-  tag           "$meta.id"
+  tag           "${meta.id}"
   label         "process_high"
   label         "maxcpus"
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/prokka:1.14.6'
-  maxForks      10
-  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'himem-small'
-  //#UPHLICA memory 60.GB
-  //#UPHLICA cpus 7
-  //#UPHLICA time '24h'
+  time          '2h'
+  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   tuple val(meta), file(contigs), val(organism)
@@ -25,51 +21,26 @@ process prokka {
   task.ext.when == null || task.ext.when
 
   shell:
-  def args = task.ext.args ?: '--mincontiglen 500 --compliant --locustag locus_tag --centre STAPHB'
+  def args   = task.ext.args   ?: '--mincontiglen 500 --compliant --locustag locus_tag --centre STAPHB'
   def prefix = task.ext.prefix ?: "${meta.id}"
-  if (organism $= null) {
-    """
-      mkdir -p prokka gff logs/${task.process}
-      log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
+  def gen_sp = organism ? "--genus ${organism[0]} --species ${organism[1]}" : ""
+  """
+    mkdir -p prokka gff logs/${task.process}
+    log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
-      # time stamp + capturing tool versions
-      date > $log_file
-      echo "container : ${task.container}" >> $log_file
-      prokka -v >> $log_file
-      echo "Nextflow command : " >> $log_file
-      cat .command.sh >> $log_file
+    prokka ${args} \
+      --cpu ${task.cpus} \
+      --outdir prokka/${prefix} \
+      --prefix ${prefix} \
+      ${gen_sp} \
+      --force ${contigs} \
+      | tee -a $log_file
 
-      prokka ${params.prokka_options} \
-        --cpu ${task.cpus} \
-        --outdir prokka/${prefix} \
-        --prefix ${prefix} \
-        --genus ${organism[0]} \
-        --species ${organism[1]} \
-        --force ${contigs} \
-        | tee -a $log_file
+    cp prokka/${prefix}/${prefix}.gff gff/${prefix}.gff
 
-      cp prokka/${prefix}/${prefix}.gff gff/${prefix}.gff
-    """
-  } else {
-    """
-      mkdir -p prokka gff logs/${task.process}
-      log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
-
-      # time stamp + capturing tool versions
-      date > $log_file
-      echo "container : ${task.container}" >> $log_file
-      prokka -v >> $log_file
-      echo "Nextflow command : " >> $log_file
-      cat .command.sh >> $log_file
-
-      prokka ${params.prokka_options} \
-        --cpu ${task.cpus} \
-        --outdir prokka/${prefix} \
-        --prefix ${prefix} \
-        --force ${contigs} \
-        | tee -a $log_file
-
-      cp prokka/${prefix}/${prefix}.gff gff/${prefix}.gff
-    """
-  }
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        prokka: \$(echo \$(prokka --version 2>&1) | sed 's/^.*prokka //')
+    END_VERSIONS
+  """
 }

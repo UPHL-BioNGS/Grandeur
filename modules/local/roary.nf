@@ -4,12 +4,8 @@ process roary {
   label         'maxcpus'
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/roary:3.13.0'
-  maxForks      10
-  //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  //#UPHLICA pod annotation: 'scheduler.illumina.com/presetSize', value: 'hicpu-small'
-  //#UPHLICA cpus 15
-  //#UPHLICA memory 30.GB
-  //#UPHLICA time '10m'
+  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  time          '10h'
   
   input:
   file(contigs)
@@ -25,24 +21,22 @@ process roary {
   task.ext.when == null || task.ext.when
 
   shell:
-  def args = task.ext.args ?: ''
-   def prefix = task.ext.prefix ?: "${meta.id}"
+  def args   = task.ext.args   ?: ''
+  def prefix = task.ext.prefix ?: "${meta.id}"
   """
     mkdir -p logs/${task.process}
     log_file=logs/${task.process}/${task.process}.${workflow.sessionId}.log
 
-    # time stamp + capturing tool versions
-    date > $log_file
-    roary -a >> $log_file
-    echo "container : ${task.container}" >> $log_file
-    echo "Nextflow command : " >> $log_file
-    cat .command.sh >> $log_file
-
-    roary ${params.roary_options} \
+    roary ${args} \
       -p ${task.cpus} \
       -f roary \
       -e -n \
       *.gff \
-      | tee -a $log_file
+      | tee -a \$log_file
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        roary: \$( roary --version )
+    END_VERSIONS
   """
 }
