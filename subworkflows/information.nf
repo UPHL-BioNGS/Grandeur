@@ -3,7 +3,7 @@ include { drprg }          from '../modules/local/drprg'          addParams(para
 include { elgato }         from '../modules/local/elgato'         addParams(params)
 include { emmtyper }       from '../modules/local/emmtyper'       addParams(params)
 include { fastqc }         from '../modules/local/fastqc'         addParams(params)
-include { flag }           from '../modules/local/grandeur'       addParams(params)
+include { flag }           from '../modules/local/local'          addParams(params)
 include { kaptive }        from '../modules/local/kaptive'        addParams(params)
 include { kleborate }      from '../modules/local/kleborate'      addParams(params)
 include { legsta }         from '../modules/local/legsta'         addParams(params)
@@ -15,28 +15,22 @@ include { quast }          from '../modules/local/quast'          addParams(para
 include { seqsero2 }       from '../modules/local/seqsero2'       addParams(params)
 include { serotypefinder } from '../modules/local/serotypefinder' addParams(params)
 include { shigatyper }     from '../modules/local/shigatyper'     addParams(params)
-include { size }           from '../modules/local/grandeur'       addParams(params)
 
 workflow information {
   take:
     ch_reads
     ch_contigs
     ch_flag
-    ch_size
     summfle_script
 
   main:
     // fastq files
-
     fastqc(ch_reads)
 
     // contigs
     mlst(ch_contigs.combine(summfle_script))
     quast(ch_contigs)
     plasmidfinder(ch_contigs.combine(summfle_script))
-
-    // estimating size of genome for the oganism
-    size(ch_size.join(quast.out.results, by: 0, remainder: true).map{ it -> tuple(it[0], [ it[1], it[2], it[3], it[4], it[5], it[6], it[7], it[8]])})
 
     // species specific
     flag(ch_flag.groupTuple())
@@ -172,13 +166,6 @@ workflow information {
         storeDir: "${params.outdir}/shigatyper")
       .set{ shigatyper_summary }
 
-    size.out.collect
-      .collectFile(name: "size_results.csv",
-        keepHeader: true,
-        sort: { file ->file.text },
-        storeDir: "${params.outdir}/size")
-      .set{ size_summary }
-
     amrfinderplus_summary
       //.mix(drprg_summary)
       .mix(elgato_summary)
@@ -195,7 +182,6 @@ workflow information {
       .mix(seqsero2_summary)
       .mix(serotypefinder_summary)
       .mix(shigatyper_summary)
-      .mix(size_summary)
       .set { for_summary }
 
     fastqc.out.for_multiqc
