@@ -12,7 +12,8 @@ println("email: eriny@utah.gov")
 println("Version: ${workflow.manifest.version}")
 println("")
 
-nextflow.enable.dsl = 2
+nextflow.enable.dsl    = 2
+nextflow.enable.strict = true
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
@@ -63,7 +64,7 @@ params.skip_extras          = false
 params.fastani_include      = true
 params.mash_max_hits        = 25
 params.min_core_genes       = 1500
-params.msa                  = ""
+params.msa                  = false
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
@@ -71,13 +72,13 @@ params.msa                  = ""
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
-//include { average_nucleotide_identity }   from "./subworkflows/average_nucleotide_identity"   addParams(params)
+include { average_nucleotide_identity }   from "./subworkflows/average_nucleotide_identity"   addParams(params)
 //include { blobtools }                     from "./subworkflows/blobtools"                     addParams(params)
 include { de_novo_alignment }             from "./subworkflows/de_novo_alignment"             addParams(params)
-//include { subtyping }                   from "./subworkflows/subtyping"                   addParams(params)
+include { information }                   from "./subworkflows/information"                   addParams(params)
 include { kmer_taxonomic_classification } from "./subworkflows/kmer_taxonomic_classification" addParams(params)
 include { min_hash }             from "./subworkflows/min_hash"             addParams(params)
-//include { phylogenetic_analysis }         from "./subworkflows/phylogenetic_analysis"         addParams(params)
+include { phylogenetic_analysis }         from "./subworkflows/phylogenetic_analysis"         addParams(params)
 //include { report }                        from "./subworkflows/report"                        addParams(params)
 //include { test }                          from "./subworkflows/test"                          addParams(params)
 
@@ -97,7 +98,6 @@ summfle_script = Channel.fromPath(workflow.projectDir + "/bin/summary_file.py", 
 // Channels for input files
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
-
 
 if (params.sample_sheet) {
   // using a sample sheet with the column header of 'sample,fastq_1,fastq_2'
@@ -120,7 +120,7 @@ if (params.sample_sheet) {
         .fromFilePairs(["${params.reads}/*_R{1,2}*.{fastq,fastq.gz,fq,fq.gz}",
                         "${params.reads}/*_{1,2}*.{fastq,fastq.gz,fq,fq.gz}"], size: 2 )
         .map { it ->
-          meta : [id:it[0].replaceAll(~/_S[0-9]+_L[0-9]+/,"")] 
+          meta = [id:it[0].replaceAll(~/_S[0-9]+_L[0-9]+/,"")] 
           tuple( meta, 
             file(it[0], checkIfExists: true), 
             file(it[1], checkIfExists: true))
@@ -130,37 +130,36 @@ if (params.sample_sheet) {
     : Channel.empty()
 }
 
-// if (params.fasta_list) {
-//   // TODO : make sure this works
+if (params.fasta_list) {
+  // TODO : make sure this works
 
-//   // getting fastas from a file
-//   Channel
-//     .fromPath("${params.fasta_list}", type: "file")
-//     .view { "Fasta list found : ${it}" }
-//     .splitText()
-//     .map{ it -> it.trim()}
-//     .map{ it -> file(it) }
-//     .map { it ->
-//       meta = [id:it.baseName]
-//       tuple( meta, it)
-//     }
-//     .set{ ch_fastas }
-// } else {
+  // getting fastas from a file
+  Channel
+    .fromPath("${params.fasta_list}", type: "file")
+    .view { "Fasta list found : ${it}" }
+    .splitText()
+    .map{ it -> it.trim()}
+    .map{ it -> file(it) }
+    .map { it ->
+      meta = [id:it.baseName]
+      tuple( meta, it)
+    }
+    .set{ ch_fastas }
+} else {
 
-//   // TODO : Make sure this works
-//   // getting fastas from a directory
-// ch_fastas = params.fastas
-// ? Channel
-//     .fromPath("${params.fastas}/*{.fa,.fasta,.fna}")
-//     .map { it ->
-//       meta: [id: it.baseName]
-//       tuple (meta, file(it, checkIfExists: true))
-//     }
-//     .unique()
-//     : Channel.empty()
-// }
-
-ch_fastas = Channel.empty()
+  // TODO : Make sure this works
+  // getting fastas from a directory
+  ch_fastas = params.fastas
+    ? Channel
+      .fromPath("${params.fastas}/*{.fa,.fasta,.fna}")
+      .view { "fasta file : $it" }
+      .map { it ->
+        meta = [id: it.baseName]
+        tuple( meta, file(it, checkIfExists: true))
+      }
+      .unique()
+    : Channel.empty()
+}
 
 // Getting fasta files that have been annotated with prokka (gff)
 ch_gffs = params.gff
@@ -198,7 +197,7 @@ ch_blast_db = params.blast_db
       exit 1
       }
       .view { "Local Blast Database for Blobtools : $it" }
-    : Channel.empty()
+  : Channel.empty()
 
 // Getting the kraken2 database
 ch_kraken2_db = params.kraken2_db
@@ -275,12 +274,8 @@ workflow {
   }
 
   de_novo_alignment(ch_raw_reads)
-  
-  ch_contigs = de_novo_alignment.out.contigs
 
-  // TODO : add in ch_fastas to this!!!
-
-  // ch_contigs       = ch_fastas.mix(de_novo_alignment.out.contigs)
+  ch_contigs       = ch_fastas.mix(de_novo_alignment.out.contigs)
   ch_clean_reads   = de_novo_alignment.out.clean_reads
 
   // optional subworkflow blobtools (useful for interspecies contamination)
@@ -307,17 +302,16 @@ workflow {
     // subworkflow mash for species determination
     min_hash(ch_clean_reads, ch_fastas, ch_mash_db)
 
-  //   // determining organisms in sample
-  //   average_nucleotide_identity(
-  //     ch_for_summary.collect(),
-  //     ch_contigs,
-  //     ch_fastani_genomes.ifEmpty([]),
-  //     dataset_script)
+    // determining organisms in sample
+    average_nucleotide_identity(
+      ch_for_summary.mix(min_hash.out.for_summary).collect(),
+      ch_contigs,
+      ch_fastani_genomes.ifEmpty([]),
+      dataset_script)
 
-  //   ch_for_summary = ch_for_summary.mix(average_nucleotide_identity.out.for_summary)
-  //   ch_for_flag    = ch_for_flag.mix(average_nucleotide_identity.out.for_flag).mix(min_hash_distance.out.for_flag)
-  //   ch_top_hit     = ch_top_hit.mix(average_nucleotide_identity.out.top_hit)
-  //   ch_datasets    = average_nucleotide_identity.out.datasets_summary.ifEmpty('none')
+    ch_for_flag    = ch_for_flag.mix(average_nucleotide_identity.out.for_flag).mix(min_hash.out.for_flag)
+    ch_top_hit     = ch_top_hit.mix(average_nucleotide_identity.out.top_hit)
+    ch_datasets    = average_nucleotide_identity.out.datasets_summary.ifEmpty('none')
 
   //   ch_contigs
   //     .join(min_hash_distance.out.mash_err)
@@ -327,18 +321,19 @@ workflow {
   //     .combine(ch_datasets)
   //     .set{ ch_size }
 
-  //   // getting all the other information
-  //   information(
-  //     ch_raw_reads, 
-  //     ch_contigs, 
-  //     ch_for_flag, 
-  //     ch_size,
-  //     summfle_script)
+    // getting all the other information
+    information(
+      ch_raw_reads, 
+      ch_contigs, 
+      ch_for_flag, 
+      summfle_script)
 
-  //   ch_for_summary = ch_for_summary.mix(information.out.for_summary).mix(min_hash_distance.out.for_summary)
+  //   ch_for_summary = ch_for_summary.mix(information.out.for_summary).mix(min_hash_distance.out.for_summary).mix(average_nucleotide_identity.out.for_summary)
   //   ch_for_multiqc = ch_for_multiqc.mix(information.out.for_multiqc)
   } 
 
+
+  //ch_versions.unique().collectFile(name: 'collated_versions.yml')
   // // optional subworkflow for comparing shared genes
   // if ( params.msa ) {
   //   phylogenetic_analysis(
