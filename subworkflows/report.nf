@@ -1,6 +1,6 @@
-include { names }   from '../modules/local/grandeur' addParams(params)
-include { multiqc } from '../modules/local/multiqc'  addParams(params)
-include { summary } from '../modules/local/grandeur' addParams(params)
+include { names }   from '../modules/local/local'   addParams(params)
+include { multiqc } from '../modules/local/multiqc' addParams(params)
+include { summary } from '../modules/local/local'   addParams(params)
 
 workflow report {
     take:
