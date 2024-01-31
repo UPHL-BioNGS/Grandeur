@@ -3,7 +3,7 @@ process kraken2 {
   label         "process_high"
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/kraken2:2.1.3'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time          '1h'
   
   input:
