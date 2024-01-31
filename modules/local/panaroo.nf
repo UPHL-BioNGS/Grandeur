@@ -7,7 +7,7 @@ process panaroo {
   time '10h'
   
   input:
-  file(gbk)
+  file(gff)
 
   output:
   path "panaroo/*"                                                                         , emit: files
@@ -21,7 +21,7 @@ process panaroo {
   shell:
   def args       = task.ext.args   ?: '--clean-mode strict --remove-invalid-genes'
   def prefix     = task.ext.prefix ?: "panaroo"
-  def assemblies = gbk.join(' ')
+  def assemblies = gff.join(' ')
   """
     mkdir -p logs/${task.process}
     log_file=logs/${task.process}/${task.process}.${workflow.sessionId}.log
