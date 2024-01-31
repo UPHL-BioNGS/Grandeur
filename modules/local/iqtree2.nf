@@ -2,7 +2,7 @@ process iqtree2 {
   tag           "Phylogenetic analysis"
   label         "process_high"
   publishDir    params.outdir, mode: 'copy'
-  container     'staphb/iqtree2:2.2.2.6'
+  container     'staphb/iqtree2:2.2.2.7'
   time          '24h'
   //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
