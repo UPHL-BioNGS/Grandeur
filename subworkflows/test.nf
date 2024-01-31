@@ -8,6 +8,6 @@ workflow test {
         download_sra(ch_accessions)
     
     emit:
-        fastq = download_sra.out.fastq
-
+        fastq    = download_sra.out.fastq
+        versions = download_sra.out.versions.first()
 }
