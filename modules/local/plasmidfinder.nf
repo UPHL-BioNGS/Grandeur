@@ -35,7 +35,7 @@ process plasmidfinder {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        plasmidfinder: "TODO:"
+        plasmidfinder: "${task.container}"
     END_VERSIONS
   """
 }
