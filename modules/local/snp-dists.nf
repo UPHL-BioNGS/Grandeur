@@ -21,8 +21,7 @@ process snp_dists {
   task.ext.when == null || task.ext.when
 
   shell:
-  def args = task.ext.args     ?: '-c'
-  def prefix = task.ext.prefix ?: "${meta.id}"
+  def args = task.ext.args ?: '-c'
   """
     mkdir -p snp-dists
 
