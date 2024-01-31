@@ -1,7 +1,6 @@
 process prokka {
   tag           "${meta.id}"
   label         "process_high"
-  label         "maxcpus"
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/prokka:1.14.6'
   time          '2h'
@@ -11,11 +10,11 @@ process prokka {
   tuple val(meta), file(contigs), val(organism)
 
   output:
-  path "prokka/*/*", emit: prokka_files
-  path "prokka/*/*.txt", emit: for_multiqc
-  path "gff/*.gff", emit: gffs, optional: true
-  path "logs/${task.process}/*.log", emit: log
-  path "versions.yml", emit: versions
+  path "prokka/*/*"                 , emit: prokka_files
+  path "prokka/*/*.txt"             , emit: for_multiqc
+  path "gff/*.gff"                  , emit: gff, optional: true
+  path "logs/${task.process}/*.log" , emit: log
+  path "versions.yml"               , emit: versions
 
   when:
   task.ext.when == null || task.ext.when
@@ -34,7 +33,7 @@ process prokka {
       --prefix ${prefix} \
       ${gen_sp} \
       --force ${contigs} \
-      | tee -a $log_file
+      | tee -a \$log_file
 
     cp prokka/${prefix}/${prefix}.gff gff/${prefix}.gff
 
