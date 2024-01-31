@@ -19,19 +19,19 @@ process phytreeviz {
 
   shell:
   def args   = task.ext.args   ?: ''
-  def prefix = task.ext.prefix ?: "${meta.id}"
+  def prefix = task.ext.prefix ?: "${analysis}"
   """
     mkdir -p phytreeviz logs/${task.process}
     log_file=logs/${task.process}/${analysis}.${task.process}.${workflow.sessionId}.log
 
     phytreeviz ${args} \
       -i ${newick} \
-      -o phytreeviz/${analysis}_tree.png \
+      -o phytreeviz/${prefix}_tree.png \
       | tee -a \$log_file
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-      phytreeviz: "TODO:"
+      phytreeviz: \$(phytreeviz --version)
     END_VERSIONS
   """
 }
