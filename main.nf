@@ -37,12 +37,10 @@ if ( params.config_file ) {
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
 params.outdir               = "grandeur"
-params.minimum_reads        = 10000
 
 // input files
 params.reads                = ""
 params.fastas               = ""
-params.gff                  = ""
 params.sample_sheet         = ""
 params.fasta_list           = ""
 
@@ -54,17 +52,64 @@ params.fastani_ref          = ""
 params.fastani_ref_list     = ""
 params.genome_sizes         = workflow.projectDir + "/assets/genome_sizes.json"
 
-// for testing
+// for downloading from databases
 params.sra_accessions       = []
+params.genome_accessions    = []
 
-// tool-specific command line options
-params.current_datasets     = false
+// thresholds and other params
+params.minimum_reads        = 10000
 params.datasets_max_genomes = 5
-params.skip_extras          = false
-params.fastani_include      = true
 params.mash_max_hits        = 25
 params.min_core_genes       = 1500
+
+// subworkflow flags
+params.current_datasets     = false
+params.skip_extras          = false
+params.exclude_top_hit      = false
 params.msa                  = false
+
+
+// ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
+// Checking params
+
+// ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
+def paramCheck(keys) {
+  set_keys = [
+    "outdir",
+    "fastas",
+    "msa",
+    "kraken2_db",
+    "mash_db",
+    "config_file",
+    "reads",
+    "sample_sheet",
+    "fasta_list",
+    "blast_db",
+    "fastani_ref",
+    "fastani_ref_list",
+    "genome_sizes",
+    "sra_accessions",
+    "genome_accessions",
+    "minimum_reads",
+    "datasets_max_genomes",
+    "mash_max_hits",
+    "min_core_genes",
+    "current_datasets",
+    "skip_extras",
+    "exclude_top_hit"]
+
+  for(key in keys){
+    if (key !in set_keys){
+      println("FATAL: ${key} isn't a supported param!")
+      println("Supported params: ${set_keys}")
+      exit 1
+    }
+  }
+}
+
+paramCheck(params.keySet())
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
@@ -72,15 +117,17 @@ params.msa                  = false
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
+// TODO : https://oldsite.nf-co.re/pipeline_schema_builder nf-core schema build
+
 include { average_nucleotide_identity }   from "./subworkflows/average_nucleotide_identity"   addParams(params)
 //include { blobtools }                     from "./subworkflows/blobtools"                     addParams(params)
 include { de_novo_alignment }             from "./subworkflows/de_novo_alignment"             addParams(params)
 include { information }                   from "./subworkflows/information"                   addParams(params)
 include { kmer_taxonomic_classification } from "./subworkflows/kmer_taxonomic_classification" addParams(params)
-include { min_hash }             from "./subworkflows/min_hash"             addParams(params)
+include { min_hash }                      from "./subworkflows/min_hash"                      addParams(params)
 include { phylogenetic_analysis }         from "./subworkflows/phylogenetic_analysis"         addParams(params)
-//include { report }                        from "./subworkflows/report"                        addParams(params)
-//include { test }                          from "./subworkflows/test"                          addParams(params)
+include { report }                        from "./subworkflows/report"                        addParams(params)
+include { test }                          from "./subworkflows/test"                          addParams(params)
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
@@ -90,8 +137,10 @@ include { phylogenetic_analysis }         from "./subworkflows/phylogenetic_anal
 
 dataset_script = Channel.fromPath(workflow.projectDir + "/bin/datasets_download.py", type: "file")
 evaluat_script = Channel.fromPath(workflow.projectDir + "/bin/evaluate.py",          type: "file")
+multiqc_script = Channel.fromPath(workflow.projectDir + "/bin/for_multiqc.py",       type: "file")
 summary_script = Channel.fromPath(workflow.projectDir + "/bin/summary.py",           type: "file")
 summfle_script = Channel.fromPath(workflow.projectDir + "/bin/summary_file.py",      type: "file")
+version_script = Channel.fromPath(workflow.projectDir + "/bin/versions.py",          type: "file")
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
@@ -161,16 +210,9 @@ if (params.fasta_list) {
     : Channel.empty()
 }
 
-// Getting fasta files that have been annotated with prokka (gff)
-ch_gffs = params.gff
-  ? Channel
-      .fromPath("${params.gff}/*.gff", type: "file")
-      .view { "gff file : $it" }
-      .unique()
-  : Channel.empty()
-
-
 // Getting accession for downloading
+
+// from SRA
 ch_sra_accessions = Channel.from( params.sra_accessions )
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
@@ -227,6 +269,8 @@ ch_mash_db = params.mash_db
 ch_fastani_genomes = Channel.empty()
 
 if ( params.fastani_ref ) {
+
+  // TODO : test fastani_ref
   Channel
     .of( params.fastani_ref )
     .splitCsv()
@@ -259,36 +303,44 @@ println("The files and directory for results is " + params.outdir )
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
 workflow {
-
-  ch_for_multiqc   = Channel.empty()
-  ch_for_summary   = Channel.empty()
-  ch_for_flag      = Channel.empty()
-  ch_top_hit       = Channel.empty()
+  ch_for_multiqc  = Channel.empty()
+  ch_for_summary  = Channel.empty()
+  ch_for_flag     = Channel.empty()
+  ch_versions     = Channel.empty()
 
   // getting test files
   if ( ! params.sra_accessions.isEmpty() ) { 
     test(ch_sra_accessions)
     ch_raw_reads = ch_reads.mix(test.out.fastq)
+    ch_versions = ch_versions.mix(test.out.versions)
   } else {
     ch_raw_reads = ch_reads
   }
 
-  de_novo_alignment(ch_raw_reads)
+  if ( params.sample_sheet || params.reads ) {
+    de_novo_alignment(ch_raw_reads)
 
-  ch_contigs       = ch_fastas.mix(de_novo_alignment.out.contigs)
-  ch_clean_reads   = de_novo_alignment.out.clean_reads
+    ch_contigs     = ch_fastas.mix(de_novo_alignment.out.contigs)
+    ch_clean_reads = de_novo_alignment.out.clean_reads
+    ch_for_multiqc = ch_for_multiqc.mix(de_novo_alignment.out.for_multiqc)
+    ch_versions = ch_versions.mix(de_novo_alignment.out.versions)
+  } else {
+    ch_contigs     = ch_fastas
+    ch_clean_reads = Channel.empty()
+  }
 
   // optional subworkflow blobtools (useful for interspecies contamination)
-  // if ( params.blast_db ) {
+  // if ( params.blast_db && ( params.sample_sheet || params.reads )) {
   //   blobtools(ch_clean_reads, ch_contigs, ch_blast_db )
 
   //   ch_for_multiqc = ch_for_multiqc.mix(blobtools.out.for_multiqc)
   //   ch_for_summary = ch_for_summary.mix(blobtools.out.for_summary)
   //   ch_for_flag    = ch_for_flag.mix(blobtools.out.for_flag)
+  // ch_versions = ch_versions.mix(blobtools.out.versions)
   // }
 
   // optional subworkflow kraken2 (useful for interspecies contamination)
-  if ( params.kraken2_db ) {
+  if ( params.kraken2_db && ( params.sample_sheet || params.reads )) {
     // TODO : figure out where the kraken2 fastq files are
 
     kmer_taxonomic_classification(ch_clean_reads, ch_kraken2_db )
@@ -296,6 +348,7 @@ workflow {
     ch_for_multiqc = ch_for_multiqc.mix(kmer_taxonomic_classification.out.for_multiqc)
     ch_for_summary = ch_for_summary.mix(kmer_taxonomic_classification.out.for_summary)
     ch_for_flag    = ch_for_flag.mix(kmer_taxonomic_classification.out.for_flag)
+    ch_versions    = ch_versions.mix(kmer_taxonomic_classification.out.versions)
   } 
   
   if ( ! params.skip_extras ) {
@@ -309,17 +362,8 @@ workflow {
       ch_fastani_genomes.ifEmpty([]),
       dataset_script)
 
-    ch_for_flag    = ch_for_flag.mix(average_nucleotide_identity.out.for_flag).mix(min_hash.out.for_flag)
-    ch_top_hit     = ch_top_hit.mix(average_nucleotide_identity.out.top_hit)
-    ch_datasets    = average_nucleotide_identity.out.datasets_summary.ifEmpty('none')
-
-  //   ch_contigs
-  //     .join(min_hash_distance.out.mash_err)
-  //     .join(min_hash_distance.out.for_flag)
-  //     .join(average_nucleotide_identity.out.for_flag)
-  //     .combine(ch_genome_sizes)
-  //     .combine(ch_datasets)
-  //     .set{ ch_size }
+    ch_for_flag = ch_for_flag.mix(average_nucleotide_identity.out.for_flag).mix(min_hash.out.for_flag)
+    ch_top_hit  = average_nucleotide_identity.out.top_hit
 
     // getting all the other information
     information(
@@ -328,32 +372,37 @@ workflow {
       ch_for_flag, 
       summfle_script)
 
-  //   ch_for_summary = ch_for_summary.mix(information.out.for_summary).mix(min_hash_distance.out.for_summary).mix(average_nucleotide_identity.out.for_summary)
-  //   ch_for_multiqc = ch_for_multiqc.mix(information.out.for_multiqc)
-  } 
+    ch_for_summary = ch_for_summary.mix(information.out.for_summary).mix(min_hash.out.for_summary).mix(average_nucleotide_identity.out.for_summary)
+    ch_for_multiqc = ch_for_multiqc.mix(information.out.for_multiqc)
+    ch_versions    = ch_versions.mix(min_hash.out.versions).mix(average_nucleotide_identity.out.versions).mix(information.out.versions)
+  } else {
+    ch_top_hit = Channel.empty()
+  }
 
 
   //ch_versions.unique().collectFile(name: 'collated_versions.yml')
-  // // optional subworkflow for comparing shared genes
-  // if ( params.msa ) {
-  //   phylogenetic_analysis(
-  //     evaluat_script, 
-  //     ch_contigs.ifEmpty([]), 
-  //     ch_gffs.ifEmpty([]), 
-  //     ch_top_hit.ifEmpty([]))
+  // optional subworkflow for comparing shared genes
+  if ( params.msa ) {
+    phylogenetic_analysis(
+      evaluat_script,
+      ch_contigs.ifEmpty([]),
+      ch_top_hit.ifEmpty([]))
     
-  //   ch_for_multiqc   = ch_for_multiqc.mix(phylogenetic_analysis.out.for_multiqc)
-  // }
+    ch_for_multiqc = ch_for_multiqc.mix(phylogenetic_analysis.out.for_multiqc)
+    ch_versions    = ch_versions.mix(phylogenetic_analysis.out.versions)
+  }
 
-  // // getting a summary of everything
-  // if (params.extras ) {
-  // ch_for_multiqc = ch_for_multiqc.mix(de_novo_alignment.out.for_multiqc)
-  //   report(
-  //     ch_raw_reads, 
-  //     ch_fastas, 
-  //     ch_for_multiqc.collect(), 
-  //     ch_for_summary.concat(summary_script).collect())
-  // }
+  // getting a summary of everything
+  if ( ! params.skip_extras ) {
+    report(
+      ch_raw_reads, 
+      ch_fastas, 
+      ch_for_multiqc.collect(), 
+      ch_for_summary.concat(summary_script).collect(),
+      ch_versions.collect(),
+      multiqc_script,
+      version_script)
+  }
 }
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####

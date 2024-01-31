@@ -39,7 +39,7 @@ process bbduk {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-      "bbmap: \$(bbduk.sh --version 2>&1 | grep -v java | grep version)" >> versions.yml
+      "bbmap: \$(bbduk.sh --version 2>&1 | grep -v java | grep version)"
     END_VERSIONS
   """
 }
