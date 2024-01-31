@@ -1,6 +1,7 @@
-include { names }   from '../modules/local/local'   addParams(params)
-include { multiqc } from '../modules/local/multiqc' addParams(params)
-include { summary } from '../modules/local/local'   addParams(params)
+include { names }    from '../modules/local/local'   addParams(params)
+include { multiqc }  from '../modules/local/multiqc' addParams(params)
+include { summary }  from '../modules/local/local'   addParams(params)
+include { versions } from '../modules/local/multiqc' addParams(params)
 
 workflow report {
     take:
@@ -8,9 +9,16 @@ workflow report {
         ch_fastas
         for_multiqc
         for_summary
+        ch_versions
+        multiqc_script
+        version_script
   
     main:
-        multiqc(for_multiqc.mix(for_summary).collect())
+        ch_versions.view()
+
+        ch_versions.collectFile(name: 'collated_versions.yml')
+        //versions(ch_versions, version_script)
+        multiqc(for_multiqc.mix(for_summary).collect(), multiqc_script)
 
         names(ch_reads.mix(ch_fastas))
 
