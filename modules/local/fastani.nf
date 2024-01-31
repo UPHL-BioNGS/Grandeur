@@ -24,15 +24,12 @@ process fastani {
   shell:
   def args   = task.ext.args ?: ''
   def prefix = task.ext.prefix ?: "${meta.id}"
+  def ref    = genomes.join(",")
   """
     mkdir -p fastani logs/${task.process}
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
-    echo ${genomes} | \
-      sed 's/\\]//g' | sed 's/\\[//g' | \
-      tr -d '[:blank:]' | \
-      tr "," "\\n" | \
-      sort | tee reference_list.txt
+    echo ${ref} | tr "," "\\n" | sort > reference_list.txt
 
     fastANI ${args} \
       --threads ${task.cpus} \
