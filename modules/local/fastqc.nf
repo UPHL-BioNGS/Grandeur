@@ -22,6 +22,7 @@ process fastqc {
   shell:
   def args   = task.ext.args   ?: ''
   def prefix = task.ext.prefix ?: "${meta.id}"
+  def reads  = fastq.join(" ")
   """
     mkdir -p fastqc logs/${task.process}
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
@@ -29,7 +30,7 @@ process fastqc {
     fastqc ${args} \
       --outdir fastqc \
       --threads ${task.cpus} \
-      ${fastq[0]} ${fastq[1]} \
+      ${reads} \
       --extract \
       | tee -a \$log_file
 
