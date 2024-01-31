@@ -2,7 +2,7 @@ process heatcluster {
   tag           "HeatCluster"
   label         "process_single"
   publishDir    params.outdir, mode: 'copy'
-  container     'quay.io/uphl/heatcluster:1.0.2-2023-12-19'
+  container     'staphb/heatcluster:1.0.2c'
   time          '10m'
   //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
@@ -10,7 +10,7 @@ process heatcluster {
   file(matrix)
 
   output:
-  path "heatcluster/heatcluster*"   , optional : true
+  path "heatcluster/*", optional : true
   path "heatcluster/heatcluster.png", optional : true, emit: for_multiqc
   path "logs/${task.process}/*.log", emit: log_files
   path "versions.yml", emit: versions
@@ -20,7 +20,6 @@ process heatcluster {
 
   shell:
   def args   = task.ext.args   ?: '-t png'
-  def prefix = task.ext.prefix ?: "${meta.id}"
   """
     mkdir -p heatcluster logs/${task.process}
     log_file=logs/${task.process}/heatcluster.${workflow.sessionId}.log
@@ -29,6 +28,8 @@ process heatcluster {
         -i ${matrix} \
         -o heatcluster/heatcluster \
         | tee -a \$log_file
+
+    if [ -f "sorted_matrix.csv" ]; then cp sorted_matrix.csv heatcluster/. ; fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
