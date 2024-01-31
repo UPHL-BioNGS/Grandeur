@@ -16,11 +16,10 @@ process core_genome_evaluation {
   path "logs/${task.process}/*.log"                       , emit: log_files
 
   shell:
-  def args   = task.ext.args ?: ''
-  def prefix = task.ext.prefix ?: "${meta.id}"
+  def args = task.ext.args ?: ''
   """
     mkdir -p core_genome_evaluation logs/${task.process}
-    log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
+    log_file=logs/${task.process}/${task.process}.${workflow.sessionId}.log
 
     python ${script} | tee -a \$log_file
 
@@ -157,6 +156,33 @@ process json_convert {
   """
 }
 
+process mash_err {
+  tag           "${meta.id}"
+  // no publishDir
+  label         "process_single"
+  container     'quay.io/biocontainers/pandas:1.5.2'
+  time          '10m'
+  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  
+  input:
+  tuple val(meta), file(error_file)
+
+  output:
+  path "summary/*_names.csv", emit: summary
+
+  when:
+  task.ext.when == null || task.ext.when
+
+  shell:
+  def prefix = task.ext.prefix ?: "${meta.id}"
+  """
+
+  echo "whatever"
+
+  exit 1
+  """
+}
+
 process names {
   tag           "${meta.id}"
   // no publishDir
@@ -262,7 +288,6 @@ process summary {
   path "grandeur_summary.txt"                 , emit: summary_txt
   path "summary/grandeur_extended_summary.tsv", emit: extended_tsv
   path "summary/grandeur_extended_summary.txt", emit: extended_txt
-  path "logs/${task.process}/*.log"           , emit: log_files
 
   when:
   task.ext.when == null || task.ext.when
@@ -271,8 +296,7 @@ process summary {
   def args = task.ext.args ?: ''
   """
     mkdir -p summary
-    log_file=logs/${task.process}/summary.${workflow.sessionId}.log
 
-    python summary.py | tee -a \$log_file
+    python summary.py
   """
 }
