@@ -12,6 +12,7 @@ workflow average_nucleotide_identity {
         dataset_script
   
     main:
+        ch_versions = Channel.empty()
         if ( params.current_datasets ) {
             species(ch_species)
 
@@ -31,7 +32,9 @@ workflow average_nucleotide_identity {
                     keepHeader: true,
                     sort: { file -> file.text },
                     name: "datasets_summary.csv")
-                .set { datasets_summary } 
+                .set { datasets_summary }
+            
+            ch_versions = ch_versions.mix(datasets_summary.out.versions.first()).mix(datasets_download.out.versions.first())
 
         } else {
             datasets_summary = Channel.empty()
@@ -57,9 +60,11 @@ workflow average_nucleotide_identity {
                 name: "fastani_summary.csv")
             .set { summary }
 
-   emit:
-        for_flag         = fastani.out.results
-        for_summary      = summary
-        top_hit          = fastani.out.top_hit
-        datasets_summary = datasets_summary
+        ch_versions = ch_versions.mix(fastani.out.versions.first())
+
+    emit:
+        for_flag    = fastani.out.results
+        for_summary = summary.mix(datasets_summary)
+        top_hit     = fastani.out.top_hit
+        versions    = ch_versions
 }
