@@ -37,8 +37,8 @@ process quast {
 
     if [ -f "quast/${prefix}/transposed_report.tsv" ]
     then
-      head -n 1 quast/${prefix}/transposed_report.tsv | awk '{print "prefix\\t" \$0 }' > quast/${prefix}/transposed_report.tsv.tmp
-      tail -n 1 quast/${prefix}/transposed_report.tsv | awk -v prefix=${prefix} '{print prefix "\\t" \$0}' >> quast/${prefix}/transposed_report.tsv.tmp
+      head -n 1 quast/${prefix}/transposed_report.tsv | awk '{print "sample\\t" \$0 }' > quast/${prefix}/transposed_report.tsv.tmp
+      tail -n 1 quast/${prefix}/transposed_report.tsv | awk -v sample=${prefix} '{print sample "\\t" \$0}' >> quast/${prefix}/transposed_report.tsv.tmp
       mv quast/${prefix}/transposed_report.tsv.tmp quast/${prefix}/transposed_report.tsv
     fi
 
