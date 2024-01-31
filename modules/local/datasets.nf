@@ -28,7 +28,7 @@ process datasets_summary {
     
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-      "datasets: \$(datasets --version)" >> versions.yml
+      "datasets: \$(datasets --version)"
     END_VERSIONS
   """
 }
@@ -41,7 +41,7 @@ process datasets_download {
   label         "process_medium"
   publishDir    path: "${params.outdir}", mode: 'copy', pattern: "logs/*/*log"
   container     'quay.io/uphl/datasets:16.3.0-2024-01-23'
-  time          '1h'
+  time          '5h'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
@@ -76,11 +76,12 @@ process datasets_download {
       gzip genomes/\${organism}_\${accession}_ds.fna
     done  
 
+    # removing MAGS
     rm -rf genomes/*:_*
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-      "datasets: \$(datasets --version)" >> versions.yml
+      "datasets: \$(datasets --version)"
     END_VERSIONS
   """
 }
