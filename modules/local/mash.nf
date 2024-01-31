@@ -51,9 +51,8 @@ process mash_sketch_fasta {
 
   output:
   tuple val(meta), file("mash/*.msh"), emit: msh
-  tuple val(meta), file("mash/*.err"), optional: true, emit: err
   path "logs/${task.process}/*.log",   emit: log
-  path  "versions.yml",                emit: versions
+  path "versions.yml",                 emit: versions
 
   when:
   task.ext.when == null || task.ext.when
@@ -65,12 +64,11 @@ process mash_sketch_fasta {
   """
   mkdir -p mash logs/${task.process}
   log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
-  err_file=mash/${prefix}.${workflow.sessionId}.err
   
   mash sketch ${args} \
     -o mash/${prefix}.fasta \
     ${fasta} \
-    2>> \$err_file | tee -a \$log_file
+    | tee -a \$log_file
 
   cat <<-END_VERSIONS > versions.yml
   "${task.process}":
@@ -125,6 +123,8 @@ process mash_dist {
 
     sort -gk3 mash/${prefix}.mashdist.txt.tmp | head -n ${params.mash_max_hits} > mash/${prefix}.mashdist.txt
 
+    echo "sample,reference,query,mash-distance,P-value,matching-hashes,organism" > mash/${prefix}.summary.mash.csv
+
     while read line
     do
       organism=\$(echo \$line | cut -f 8 -d "-" | cut -f 1,2 -d "_" | cut -f 1 -d ".")
@@ -160,6 +160,8 @@ process mash_dist {
     fi
 
     sort -gk3 mash/${prefix}.mashdist.txt.tmp | head -n ${params.mash_max_hits} > mash/${prefix}.mashdist.txt
+
+    echo "sample,reference,query,mash-distance,P-value,matching-hashes,organism" > mash/${prefix}.summary.mash.csv
 
     while read line
     do
