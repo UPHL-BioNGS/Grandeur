@@ -24,8 +24,27 @@ workflow information {
     summfle_script
 
   main:
-    // fastq files
-    fastqc(ch_reads)
+    for_multiqc = Channel.empty()
+    ch_versions = Channel.empty()
+
+    // fastq files only
+    if ( params.sample_sheet || params.reads ) {
+      fastqc(ch_reads)
+
+      for_multiqc = for_multiqc.mix(fastqc.out.for_multiqc)
+
+      fastqc.out.collect
+        .collectFile(name: "fastqc_summary.csv",
+          keepHeader: true,
+          sort: { file -> file.text },
+          storeDir: "${params.outdir}/fastqc")
+        .set{ fastqc_summary }
+
+      ch_versions = ch_versions.mix(fastq.out.versions.first())
+
+    } else {
+      fastqc_summary = Channel.empty()
+    }
 
     // contigs
     mlst(ch_contigs.combine(summfle_script))
@@ -54,12 +73,12 @@ workflow information {
         storeDir: "${params.outdir}/ncbi-AMRFinderplus")
       .set{ amrfinderplus_summary }
 
-    // drprg.out.collect
-    //   .collectFile(name: "drprg_summary.txt",
-    //     keepHeader: true,
-    //     sort: { file -> file.text },
-    //     storeDir: "${params.outdir}/drprg")
-    //   .set{ drprg_summary }
+      // drprg.out.collect
+      //   .collectFile(name: "drprg_summary.txt",
+      //     keepHeader: true,
+      //     sort: { file -> file.text },
+      //     storeDir: "${params.outdir}/drprg")
+      //   .set{ drprg_summary }
 
     elgato.out.collect
       .collectFile(name: "elgato_summary.tsv",
@@ -75,13 +94,6 @@ workflow information {
         storeDir: "${params.outdir}/emmtyper")
       .set{ emmtyper_summary }
 
-    fastqc.out.collect
-      .collectFile(name: "fastqc_summary.csv",
-        keepHeader: true,
-        sort: { file -> file.text },
-        storeDir: "${params.outdir}/fastqc")
-      .set{ fastqc_summary }
-
     flag.out.collect
       .collectFile(name: "flag_summary.csv",
         keepHeader: true,
@@ -89,12 +101,12 @@ workflow information {
         storeDir: "${params.outdir}/flag")
       .set { flag_summary }
 
-    // kaptive.out.collect
-    //   .collectFile(name: "kaptive_summary.csv",
-    //     keepHeader: true,
-    //     sort: { file -> file.text },
-    //     storeDir: "${params.outdir}/kaptive")
-    //   .set{ kaptive_summary }
+      // kaptive.out.collect
+      //   .collectFile(name: "kaptive_summary.csv",
+      //     keepHeader: true,
+      //     sort: { file -> file.text },
+      //     storeDir: "${params.outdir}/kaptive")
+      //   .set{ kaptive_summary }
 
     kleborate.out.collect
       .collectFile(name: "kleborate_results.tsv",
@@ -102,13 +114,6 @@ workflow information {
         sort: { file -> file.text },
         storeDir: "${params.outdir}/kleborate")
       .set{ kleborate_summary }
-
-    // legsta.out.collect
-    //   .collectFile(name: "legsta_summary.csv",
-    //     keepHeader: true,
-    //     sort: { file -> file.text },
-    //     storeDir: "${params.outdir}/legsta")
-    //   .set{ legsta_summary }
 
     mlst.out.collect
       .collectFile(name: "mlst_summary.tsv",
@@ -173,7 +178,6 @@ workflow information {
       .mix(fastqc_summary)
       //.mix(kaptive_summary)
       .mix(kleborate_summary)
-      //.mix(legsta_summary)
       .mix(mlst_summary)
       .mix(mykrobe_summary)
       .mix(pbptyper_summary)
@@ -184,11 +188,24 @@ workflow information {
       .mix(shigatyper_summary)
       .set { for_summary }
 
-    fastqc.out.for_multiqc
-      .mix(quast.out.for_multiqc)
-      .set { for_multiqc }
+    ch_versions
+      .mix(drprg.out.versions.first())
+      .mix(elgato.out.versions.first())
+      .mix(emmtyper.out.versions.first())
+      //.mix(kaptive.out.versions.first())
+      .mix(kleborate.out.versions.first())
+      .mix(mlst.out.versions.first())
+      .mix(mykrobe.out.versions.first())
+      .mix(pbptyper.out.versions.first())
+      .mix(plasmidfinder.out.versions.first())
+      .mix(quast.out.versions.first())
+      .mix(seqsero2.out.versions.first())
+      .mix(serotypefinder.out.versions.first())
+      .mix(shigatyper.out.versions.first())
+      .set { for_versions }
 
   emit:
     for_summary = for_summary.collect()
-    for_multiqc = for_multiqc.collect()
+    for_multiqc = for_multiqc.mix(quast.out.for_multiqc).collect()
+    versions    = for_versions
 }
