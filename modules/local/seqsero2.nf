@@ -1,7 +1,6 @@
 process seqsero2 {
   tag           "${meta.id}"
   label         "process_medium"
-  label         "medcpus"
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/seqsero2:1.2.1'
   time          '10m'
