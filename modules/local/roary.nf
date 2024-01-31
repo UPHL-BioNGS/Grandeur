@@ -1,7 +1,6 @@
 process roary {
   tag           "Core Genome Alignment"
   label         "process_high"
-  label         'maxcpus'
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/roary:3.13.0'
   //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
