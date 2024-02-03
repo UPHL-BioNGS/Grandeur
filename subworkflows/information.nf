@@ -4,6 +4,7 @@ include { elgato }         from '../modules/local/elgato'         addParams(para
 include { emmtyper }       from '../modules/local/emmtyper'       addParams(params)
 include { fastqc }         from '../modules/local/fastqc'         addParams(params)
 include { flag }           from '../modules/local/local'          addParams(params)
+include { json_convert }   from '../modules/local/local'          addParams(params)
 include { kaptive }        from '../modules/local/kaptive'        addParams(params)
 include { kleborate }      from '../modules/local/kleborate'      addParams(params)
 include { legsta }         from '../modules/local/legsta'         addParams(params)
@@ -22,6 +23,7 @@ workflow information {
     ch_contigs
     ch_flag
     summfle_script
+    jsoncon_script
 
   main:
     for_multiqc = Channel.empty()
@@ -40,7 +42,7 @@ workflow information {
           storeDir: "${params.outdir}/fastqc")
         .set{ fastqc_summary }
 
-      ch_versions = ch_versions.mix(fastq.out.versions.first())
+      ch_versions = ch_versions.mix(fastqc.out.versions)
 
     } else {
       fastqc_summary = Channel.empty()
@@ -66,6 +68,8 @@ workflow information {
     serotypefinder(ch_contigs.join(flag.out.ecoli_flag, by:0).combine(summfle_script))
     shigatyper(ch_contigs.join(flag.out.ecoli_flag,     by:0).combine(summfle_script))
 
+    json_convert(drprg.out.json.combine(jsoncon_script))
+
     amrfinderplus.out.collect
       .collectFile(name: "amrfinderplus.txt",
         keepHeader: true,
@@ -73,12 +77,13 @@ workflow information {
         storeDir: "${params.outdir}/ncbi-AMRFinderplus")
       .set{ amrfinderplus_summary }
 
-      // drprg.out.collect
-      //   .collectFile(name: "drprg_summary.txt",
-      //     keepHeader: true,
-      //     sort: { file -> file.text },
-      //     storeDir: "${params.outdir}/drprg")
-      //   .set{ drprg_summary }
+    json_convert.out.collect
+      .filter( /drprg/ )
+      .collectFile(name: "drprg_summary.tsv",
+        keepHeader: true,
+        sort: { file -> file.text },
+        storeDir: "${params.outdir}/drprg")
+      .set{ drprg_summary }
 
     elgato.out.collect
       .collectFile(name: "elgato_summary.tsv",
@@ -171,8 +176,15 @@ workflow information {
         storeDir: "${params.outdir}/shigatyper")
       .set{ shigatyper_summary }
 
+    // TODO:
+    // check all are in mutliqc
+    // check all are in summary file
+    // check kleborate getting amr
+    // known issues : emmtyper, kleborate, el gato, pbp, drprg
+
+
     amrfinderplus_summary
-      //.mix(drprg_summary)
+      .mix(drprg_summary)
       .mix(elgato_summary)
       .mix(emmtyper_summary)
       .mix(fastqc_summary)
@@ -189,19 +201,20 @@ workflow information {
       .set { for_summary }
 
     ch_versions
-      .mix(drprg.out.versions.first())
-      .mix(elgato.out.versions.first())
-      .mix(emmtyper.out.versions.first())
-      //.mix(kaptive.out.versions.first())
-      .mix(kleborate.out.versions.first())
-      .mix(mlst.out.versions.first())
-      .mix(mykrobe.out.versions.first())
-      .mix(pbptyper.out.versions.first())
-      .mix(plasmidfinder.out.versions.first())
-      .mix(quast.out.versions.first())
-      .mix(seqsero2.out.versions.first())
-      .mix(serotypefinder.out.versions.first())
-      .mix(shigatyper.out.versions.first())
+      .mix(amrfinderplus.out.versions)
+      .mix(drprg.out.versions)
+      .mix(elgato.out.versions)
+      .mix(emmtyper.out.versions)
+      //.mix(kaptive.out.versions)
+      .mix(kleborate.out.versions)
+      .mix(mlst.out.versions)
+      .mix(mykrobe.out.versions)
+      .mix(pbptyper.out.versions)
+      .mix(plasmidfinder.out.versions)
+      .mix(quast.out.versions)
+      .mix(seqsero2.out.versions)
+      .mix(serotypefinder.out.versions)
+      .mix(shigatyper.out.versions)
       .set { for_versions }
 
   emit:
