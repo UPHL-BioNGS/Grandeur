@@ -134,25 +134,26 @@ process flag {
 }
 
 process json_convert {
-  tag           "${prefix}"
-  label         "process_single"
+  tag       "${meta.id}"
+  label     "process_single"
   // no publishDir
-  container     'quay.io/biocontainers/pandas:1.5.2'
-  maxForks      10
-  time          '10m'
+  container 'quay.io/biocontainers/pandas:1.5.2'
+  time      '10m'
   //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   tuple val(meta), val(analysis), file(json), file(script)
 
   output:
-  path "${analysis}/*_${analysis}_summary.csv", emit: collect
+  path "${analysis}/*_${analysis}*", emit: collect
 
   shell:
   """
   mkdir -p ${analysis}
 
-  python3 ${script} ${analysis} ${json} 
+  python3 ${script} ${json} ${analysis}
+
+  mv *${analysis}*tsv ${analysis}/.
   """
 }
 
@@ -168,7 +169,7 @@ process mash_err {
   tuple val(meta), file(error_file)
 
   output:
-  path "summary/*_names.csv", emit: summary
+  path "mash_estimates.csv", emit: summary
 
   when:
   task.ext.when == null || task.ext.when
@@ -177,9 +178,35 @@ process mash_err {
   def prefix = task.ext.prefix ?: "${meta.id}"
   """
 
-  echo "whatever"
+  genome_size=\$(grep "Estimated genome size:" ${error_file} | awk '{print \$NF}')
+  coverage=\$(grep "Estimated coverage:"  ${error_file} | awk '{print \$NF}')
 
-  exit 1
+  echo "sample,mash_estimated_genome_size,mash_estimated_coverage" > mash_estimates.csv
+  echo "${prefix},\$genome_size,\$coverage" >> mash_estimates.csv
+  """
+}
+
+process mqc_prep {
+  tag           "prepping files"
+  // no publishDir
+  label         "process_single"
+  container     'quay.io/biocontainers/pandas:1.5.2'
+  time          '10m'
+  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  
+  input:
+  file(input)
+  file(script)
+
+  output:
+  path "*mqc*", emit: for_multiqc
+
+  when:
+  task.ext.when == null || task.ext.when
+
+  shell:
+  """
+  python3 ${script}
   """
 }
 
@@ -202,11 +229,12 @@ process names {
 
   shell:
   def prefix = task.ext.prefix ?: "${meta.id}"
+  def files  = input.join(" ")
   """
   mkdir -p summary
 
   echo "sample,file,version" > summary/${prefix}_names.csv
-  echo "${prefix},${input},${workflow.manifest.version}" >> summary/${prefix}_names.csv
+  echo "${prefix},${files},${workflow.manifest.version}" >> summary/${prefix}_names.csv
   """
 }
 
