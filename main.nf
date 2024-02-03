@@ -54,13 +54,13 @@ params.genome_sizes         = workflow.projectDir + "/assets/genome_sizes.json"
 
 // for downloading from databases
 params.sra_accessions       = []
-params.genome_accessions    = []
 
 // thresholds and other params
 params.minimum_reads        = 10000
 params.datasets_max_genomes = 5
 params.mash_max_hits        = 25
 params.min_core_genes       = 1500
+params.iqtree2_outgroup     = ""
 
 // subworkflow flags
 params.current_datasets     = false
@@ -89,9 +89,9 @@ def paramCheck(keys) {
     "blast_db",
     "fastani_ref",
     "fastani_ref_list",
+    "iqtree2_outgroup",
     "genome_sizes",
     "sra_accessions",
-    "genome_accessions",
     "minimum_reads",
     "datasets_max_genomes",
     "mash_max_hits",
@@ -137,6 +137,7 @@ include { test }                          from "./subworkflows/test"            
 
 dataset_script = Channel.fromPath(workflow.projectDir + "/bin/datasets_download.py", type: "file")
 evaluat_script = Channel.fromPath(workflow.projectDir + "/bin/evaluate.py",          type: "file")
+jsoncon_script = Channel.fromPath(workflow.projectDir + "/bin/json_convert.py",      type: "file")
 multiqc_script = Channel.fromPath(workflow.projectDir + "/bin/for_multiqc.py",       type: "file")
 summary_script = Channel.fromPath(workflow.projectDir + "/bin/summary.py",           type: "file")
 summfle_script = Channel.fromPath(workflow.projectDir + "/bin/summary_file.py",      type: "file")
@@ -304,7 +305,7 @@ println("The files and directory for results is " + params.outdir )
 
 workflow {
   ch_for_multiqc  = Channel.empty()
-  ch_for_summary  = Channel.empty()
+  ch_for_summary  = ch_genome_sizes
   ch_for_flag     = Channel.empty()
   ch_versions     = Channel.empty()
 
@@ -370,7 +371,8 @@ workflow {
       ch_raw_reads, 
       ch_contigs, 
       ch_for_flag, 
-      summfle_script)
+      summfle_script,
+      jsoncon_script)
 
     ch_for_summary = ch_for_summary.mix(information.out.for_summary).mix(min_hash.out.for_summary).mix(average_nucleotide_identity.out.for_summary)
     ch_for_multiqc = ch_for_multiqc.mix(information.out.for_multiqc)
