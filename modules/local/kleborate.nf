@@ -19,7 +19,7 @@ process kleborate {
   (task.ext.when == null || task.ext.when) && flag =~ 'found'
 
   shell:
-  def args   = task.ext.args   ?: ''
+  def args   = task.ext.args   ?: '--all'
   def prefix = task.ext.prefix ?: "${meta.id}"
   """
     mkdir -p kleborate logs/${task.process}
