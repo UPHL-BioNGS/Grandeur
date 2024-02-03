@@ -3,7 +3,7 @@ process bbduk {
   label         "process_medium"
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/bbtools:39.01'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time          '10m'
 
   input:
@@ -39,7 +39,7 @@ process bbduk {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-      "bbmap: \$(bbduk.sh --version 2>&1 | grep -v java | grep version)"
+      bbduk: "\$(bbduk.sh --version 2>&1 | grep -v java | grep version | awk '{print \$NF}')"
     END_VERSIONS
   """
 }
