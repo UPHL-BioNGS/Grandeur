@@ -27,5 +27,5 @@ workflow blobtools {
     for_flag    = blobtools_plot.out.results
     for_summary = summary
     for_multiqc = bbmap.out.stats
-    versions    = blastn.out.versions.first().mix(blobtools_create.out.versions.first()).mix(blobtools_view.out.versions.first()).mix(blobtools_plot.out.versions.first())
+    versions    = blastn.out.versions.mix(blobtools_create.out.versions).mix(blobtools_view.out.versions).mix(blobtools_plot.out.versions)
 }
