@@ -33,7 +33,7 @@ process heatcluster {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        heatcluster: \$(echo \$(heatcluster.py -v 2>&1))
+      heatcluster: \$(echo \$(heatcluster.py --version | grep -v DeprecationWarning | grep -i heatcluster | awk '{print \$NF}' ))
     END_VERSIONS
   """
 }
