@@ -19,9 +19,8 @@ process iqtree2 {
   task.ext.when == null || task.ext.when
 
   shell:
-  def args = task.ext.args ?: '-t RANDOM -m GTR+F+I -bb 1000 -alrt 1000'
-  def prefix = task.ext.prefix ?: "${meta.id}"
-  def outgroup = params.iqtree2_outgroup ?: "-o ${params.iqtree2_outgroup}"
+  def args     = task.ext.args ?: '-t RANDOM -m GTR+F+I -bb 1000 -alrt 1000'
+  def outgroup = params.iqtree2_outgroup ? "-o ${params.iqtree2_outgroup}" : "" 
   """
     mkdir -p iqtree2 logs/${task.process}
     log_file=logs/${task.process}/${task.process}.${workflow.sessionId}.log
@@ -38,7 +37,7 @@ process iqtree2 {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        iqtree: \$(echo \$(iqtree -version 2>&1) | sed 's/^IQ-TREE multicore version //;s/ .*//')
+        iqtree2: \$(echo \$(iqtree2 -version 2>&1) | sed 's/^IQ-TREE multicore version //;s/ .*//')
     END_VERSIONS
   """
 }
