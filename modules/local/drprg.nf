@@ -11,7 +11,7 @@ process drprg {
   tuple val(meta), file(contigs), val(flag)
 
   output:
-  tuple val(meta), val("drprg"), file("drprg/*/*.drprg.json"), emit: collect
+  tuple val(meta), val("drprg"), file("drprg/*/*.drprg.json"), emit: json
   path "drprg/*/*", emit: results
   path "logs/${task.process}/*.log", emit: log
   path "versions.yml", emit: versions
@@ -35,7 +35,7 @@ process drprg {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        elgato: \$( drprg --version )
+        drprg: \$( drprg --version )
     END_VERSIONS
   """
 }
