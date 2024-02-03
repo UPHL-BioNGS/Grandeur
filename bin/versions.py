@@ -1,17 +1,16 @@
 #!/usr/bin/env python
 
-# Basically stolen from 
+# Stolen and modified from 
 # https://github.com/nf-core/rnaseq/blob/b89fac32650aacc86fcda9ee77e00612a1d77066/modules/nf-core/custom/dumpsoftwareversions/templates/dumpsoftwareversions.py#L4
 
-
-"""Provide functions to merge multiple versions.yml files."""
+""" Reformat versions yml file for multiqc """
 
 import yaml
-import platform
 from textwrap import dedent
 
 def _make_versions_html(versions):
-    """Generate a tabular HTML output of all versions for MultiQC."""
+    """ Reformat versions yml file for multiqc """
+
     html = [
         dedent(
             """\\
@@ -52,31 +51,27 @@ def _make_versions_html(versions):
 
 def main():
     """Load all version files and generate merged output."""
-    versions_this_module = {}
-    versions_this_module["${task.process}"] = {
-        "python": platform.python_version(),
-        "yaml": yaml.__version__,
-    }
 
-    with open("$versions") as f:
-        versions_by_process = yaml.load(f, Loader=yaml.BaseLoader) | versions_this_module
+    with open("versions.yml") as f:
+        versions_by_process = yaml.load(f, Loader=yaml.BaseLoader) 
 
-    # aggregate versions by the module name (derived from fully-qualified process name)
     versions_by_module = {}
     for process, process_versions in versions_by_process.items():
         module = process.split(":")[-1]
-
-    versions_by_module["Workflow"] = {
-        "Nextflow": "$workflow.nextflow.version",
-        "$workflow.manifest.name": "$workflow.manifest.version",
-    }
+        try:
+            if versions_by_module[module] != process_versions:
+                raise AssertionError(
+                    "There's something wrong with the designated containers of this workflow"
+                )
+        except KeyError:
+            versions_by_module[module] = process_versions
 
     versions_mqc = {
         "id": "software_versions",
-        "section_name": "${workflow.manifest.name} Software Versions",
-        "section_href": "https://github.com/${workflow.manifest.name}",
+        "section_name": "Grandeur Software Versions",
+        "section_href": "https://github.com/UPHL-BioNGS/Grandeur",
         "plot_type": "html",
-        "description": "are collected at run time from the software output.",
+        "description": "Collected at run time from the software output.",
         "data": _make_versions_html(versions_by_module),
     }
 
@@ -84,10 +79,6 @@ def main():
         yaml.dump(versions_by_module, f, default_flow_style=False)
     with open("software_versions_mqc.yml", "w") as f:
         yaml.dump(versions_mqc, f, default_flow_style=False)
-
-    with open("versions.yml", "w") as f:
-        yaml.dump(versions_this_module, f, default_flow_style=False)
-
 
 if __name__ == "__main__":
     main()
