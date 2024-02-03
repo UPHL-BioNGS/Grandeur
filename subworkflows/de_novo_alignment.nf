@@ -23,5 +23,5 @@ workflow de_novo_alignment {
 
     // for multiqc
     for_multiqc = fastp.out.fastp_files.mix(bbduk.out.stats)
-    versions    = bbduk.out.versions.first().mix(fastp.out.versions.first()).mix(spades.out.versions.first())
+    versions    = bbduk.out.versions.mix(fastp.out.versions).mix(spades.out.versions)
 }

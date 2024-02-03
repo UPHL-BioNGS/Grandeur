@@ -32,6 +32,8 @@ workflow phylogenetic_analysis {
           .set { ch_representative }
 
         for_prokka = ch_contigs.join( ch_organism, by: 0, remainder: true).mix(ch_representative)
+      } else {
+        for_prokka = ch_contigs.join( ch_organism, by: 0, remainder: true)
       }
     } else {
       // skipping ani and top hit
@@ -63,5 +65,5 @@ workflow phylogenetic_analysis {
 
   emit:
     for_multiqc = prokka.out.for_multiqc.mix(snp_dists.out.snp_matrix).mix(heatcluster.out.for_multiqc).mix(phytreeviz.out.for_multiqc).mix(core_genome_evaluation.out.for_multiqc)
-    versions    = prokka.out.versions.first().mix(panaroo.out.versions.first()).mix(mashtree.out.versions.first()).mix(iqtree2.out.versions.first()).mix(phytreeviz.out.versions.first()).mix(snp_dists.out.versions.first()).mix(heatcluster.out.versions.first())
+    versions    = prokka.out.versions.mix(panaroo.out.versions).mix(mashtree.out.versions).mix(iqtree2.out.versions).mix(phytreeviz.out.versions).mix(snp_dists.out.versions).mix(heatcluster.out.versions)
 }
