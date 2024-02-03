@@ -14,6 +14,7 @@ process fastani {
   output:
   tuple val(meta), file("fastani/*_fastani.csv"), emit: results, optional: true
   tuple val(meta), env(top_hit), path("top_hit/*"), emit: top_hit, optional: true
+  path "fastani/*_fastani_len.csv", emit: top_len, optional: true
   path "fastani/*", emit: everything
   path "logs/${task.process}/*.log", emit: log
   path "versions.yml", emit: versions
@@ -48,6 +49,11 @@ process fastani {
       cp \$top_hit top_hit/.
       gzip -d top_hit/*.gz || ls top_hit
       chmod 664 top_hit/*
+
+      top_len=\$(grep -v ">" top_hit/* | wc -c)
+
+      echo "sample,top_hit,top_len" > fastani/${prefix}_fastani_len.csv
+      echo "${prefix},\$top_hit,\$top_len" >> fastani/${prefix}_fastani_len.csv
     fi
 
     cat <<-END_VERSIONS > versions.yml
