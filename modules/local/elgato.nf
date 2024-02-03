@@ -34,7 +34,7 @@ process elgato {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-      elgato: \$( echo \$(elgato --version )
+      elgato: "${task.container}"
     END_VERSIONS
   """
 }
