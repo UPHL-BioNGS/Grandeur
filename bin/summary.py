@@ -17,14 +17,20 @@ from os.path import exists
 names          = 'input_files.csv'
 amrfinderplus  = 'amrfinderplus.txt'
 blobtools      = 'blobtools_summary.txt'
+core           = 'multiqc_core_genome_evaluation-plot.txt'
 datasets       = 'datasets_summary.csv'
+drprg          = 'replaceme.csv'
+elgato         = 'replaceme.csv'
 emmtyper       = 'emmtyper_summary.tsv'
 fastani        = 'fastani_summary.csv'
+fastani_len    = "fastani_top_len.csv"
 fastqc         = 'fastqc_summary.csv'
+genome_sizes   = "genome_sizes.json"
 kleborate      = 'kleborate_results.tsv'
 kraken2        = 'kraken2_summary.csv'
 legsta         = 'legsta_summary.csv'
 mash           = 'mash_summary.csv'
+mash_err       = 'mash_err_summary.csv'
 mlst           = 'mlst_summary.tsv'
 mykrobe        = 'mykrobe_summary.csv'
 pbptyper       = 'pbptyper_summary.tsv'
@@ -33,7 +39,6 @@ quast          = 'quast_report.tsv'
 seqsero2       = 'seqsero2_results.txt'
 serotypefinder = 'serotypefinder_results.txt'
 shigatyper     = 'shigatyper_results.txt'
-size           = 'size_results.csv'
 multiqc_json   = 'multiqc_data.json'
 multiqc_stats  = 'multiqc_general_stats.txt'
 
@@ -69,7 +74,7 @@ if not exists(names) :
 # creating the summary dataframe         #
 ##########################################
 
-summary_df = pd.read_csv(names, dtype = str)
+summary_df = pd.read_csv(names, dtype = str, index_col=None)
 summary_df['warnings'] = ''
 columns = list(summary_df.columns)
 
@@ -177,6 +182,7 @@ if exists(fastqc) :
     new_df['flagged sequences']  = new_df.apply(lambda x: x['R1_Sequences flagged as poor quality'] + x['R2_Sequences flagged as poor quality'], axis=1) 
     new_df = new_df[['sample','total sequences', 'flagged sequences']]
     new_df = new_df.add_prefix(analysis + '_')
+
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
 
@@ -259,7 +265,6 @@ if exists(shigatyper) :
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
 
 # multiqc : bbduk and fastp
-
 if exists(multiqc_json) :
     file = multiqc_json
     print("Adding analysis parsed via multiqc in " + file)
@@ -285,7 +290,7 @@ if exists(multiqc_json) :
             bbduk_phixreads_df['bbduk_phix_reads'] = phix_reads
             summary_df = pd.merge(summary_df, bbduk_phixreads_df, left_on="sample", right_on="bbduk_sample", how = 'left')
             summary_df.drop("bbduk_sample", axis=1, inplace=True)
-        
+
 if exists(multiqc_stats) : 
     file = multiqc_stats
     print("Adding analysis parsed via multiqc in " + file)
@@ -294,67 +299,193 @@ if exists(multiqc_stats) :
         tmp_df = new_df[["Sample","FastQC_mqc-generalstats-fastqc-avg_sequence_length"]].copy()
         tmp_df["fastqc_avg_length"] = tmp_df["FastQC_mqc-generalstats-fastqc-avg_sequence_length"]
         tmp_df.drop("FastQC_mqc-generalstats-fastqc-avg_sequence_length", axis=1, inplace=True)
+        tmp_df = tmp_df.dropna(subset=['fastqc_avg_length'])
         
         summary_df["possible_fastqc_name"] = summary_df['file'].str.split(" ").str[0].str.split(".").str[0]
         summary_df = pd.merge(summary_df, tmp_df, left_on="possible_fastqc_name", right_on="Sample", how = 'left')
         summary_df.drop("Sample", axis=1, inplace=True)
         summary_df.drop("possible_fastqc_name", axis=1, inplace=True)
 
+# core genome analysis file is also from multiqc
+if exists(core):
+    file = core
+    analysis = "core_genome_genes"
+    print("Adding core genome percentage from " + file)
+    new_df = pd.read_table(file, dtype = str, index_col= False)
+    new_df = new_df.add_prefix(analysis + '_')
+    summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_Sample", how = 'left')
+    summary_df.drop(analysis + "_Sample", axis=1, inplace=True)
+    summary_df['per_core_genome_genes'] = summary_df[analysis + '_core'].astype(float) / (summary_df[analysis + '_soft'].astype(float) + summary_df[analysis + '_core'].astype(float) + summary_df[analysis + '_shell'].astype(float) + summary_df[analysis + '_cloud'].astype(float))
+    summary_df['per_core_genome_genes'] = summary_df['per_core_genome_genes'].astype(float) * 100
+    summary_df['per_core_genome_genes'] = summary_df['per_core_genome_genes'].round(2)
+
+    summary_df['core_genome_warning'] = summary_df['per_core_genome_genes'].apply(lambda x: "Low core genes," if x <= 85 else "")
+    summary_df['warnings']            = summary_df['warnings'] + summary_df['core_genome_warning']
+
+
 # size : getting the size and coverage and warning if there's too much stdev
-if exists(size) :
-    file = size
-    print("Adding coverage information from sizes in " + file)
-    new_df = pd.read_csv(file, dtype = str, index_col= False)
-    new_df['datasets_size'] = new_df['datasets_size'].astype('float').astype('Int32')
-    new_df['expected_size'] = new_df['expected_size'].astype('float').astype('Int32')
-    new_df['mash_size'] = new_df['mash_size'].astype('float').astype('Int32')
-    new_df['quast_size'] = new_df['quast_size'].astype('float').astype('Int32')
-    new_df['average'] = new_df[["datasets_size","expected_size","mash_size", "quast_size"]].mean(axis = 1, skipna = True)
-    new_df['stdev'] = new_df[["datasets_size","expected_size","mash_size", "quast_size"]].std(axis = 1, skipna = True)
-    new_df['stdev_ratio'] = new_df['stdev']/new_df['average']
-    new_df['warning'] = new_df['stdev_ratio'].apply(lambda x: "Variable genome size," if x >= 0.1 else "")
-    new_df = new_df.add_prefix("size_")
+        
+# getting different size estimates
+# from circulocov
 
-    summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on="size_sample", how = 'left')
-    summary_df.drop("size_sample", axis=1, inplace=True)
-    summary_df.drop("size_genus", axis=1, inplace=True)
-    summary_df.drop("size_species", axis=1, inplace=True)
-    summary_df.drop("size_accession", axis=1, inplace=True)
-    summary_df['warnings'] = summary_df['warnings'] + summary_df['size_warning']
+##########################################
+# predicting organism                    #
+##########################################
 
-    if "fastqc_total sequences" and 'fastqc_avg_length' in summary_df:
-        summary_df['total_bases']          = summary_df['fastqc_total sequences'].astype('Int32') * summary_df['fastqc_avg_length'].astype(float)
-    elif 'quast_Total length' in summary_df:
-        summary_df['total_bases']          = summary_df['quast_Total length'].astype(float)
-    
-    if 'total_bases' in summary_df:
-        summary_df['coverage']                 = summary_df['total_bases'].astype(float) /  summary_df['size_size'].astype(float)
-        summary_df['coverage_for_1.5M_genome'] = summary_df['total_bases'].astype(float) /  1500000
-        summary_df['coverage_for_2M_genome']   = summary_df['total_bases'].astype(float) /  2000000
-        summary_df['coverage_for_2.5M_genome'] = summary_df['total_bases'].astype(float) /  2500000
-        summary_df['coverage_for_3M_genome']   = summary_df['total_bases'].astype(float) /  3000000
-        summary_df['coverage_for_3.5M_genome'] = summary_df['total_bases'].astype(float) /  3500000
-        summary_df['coverage_for_4M_genome']   = summary_df['total_bases'].astype(float) /  4000000
-        summary_df['coverage_for_4.5M_genome'] = summary_df['total_bases'].astype(float) /  4500000
-        summary_df['coverage_for_5M_genome']   = summary_df['total_bases'].astype(float) /  5000000
-        summary_df['coverage_for_5.5M_genome'] = summary_df['total_bases'].astype(float) /  5500000
-        summary_df['coverage_for_6M_genome']   = summary_df['total_bases'].astype(float) /  6000000
-        summary_df['coverage_for_6.5M_genome'] = summary_df['total_bases'].astype(float) /  6500000
-        summary_df['coverage_for_7M_genome']   = summary_df['total_bases'].astype(float) /  7000000
-        summary_df['coverage_for_7.5M_genome'] = summary_df['total_bases'].astype(float) /  7500000
-        summary_df['coverage_for_8M_genome']   = summary_df['total_bases'].astype(float) /  8000000
-        summary_df['coverage_for_8.5M_genome'] = summary_df['total_bases'].astype(float) /  8500000
-        summary_df['coverage_for_9M_genome']   = summary_df['total_bases'].astype(float) /  9000000
-        summary_df['coverage_for_9.5M_genome'] = summary_df['total_bases'].astype(float) /  9500000
-        summary_df['coverage_for_10M_genome']  = summary_df['total_bases'].astype(float) / 10000000
-        summary_df['coverage_warning']         = summary_df['coverage'].apply(lambda x: "Low coverage," if x <= 20 else "")
-        summary_df['warnings']                 = summary_df['warnings'] + summary_df['coverage_warning']
+print("Predicting organism")
 
-    else:
-        summary_df['total_bases']              = "Undetermined"
-        summary_df['coverage']                 = "Undetermined"
-        summary_df['coverage_warning']         = "Coverage is undetermined"
-        summary_df['warnings']                 = summary_df['warnings'] + summary_df['coverage_warning']
+summary_df['predicted_organism'] = pd.NA
+
+# TODO : add in fastani
+
+if 'blobtools_top_organism' in summary_df:
+    def fill_predicted_organism(row):
+        if pd.isna(row['predicted_organism']):
+            return row['blobtools_top_organism']
+        else:
+            return row['predicted_organism']
+
+    summary_df['predicted_organism'] = summary_df.apply(fill_predicted_organism, axis=1)
+
+if 'kraken2_top_organism' in summary_df:
+    def fill_predicted_organism(row):
+        if pd.isna(row['predicted_organism']):
+            return row['kraken2_top_organism']
+        else:
+            return row['predicted_organism']
+
+    summary_df['predicted_organism'] = summary_df.apply(fill_predicted_organism, axis=1)
+
+if 'mash_organism' in summary_df:
+    def fill_predicted_organism(row):
+        if pd.isna(row['predicted_organism']):
+            return row['mash_organism']
+        else:
+            return row['predicted_organism']
+
+    summary_df['predicted_organism'] = summary_df.apply(fill_predicted_organism, axis=1)
+
+##########################################
+# size and coverage estimates            #
+##########################################
+
+print("Estimating coverage")
+
+if "fastqc_total sequences" and 'fastqc_avg_length' in summary_df:
+    print("Estimating coverage")
+
+    summary_df['total_bases'] = summary_df['fastqc_total sequences'].astype(float) * summary_df['fastqc_avg_length'].astype(float)
+    summary_df['coverage_for_1.5M_genome'] = summary_df['total_bases'].astype(float) /  1500000
+    summary_df['coverage_for_2M_genome']   = summary_df['total_bases'].astype(float) /  2000000
+    summary_df['coverage_for_2.5M_genome'] = summary_df['total_bases'].astype(float) /  2500000
+    summary_df['coverage_for_3M_genome']   = summary_df['total_bases'].astype(float) /  3000000
+    summary_df['coverage_for_3.5M_genome'] = summary_df['total_bases'].astype(float) /  3500000
+    summary_df['coverage_for_4M_genome']   = summary_df['total_bases'].astype(float) /  4000000
+    summary_df['coverage_for_4.5M_genome'] = summary_df['total_bases'].astype(float) /  4500000
+    summary_df['coverage_for_5M_genome']   = summary_df['total_bases'].astype(float) /  5000000
+    summary_df['coverage_for_5.5M_genome'] = summary_df['total_bases'].astype(float) /  5500000
+    summary_df['coverage_for_6M_genome']   = summary_df['total_bases'].astype(float) /  6000000
+    summary_df['coverage_for_6.5M_genome'] = summary_df['total_bases'].astype(float) /  6500000
+    summary_df['coverage_for_7M_genome']   = summary_df['total_bases'].astype(float) /  7000000
+    summary_df['coverage_for_7.5M_genome'] = summary_df['total_bases'].astype(float) /  7500000
+    summary_df['coverage_for_8M_genome']   = summary_df['total_bases'].astype(float) /  8000000
+    summary_df['coverage_for_8.5M_genome'] = summary_df['total_bases'].astype(float) /  8500000
+    summary_df['coverage_for_9M_genome']   = summary_df['total_bases'].astype(float) /  9000000
+    summary_df['coverage_for_9.5M_genome'] = summary_df['total_bases'].astype(float) /  9500000
+    summary_df['coverage_for_10M_genome']  = summary_df['total_bases'].astype(float) / 10000000
+
+    if exists(mash_err) :
+        file = mash_err
+        print("Adding cov and size estimates from " + file)
+        new_df = pd.read_csv(file, dtype = str, index_col= False)
+        new_df["mash_estimated_genome_size"] = new_df["mash_estimated_genome_size"].astype(float)
+        new_df["mash_estimated_coverage"] = new_df["mash_estimated_coverage"].astype(float)
+        summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on="sample", how = 'left')
+
+    if exists(fastani_len):
+        file = fastani_len
+        print("getting size estimate from fastani top hit" + file)
+        new_df = pd.read_csv(file, dtype = str, index_col= False)
+        new_df['predicted_organism'] = new_df["top_hit"].astype(str).apply(lambda x: "_".join(x.split('_')[:2]))
+        new_df.rename(columns={'top_len': 'fastani_estimated_genome_size'}, inplace=True) 
+        summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on="sample", how = 'left')
+        summary_df['fastani_estimated_coverage'] = summary_df['total_bases'].astype(float) / summary_df['fastani_estimated_genome_size'].astype(float)
+
+    if exists(genome_sizes) :
+        genome_size_df = pd.read_json(genome_sizes, orient='records')
+        genome_size_df = genome_size_df.reset_index()
+        genome_size_df.rename(columns={'genome_sizes': 'rep_estimated_genome_size', 'index': 'predicted_organism'}, inplace=True)
+
+        summary_df = pd.merge(summary_df, genome_size_df, left_on='predicted_organism', right_on='predicted_organism', how = 'left')
+        summary_df['rep_estimated_coverage'] = summary_df['total_bases'].astype(float) / summary_df['rep_estimated_genome_size'].astype(float)
+
+    if 'quast_Total length' in summary_df:
+        summary_df['quast_estimated_genome_size'] = summary_df['quast_Total length']
+        summary_df['quast_estimated_coverage']    = summary_df['total_bases'].astype(float) / summary_df['quast_estimated_genome_size'].astype(float)
+
+    summary_df['coverage'] = pd.NA
+
+    cov_columns = []
+
+    if 'rep_estimated_coverage' in summary_df:
+        cov_columns.append('rep_estimated_coverage')
+        def fill_coverage(row):
+            if pd.isna(row['coverage']):
+                return row['rep_estimated_coverage']
+            else:
+                return row['coverage']
+
+        summary_df['coverage'] = summary_df.apply(fill_coverage, axis=1)
+
+    if 'fastani_estimated_coverage' in summary_df:
+        cov_columns.append('fastani_estimated_coverage')
+        def fill_coverage(row):
+            if pd.isna(row['coverage']):
+                return row['fastani_estimated_coverage']
+            else:
+                return row['coverage']
+
+        summary_df['coverage'] = summary_df.apply(fill_coverage, axis=1)
+
+    if 'quast_estimated_coverage' in summary_df:
+        cov_columns.append('quast_estimated_coverage')
+        def fill_coverage(row):
+            if pd.isna(row['coverage']):
+                return row['quast_estimated_coverage']
+            else:
+                return row['coverage']
+
+        summary_df['coverage'] = summary_df.apply(fill_coverage, axis=1)
+
+    if 'mash_estimated_coverage' in summary_df:
+        cov_columns.append('mash_estimated_coverage')
+        def fill_coverage(row):
+            if pd.isna(row['coverage']):
+                return row['mash_estimated_coverage']
+            else:
+                return row['coverage']
+
+        summary_df['coverage'] = summary_df.apply(fill_coverage, axis=1)
+
+    if 'coverage_for_5M_genome' in summary_df:
+        def fill_coverage(row):
+            if pd.isna(row['coverage']):
+                return row['coverage_for_5M_genome']
+            else:
+                return row['coverage']
+
+        summary_df['coverage'] = summary_df.apply(fill_coverage, axis=1)
+
+    summary_df['coverage'] = summary_df['coverage'].round(2)
+
+    summary_df['coverage_warning'] = summary_df['coverage'].apply(lambda x: "Low coverage," if x <= 20 else "")
+    summary_df['warnings']         = summary_df['warnings'] + summary_df['coverage_warning']
+
+    if cov_columns:
+        summary_df['cov_average'] = summary_df[cov_columns].mean(axis = 1, skipna = True)
+        summary_df['cov_stdev'] = summary_df[cov_columns].std(axis = 1, skipna = True)
+        summary_df['cov_stdev_ratio'] = summary_df['cov_stdev']/summary_df['cov_average']
+        summary_df['warning'] = summary_df['cov_stdev_ratio'].apply(lambda x: "Variable genome size," if x >= 0.3 else "")
 
 ##########################################
 # creating files                         #
@@ -369,6 +500,7 @@ summary_df.to_csv(extended + '.txt', index=False, sep=";")
 final_columns = [
 # general information
 'coverage',
+'per_core_genome_genes',
 'fastqc_total_sequences',
 'fastqc_flagged_sequences',
 'fastqc_avg_length',
@@ -380,18 +512,18 @@ final_columns = [
 'amrfinder_genes_(per_cov/per_ident)',
 
 # species
-# TODO 'predicted_organism',
+'predicted_organism',
 'mlst_matching_PubMLST_scheme',
 'mlst_ST',
+'fastani_reference',
+'fastani_ANI_estimate',
+'fastani_total_query_sequence_fragments',
+'fastani_fragments_aligned_as_orthologous_matches',
 'mash_reference',
 'mash_mash-distance',
 'mash_P-value',
 'mash_matching-hashes',
 'mash_organism',
-'fastani_reference',
-'fastani_ANI_estimate',
-'fastani_total_query_sequence_fragments',
-'fastani_fragments_aligned_as_orthologous_matches',
 'plasmidfinder_plasmid_(identity)',
 
 # contamination
@@ -403,6 +535,7 @@ final_columns = [
 'seqsero2_Predicted_serotype',
 'emmtyper_Predicted_emm-type',
 'kleborate_virulence_score',
+'kleborate_resistance_score',
 'mykrobe_phylo_group',
 'mykrobe_species',
 'mykrobe_lineage',
