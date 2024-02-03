@@ -17,9 +17,11 @@ workflow kmer_taxonomic_classification {
             name: "kraken2_summary.csv")
         .set { summary }
 
+    // TODO : get classified reads
+
     emit:
         for_flag    = kraken2.out.results
         for_summary = summary
         for_multiqc = kraken2.out.for_multiqc
-        versions    = kraken2.out.versions.first()
+        versions    = kraken2.out.versions
 }
