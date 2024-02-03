@@ -58,7 +58,7 @@ process seqsero2 {
         mv SeqSero_result.tsv.tmp seqsero2/${prefix}/SeqSero_result.tsv
       fi
 
-      cat seqsero2/${prefix}/SeqSero_result.tsv | sed 's/prefix name/prefix/g' > seqsero2/${prefix}/SeqSero_result.tsv.tmp
+      cat seqsero2/${prefix}/SeqSero_result.tsv | sed 's/Sample name/sample/g' > seqsero2/${prefix}/SeqSero_result.tsv.tmp
       mv seqsero2/${prefix}/SeqSero_result.tsv.tmp seqsero2/${prefix}/SeqSero_result.tsv
     fi
 
