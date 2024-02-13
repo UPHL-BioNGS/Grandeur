@@ -34,7 +34,7 @@ workflow average_nucleotide_identity {
                     name: "datasets_summary.csv")
                 .set { datasets_summary }
             
-            ch_versions = ch_versions.mix(datasets_summary.out.versions).mix(datasets_download.out.versions)
+            ch_versions = ch_versions.mix(datasets_summary.out.versions.first()).mix(datasets_download.out.versions.first())
 
         } else {
             datasets_summary = Channel.empty()
@@ -66,7 +66,7 @@ workflow average_nucleotide_identity {
                 name: "fastani_top_len.csv")
             .set { fastani_len_summary }
 
-        ch_versions = ch_versions.mix(fastani.out.versions)
+        ch_versions = ch_versions.mix(fastani.out.versions.first())
 
     emit:
         for_flag    = fastani.out.results
