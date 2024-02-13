@@ -65,5 +65,5 @@ workflow phylogenetic_analysis {
 
   emit:
     for_multiqc = prokka.out.for_multiqc.mix(snp_dists.out.snp_matrix).mix(heatcluster.out.for_multiqc).mix(phytreeviz.out.for_multiqc).mix(core_genome_evaluation.out.for_multiqc)
-    versions    = prokka.out.versions.mix(panaroo.out.versions).mix(mashtree.out.versions).mix(iqtree2.out.versions).mix(phytreeviz.out.versions).mix(snp_dists.out.versions).mix(heatcluster.out.versions)
+    versions    = prokka.out.versions.first().mix(panaroo.out.versions).mix(mashtree.out.versions).mix(iqtree2.out.versions).mix(phytreeviz.out.versions.first()).mix(snp_dists.out.versions).mix(heatcluster.out.versions)
 }
