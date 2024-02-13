@@ -11,10 +11,10 @@ process pbptyper {
   tuple val(meta), file(contigs), val(flag)
 
   output:
-  path "pbptyper/*.tsv"                                  , emit: collect
-  path "pbptyper/*"                                     , emit: all
+  path "pbptyper/${meta.id}.tsv"   , emit: collect
+  path "pbptyper/*"                , emit: all
   path "logs/${task.process}/*.log", emit: log
-  path "versions.yml"                          , emit: versions
+  path "versions.yml"              , emit: versions
 
   when:
   (task.ext.when == null || task.ext.when) && flag =~ 'found'
