@@ -4,7 +4,7 @@ process shigatyper {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/shigatyper:2.0.5'
   stageInMode   'copy'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time          '10m'
   
   input:

@@ -4,7 +4,7 @@ process elgato {
   publishDir    path: params.outdir, mode: 'copy'
   container     'staphb/elgato:1.15.2'
   time          '10m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   tuple val(meta), file(contigs), val(flag)

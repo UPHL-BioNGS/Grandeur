@@ -6,7 +6,7 @@ process fastani {
   publishDir    path: params.outdir, mode: 'copy', pattern: 'fastani/*' 
   container     'staphb/fastani:1.34'
   time          '10m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   tuple val(meta), file(contigs), file(genomes)

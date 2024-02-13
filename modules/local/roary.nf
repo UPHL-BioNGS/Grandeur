@@ -3,7 +3,7 @@ process roary {
   label         "process_high"
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/roary:3.13.0'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time          '10h'
   
   input:

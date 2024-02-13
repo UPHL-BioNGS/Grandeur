@@ -4,7 +4,7 @@ process plasmidfinder {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/plasmidfinder:2.1.6'
   time          '10m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   tuple val(meta), file(file), file(script)

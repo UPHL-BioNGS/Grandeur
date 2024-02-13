@@ -4,7 +4,7 @@ process multiqc {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/multiqc:1.19'
   time          '10m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   file(input)
@@ -44,7 +44,7 @@ process versions {
   publishDir    "${params.outdir}/summary", mode: 'copy'
   container     'staphb/multiqc:1.19'
   time          '10m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   file(input)

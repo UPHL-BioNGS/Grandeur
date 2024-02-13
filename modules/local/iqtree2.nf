@@ -4,7 +4,7 @@ process iqtree2 {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/iqtree2:2.2.2.7'
   time          '24h'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   file(msa)

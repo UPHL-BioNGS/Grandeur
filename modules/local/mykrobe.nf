@@ -4,8 +4,8 @@ process mykrobe {
   stageInMode   "copy"
   publishDir    path: params.outdir, mode: 'copy'
   container     'staphb/mykrobe:0.13.0'
-  time      '1h'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  time          '1h'
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   tuple val(meta), file(contigs), val(flag)

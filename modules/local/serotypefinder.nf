@@ -5,7 +5,7 @@ process serotypefinder {
   container     'staphb/serotypefinder:2.0.1'
   maxForks      10
   time          '10m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}  
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}  
 
   input:
   tuple val(meta), file(file), val(flag), file(script)

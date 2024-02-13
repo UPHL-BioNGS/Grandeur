@@ -3,7 +3,7 @@ process amrfinderplus {
   label         "process_medium"
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/ncbi-amrfinderplus:3.11.26-2023-11-15.1'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time '10m'
 
   input:

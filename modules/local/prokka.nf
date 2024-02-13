@@ -4,7 +4,7 @@ process prokka {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/prokka:1.14.6'
   time          '2h'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   tuple val(meta), file(contigs), val(organism)

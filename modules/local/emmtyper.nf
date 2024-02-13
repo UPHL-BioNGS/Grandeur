@@ -5,7 +5,7 @@ process emmtyper {
   publishDir    path: params.outdir, mode: 'copy'
   container     'staphb/emmtyper:0.2.0'
   time          '10m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   when:
   (task.ext.when == null || task.ext.when) && flag =~ 'found'

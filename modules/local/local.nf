@@ -5,7 +5,7 @@ process core_genome_evaluation {
   publishDir  path: params.outdir, mode: 'copy', pattern: 'core_genome_evaluation/core_genome_evaluation.csv'
   container   'quay.io/biocontainers/pandas:1.5.2'
   time        '10m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   tuple file(fasta), file(summary), file(script)
@@ -32,10 +32,10 @@ process core_genome_evaluation {
 process flag {
   tag           "${meta.id}"
   label         "process_single"
-  //publishDir    params.outdir, mode: 'copy'
+  //no publishDir    params.outdir, mode: 'copy'
   container     'quay.io/biocontainers/pandas:1.5.2'
   time          '10m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   tuple val(meta), file(files)
@@ -139,7 +139,7 @@ process json_convert {
   // no publishDir
   container 'quay.io/biocontainers/pandas:1.5.2'
   time      '10m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   tuple val(meta), val(analysis), file(json), file(script)
@@ -163,7 +163,7 @@ process mash_err {
   label         "process_single"
   container     'quay.io/biocontainers/pandas:1.5.2'
   time          '10m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   tuple val(meta), file(error_file)
@@ -192,7 +192,7 @@ process mqc_prep {
   label         "process_single"
   container     'quay.io/biocontainers/pandas:1.5.2'
   time          '10m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   file(input)
@@ -216,7 +216,7 @@ process names {
   label         "process_single"
   container     'quay.io/biocontainers/pandas:1.5.2'
   time          '10m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   tuple val(meta), file(input)
@@ -244,7 +244,7 @@ process references {
   label     "process_single"
   container 'quay.io/uphl/grandeur_ref:20240124'
   time      '10m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   output:
   path "ref/*", emit: fastas
@@ -266,7 +266,7 @@ process species {
   publishDir    params.outdir, mode: 'copy'
   container     'quay.io/biocontainers/pandas:1.5.2'
   time          '10m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   file(results)
@@ -306,7 +306,7 @@ process summary {
   container     'quay.io/biocontainers/pandas:1.5.2'
   label         "process_single"
   time          '10m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   file(input)

@@ -5,7 +5,7 @@ process kaptive {
   publishDir    path: params.outdir, mode: 'copy'
   container     'staphb/kaptive:2.0.8'
   time          '30m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   tuple val(meta), file(contigs), val(flag)

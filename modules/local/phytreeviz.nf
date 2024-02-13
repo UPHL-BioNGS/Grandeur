@@ -4,7 +4,7 @@ process phytreeviz {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/phytreeviz:0.1.0'
   time          '1h'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   tuple val(analysis), file(newick)

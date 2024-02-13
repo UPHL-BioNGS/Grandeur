@@ -4,7 +4,7 @@ process kleborate {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/kleborate:2.4.1'
   time          '10m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   tuple val(meta), file(contig), val(flag), file(script)

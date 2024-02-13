@@ -4,7 +4,7 @@ process quast {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/quast:5.2.0'
   time          '10m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   tuple val(meta), file(contigs)

@@ -4,7 +4,7 @@ process heatcluster {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/heatcluster:1.0.2c'
   time          '10m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   file(matrix)

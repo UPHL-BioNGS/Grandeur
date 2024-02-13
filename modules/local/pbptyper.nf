@@ -5,7 +5,7 @@ process pbptyper {
   publishDir    path: params.outdir, mode: 'copy'
   container     'staphb/pbptyper:1.0.4'
   time          '1h'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   tuple val(meta), file(contigs), val(flag)

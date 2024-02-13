@@ -5,7 +5,7 @@ process mashtree {
   container     'staphb/mashtree:1.4.6'
   stageInMode 'copy'
   time      '4h'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   file(assemblies)
