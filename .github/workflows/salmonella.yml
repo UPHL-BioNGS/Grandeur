@@ -36,7 +36,9 @@ jobs:
             mv ${accession}_genomic.fna fastas/.
           done
 
-          nextflow run . -profile docker -c .github/workflows/github_actions.config --fastas fastas
+          ls fastas/* > fastas.txt
+
+          nextflow run . -profile docker -c .github/workflows/github_actions.config --fasta_list fastas.txt
 
           cat grandeur/grandeur_summary.tsv
 
