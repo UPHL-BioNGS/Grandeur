@@ -33,6 +33,6 @@ jobs:
           mkdir fastas
           mv *fna fastas/.
 
-          nextflow run . -profile docker --current_datasets -c .github/workflows/github_actions.config
+          nextflow run . -profile docker --current_datasets -c .github/workflows/github_actions.config --fastas fastas
 
           cat grandeur/grandeur_summary.tsv

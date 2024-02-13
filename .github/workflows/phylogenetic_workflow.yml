@@ -37,7 +37,7 @@ jobs:
 
           cat grandeur/grandeur_summary.tsv
 
-          nextflow run . -profile docker,msa -resume -c .github/workflows/github_actions.config
+          nextflow run . -profile docker,msa -resume -c .github/workflows/github_actions.config --fastas fastas
 
       - name: Check MSA files
         run: |
