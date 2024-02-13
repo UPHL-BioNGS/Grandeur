@@ -1,4 +1,4 @@
-name: Test Grandeur workflow with Legionella
+name: Test Grandeur workflow with Klebsiella
 
 on: [pull_request, workflow_dispatch]
 
@@ -25,7 +25,7 @@ jobs:
           docker --version
           
           mkdir fastas 
-          for accession in GCA_001753085.1_ASM175308v1 
+          for accession in GCA_000240185.2_ASM24018v2 GCA_003812925.1_ASM381292v1 GCA_901421005.1_39282_A01
           do
             all=$(echo $accession | cut -f 2 -d "_")
             fir=$(echo $all | cut -c 1-3)
@@ -36,15 +36,13 @@ jobs:
             mv ${accession}_genomic.fna fastas/.
           done
 
-          nextflow run . -profile docker -c .github/workflows/github_actions.config
-          
+          nextflow run . -profile docker
           cat grandeur/grandeur_summary.tsv
 
-      - name: Check Legionella file
+      - name: Check Klebsiella file
         run: |
-          for file in grandeur/elgato/elgato_summary.csv
+          for file in grandeur/emmtyper/emmtyper_summary.tsv
           do
             head $file
             wc -l $file
           done
-  

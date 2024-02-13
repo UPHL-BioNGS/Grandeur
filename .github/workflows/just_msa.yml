@@ -33,7 +33,7 @@ jobs:
           mkdir fastas
           mv *fna fastas/.
 
-          nextflow run . -profile docker,just_msa --maxcpus 2 --medcpus 2
+          nextflow run . -profile docker,just_msa -c .github/workflows/github_actions.config
 
       - name: Check MSA files
         run: |

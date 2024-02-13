@@ -36,8 +36,14 @@ jobs:
             mv ${accession}_genomic.fna fastas/.
           done
 
-          nextflow run . -profile docker --maxcpus 2 --medcpus 2
+          nextflow run . -profile docker -c .github/workflows/github_actions.config
           cat grandeur/grandeur_summary.tsv
 
       - name: Check Vibrio species
-        run: grep -i vibrio grandeur/fastani/fastani_summary.csv
+        run: |
+          grep -i vibrio grandeur/fastani/fastani_summary.csv
+          for file in grandeur/kaptive/kaptive_summary.txt
+          do
+            head $file
+            wc -l $file
+          done

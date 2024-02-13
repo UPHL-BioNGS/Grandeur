@@ -33,11 +33,11 @@ jobs:
           mkdir fastas
           mv *fna fastas/.
 
-          nextflow run . -profile docker --maxcpus 2 --medcpus 2
+          nextflow run . -profile docker -c .github/workflows/github_actions.config
 
           cat grandeur/grandeur_summary.tsv
 
-          nextflow run . -profile docker,msa --maxcpus 2 --medcpus 2 -resume
+          nextflow run . -profile docker,msa -resume -c .github/workflows/github_actions.config
 
       - name: Check MSA files
         run: |

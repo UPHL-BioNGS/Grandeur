@@ -36,12 +36,12 @@ jobs:
             mv ${accession}_genomic.fna fastas/.
           done
 
-          nextflow run . -profile docker --maxcpus 2 --medcpus 2
+          nextflow run . -profile docker -c .github/workflows/github_actions.config
           cat grandeur/grandeur_summary.tsv
           
       - name: Check E. coli file
         run: |
-          for file in grandeur/shigatyper/shigatyper_results.txt grandeur/serotypefinder/serotypefinder_results.txt
+          for file in grandeur/shigatyper/shigatyper_summary.txt grandeur/shigatyper/shigatyper_hits.txt grandeur/serotypefinder/serotypefinder_results.txt
           do
             head $file
             wc -l $file
