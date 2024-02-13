@@ -23,5 +23,5 @@ workflow kmer_taxonomic_classification {
         for_flag    = kraken2.out.results
         for_summary = summary
         for_multiqc = kraken2.out.for_multiqc
-        versions    = kraken2.out.versions
+        versions    = kraken2.out.versions.first()
 }
