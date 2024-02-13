@@ -30,7 +30,7 @@ workflow min_hash {
                     name: "mash_err_summary.csv")
                 .set { mash_err_summary }
 
-            ch_versions = ch_versions.mix(mash_sketch_fastq.out.versions)
+            ch_versions = ch_versions.mix(mash_sketch_fastq.out.versions.first())
         } else {
             mash_err_summary = Channel.empty()
         }
@@ -38,7 +38,7 @@ workflow min_hash {
         if ( params.fastas || params.fasta_list ) {
             mash_sketch_fasta(ch_fastas)
             ch_mash_sketches = ch_mash_sketches.mix(mash_sketch_fasta.out.msh.filter({it[1].size() > 0 }))
-            ch_versions      = ch_versions.mix(mash_sketch_fasta.out.versions)
+            ch_versions      = ch_versions.mix(mash_sketch_fasta.out.versions.first())
         }
 
         if (params.mash_db) {
@@ -56,7 +56,8 @@ workflow min_hash {
                 name: "mash_summary.csv")
             .set { mash_summary }
 
-        ch_versions = ch_versions.mix(mash_dist.out.versions)
+        ch_versions = ch_versions.mix(mash_dist.out.versions.first())
+
     emit:
         for_summary = mash_summary.mix(mash_err_summary)
         for_flag    = mash_dist.out.results
