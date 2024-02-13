@@ -19,13 +19,14 @@ amrfinderplus  = 'amrfinderplus.txt'
 blobtools      = 'blobtools_summary.txt'
 core           = 'multiqc_core_genome_evaluation-plot.txt'
 datasets       = 'datasets_summary.csv'
-drprg          = 'replaceme.csv'
-elgato         = 'replaceme.csv'
+drprg          = 'drprg_summary.tsv'
+elgato         = 'elgato_summary.tsv'
 emmtyper       = 'emmtyper_summary.tsv'
 fastani        = 'fastani_summary.csv'
 fastani_len    = "fastani_top_len.csv"
 fastqc         = 'fastqc_summary.csv'
 genome_sizes   = "genome_sizes.json"
+kaptive        = "kaptive_summary.txt"
 kleborate      = 'kleborate_results.tsv'
 kraken2        = 'kraken2_summary.csv'
 legsta         = 'legsta_summary.csv'
@@ -38,7 +39,8 @@ plasmidfinder  = 'plasmidfinder_result.tsv'
 quast          = 'quast_report.tsv'
 seqsero2       = 'seqsero2_results.txt'
 serotypefinder = 'serotypefinder_results.txt'
-shigatyper     = 'shigatyper_results.txt'
+shigatyper_hit = 'shigatyper_hits.txt'
+shigatyper     = 'shigatyper_summary.txt'
 multiqc_json   = 'multiqc_data.json'
 multiqc_stats  = 'multiqc_general_stats.txt'
 
@@ -51,7 +53,7 @@ extended       = 'summary/grandeur_extended_summary'
 ##########################################
 
 csv_files = [ legsta, mykrobe ]
-tsv_files = [ quast, seqsero2, kleborate, mlst, emmtyper , pbptyper]
+tsv_files = [ quast, drprg, elgato, seqsero2, kleborate, mlst, emmtyper, pbptyper, shigatyper ]
 top_hit   = [ fastani ]
 
 ##########################################
@@ -85,6 +87,8 @@ for file in csv_files :
         analysis = str(file).split("_")[0]
         new_df = pd.read_csv(file, dtype = str, index_col= False)
         new_df = new_df.add_prefix(analysis + "_")
+        new_df = new_df.replace('Sample', 'sample', regex=True)
+        new_df.columns = [x.lower() for x in new_df.columns]
         summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
         summary_df.drop(analysis + "_sample", axis=1, inplace=True)
 
@@ -95,6 +99,7 @@ for file in tsv_files :
         analysis = str(file).split("_")[0]
         new_df = pd.read_table(file, dtype = str, index_col= False)
         new_df = new_df.add_prefix(analysis + "_")
+        new_df.columns = [x.lower() for x in new_df.columns]
         summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
         summary_df.drop(analysis + "_sample", axis=1, inplace=True)
 
@@ -106,6 +111,7 @@ for file in top_hit :
         new_df = pd.read_csv(file, dtype = str, index_col= False)
         new_df = new_df.drop_duplicates(subset=['sample'], keep='first')
         new_df = new_df.add_prefix(analysis + "_")
+        new_df.columns = [x.lower() for x in new_df.columns]
         summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
         summary_df.drop(analysis + "_sample", axis=1, inplace=True)
 
@@ -122,8 +128,9 @@ if exists(amrfinderplus) :
     new_df = new_df[['Name', 'genes (per cov/per ident)']]
     new_df = new_df.groupby('Name', as_index=False).agg({'genes (per cov/per ident)': lambda x: list(x)})
     new_df = new_df.add_prefix(analysis + '_')
-    summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_Name", how = 'left')
-    summary_df.drop(analysis + "_Name", axis=1, inplace=True)
+    new_df.columns = [x.lower() for x in new_df.columns]
+    summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_name", how = 'left')
+    summary_df.drop(analysis + "_name", axis=1, inplace=True)
 
 # blobtools : merging many rows into one with relevant information
 if exists(blobtools) :
@@ -144,6 +151,7 @@ if exists(blobtools) :
     new_df = new_df.groupby('sample', as_index=False).agg({'organism (per mapped reads)': lambda x: list(x)})
     new_df['warning'] = new_df['organism (per mapped reads)'].apply(lambda x: "Blobtools multiple organisms," if ','.join(x).count(',') >= 2 else "")
     new_df = new_df.add_prefix(analysis + '_')
+    new_df.columns = [x.lower() for x in new_df.columns]
     
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
@@ -161,6 +169,7 @@ if exists(fastani) :
     new_df = new_df.groupby('sample', as_index=False).agg({'genome (ANI estimate)': lambda x: list(x)})
     new_df['warning'] = new_df['genome (ANI estimate)'].apply(lambda x: "Multiple FastANI hits," if ','.join(x).count(',') >= 4 else "")
     new_df = new_df.add_prefix(analysis + '_')
+    new_df.columns = [x.lower() for x in new_df.columns]
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
     summary_df['warnings'] = summary_df['warnings'] + summary_df['fastani_warning']
@@ -182,9 +191,28 @@ if exists(fastqc) :
     new_df['flagged sequences']  = new_df.apply(lambda x: x['R1_Sequences flagged as poor quality'] + x['R2_Sequences flagged as poor quality'], axis=1) 
     new_df = new_df[['sample','total sequences', 'flagged sequences']]
     new_df = new_df.add_prefix(analysis + '_')
+    new_df.columns = [x.lower() for x in new_df.columns]
 
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
+
+# kaptive : merging relevant rows into one
+if exists(kaptive) :
+    file = kaptive
+    print("Adding results for " + file)
+    analysis = "kaptive"
+    new_df = pd.read_table(file, dtype = str, index_col= False, sep="\t")
+    new_df = new_df.add_prefix(analysis + '_')
+    new_df.columns = [x.lower() for x in new_df.columns]
+    K_df   = new_df[new_df['kaptive_best match locus'].str.contains("K")].copy()
+    K_df   = K_df.add_suffix('_K')
+    O_df   = new_df[new_df['kaptive_best match locus'].str.contains("O")].copy()
+    O_df   = O_df.add_suffix('_O')
+
+    summary_df = pd.merge(summary_df, O_df, left_on="sample", right_on=analysis + "_assembly_O", how = 'left')
+    summary_df.drop(analysis + "_assembly_O", axis=1, inplace=True)
+    summary_df = pd.merge(summary_df, K_df, left_on="sample", right_on=analysis + "_assembly_K", how = 'left')
+    summary_df.drop(analysis + "_assembly_K", axis=1, inplace=True)
 
 # kraken2 : merging relevant rows into one
 if exists(kraken2) :
@@ -204,6 +232,7 @@ if exists(kraken2) :
     new_df = new_df.groupby('Sample', as_index=False).agg({'organism (per fragment)': lambda x: list(x)})
     new_df['warning'] = new_df['organism (per fragment)'].apply(lambda x: "Kraken2 multiple organisms," if ','.join(x).count(',') >= 2 else "")
     new_df = new_df.add_prefix(analysis + '_')
+    new_df.columns = [x.lower() for x in new_df.columns]
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_Sample", how = 'left')
     summary_df.drop(analysis + "_Sample", axis=1, inplace=True)
     summary_df = pd.merge(summary_df, tmp_df, left_on="sample", right_on=analysis + "_Sample", how = 'left')
@@ -219,6 +248,7 @@ if exists(mash) :
     new_df = new_df.sort_values(by = ['P-value', 'mash-distance'], ascending = [True, True])
     new_df = new_df.drop_duplicates(subset=['sample'], keep='first')
     new_df = new_df.add_prefix(analysis + "_")
+    new_df.columns = [x.lower() for x in new_df.columns]
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
 
@@ -232,6 +262,7 @@ if exists(plasmidfinder) :
     new_df = new_df[['sample', 'plasmid (identity)']]
     new_df = new_df.groupby('sample', as_index=False).agg({'plasmid (identity)': lambda x: list(x)})
     new_df = new_df.add_prefix(analysis + '_')
+    new_df.columns = [x.lower() for x in new_df.columns]
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
 
@@ -254,13 +285,14 @@ if exists(serotypefinder) :
     summary_df.drop(analysis + "_sample_H", axis=1, inplace=True)
 
 # shigatyper : combining rows into one
-if exists(shigatyper) :
-    file = shigatyper
+if exists(shigatyper_hit) :
+    file = shigatyper_hit
     print("Adding results for " + file)
     analysis = "shigatyper"
     new_df = pd.read_table(file, dtype = str, index_col= False)
     new_df = new_df.groupby('sample', as_index=False).agg({'Hit': lambda x: list(x)})
     new_df = new_df.add_prefix(analysis + '_')
+    new_df.columns = [x.lower() for x in new_df.columns]
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
 
@@ -507,7 +539,7 @@ final_columns = [
 'fastp_passed_reads',
 'bbduk_phix_reads',
 'quast_#_contigs',
-'quast_GC_(%)',
+'quast_gc_(%)',
 'warnings',
 'amrfinder_genes_(per_cov/per_ident)',
 
@@ -521,7 +553,7 @@ final_columns = [
 'fastani_fragments_aligned_as_orthologous_matches',
 'mash_reference',
 'mash_mash-distance',
-'mash_P-value',
+'mash_p-value',
 'mash_matching-hashes',
 'mash_organism',
 'plasmidfinder_plasmid_(identity)',
@@ -531,19 +563,23 @@ final_columns = [
 'kraken2_organism_(per_fragment)',
 
 # species specific information
-'seqsero2_Predicted_antigenic_profile',
-'seqsero2_Predicted_serotype',
-'emmtyper_Predicted_emm-type',
+'seqsero2_predicted_antigenic_profile',
+'seqsero2_predicted_serotype',
+'emmtyper_predicted_emm-type',
 'kleborate_virulence_score',
 'kleborate_resistance_score',
+'kaptive_best_match_locus_O',
+'kaptive_best_match_locus_K',
+'elgato_st',
 'mykrobe_phylo_group',
 'mykrobe_species',
 'mykrobe_lineage',
+'drprg_susceptibility',
 'pbptyper_pbptype',
-'legsta_SBT',
 'serotypefinder_Serotype_O',
 'serotypefinder_Serotype_H',
-'shigatyper_Hit']
+'shigatyper_prediction',
+'shigatyper_hit']
 
 set_columns = []
 for new_column in final_columns :
