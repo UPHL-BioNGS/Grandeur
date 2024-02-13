@@ -196,8 +196,6 @@ if (params.fasta_list) {
     }
     .set{ ch_fastas }
 } else {
-
-  // TODO : Make sure this works
   // getting fastas from a directory
   ch_fastas = params.fastas
     ? Channel
@@ -325,6 +323,7 @@ workflow {
     ch_clean_reads = de_novo_alignment.out.clean_reads
     ch_for_multiqc = ch_for_multiqc.mix(de_novo_alignment.out.for_multiqc)
     ch_versions = ch_versions.mix(de_novo_alignment.out.versions)
+
   } else {
     ch_contigs     = ch_fastas
     ch_clean_reads = Channel.empty()
@@ -381,8 +380,6 @@ workflow {
     ch_top_hit = Channel.empty()
   }
 
-
-  //ch_versions.unique().collectFile(name: 'collated_versions.yml')
   // optional subworkflow for comparing shared genes
   if ( params.msa ) {
     phylogenetic_analysis(
