@@ -42,7 +42,7 @@ workflow information {
           storeDir: "${params.outdir}/fastqc")
         .set{ fastqc_summary }
 
-      ch_versions = ch_versions.mix(fastqc.out.versions)
+      ch_versions = ch_versions.mix(fastqc.out.versions.first())
 
     } else {
       fastqc_summary = Channel.empty()
@@ -54,12 +54,16 @@ workflow information {
     plasmidfinder(ch_contigs.combine(summfle_script))
 
     // species specific
-    flag(ch_flag.groupTuple())
+    // TODO : add blobtools
+    int grouptuplesize = 2
+    if ( params.kraken2_db && ( params.sample_sheet || params.reads )) { grouptuplesize = grouptuplesize +1 }
+
+    flag(ch_flag.groupTuple(size : grouptuplesize, remainder: true ))
 
     amrfinderplus(ch_contigs.join(flag.out.organism,    by:0))
     drprg(ch_contigs.join(flag.out.myco_flag,           by:0))
     emmtyper(ch_contigs.join(flag.out.strepa_flag,      by:0).combine(summfle_script)) 
-    //kaptive(ch_contigs.join(flag.out.klebacin_flag,     by:0))      
+    kaptive(ch_contigs.join(flag.out.vibrio_flag,       by:0))      
     kleborate(ch_contigs.join(flag.out.klebsiella_flag, by:0).combine(summfle_script))
     elgato(ch_contigs.join(flag.out.legionella_flag,    by:0))
     mykrobe(ch_contigs.join(flag.out.myco_flag,         by:0))
@@ -78,7 +82,7 @@ workflow information {
       .set{ amrfinderplus_summary }
 
     json_convert.out.collect
-      .filter( /drprg/ )
+      .filter( ~/.*drprg.tsv/ )
       .collectFile(name: "drprg_summary.tsv",
         keepHeader: true,
         sort: { file -> file.text },
@@ -106,13 +110,13 @@ workflow information {
         storeDir: "${params.outdir}/flag")
       .set { flag_summary }
 
-      // kaptive.out.collect
-      //   .collectFile(name: "kaptive_summary.csv",
-      //     keepHeader: true,
-      //     sort: { file -> file.text },
-      //     storeDir: "${params.outdir}/kaptive")
-      //   .set{ kaptive_summary }
-
+    kaptive.out.collect
+      .collectFile(name: "kaptive_summary.txt",
+        keepHeader: true,
+        sort: { file -> file.text },
+        storeDir: "${params.outdir}/kaptive")
+      .set{ kaptive_summary }
+    
     kleborate.out.collect
       .collectFile(name: "kleborate_results.tsv",
         keepHeader: true,
@@ -170,25 +174,30 @@ workflow information {
       .set{ serotypefinder_summary }
 
     shigatyper.out.collect
-      .collectFile(name: "shigatyper_results.txt",
+      .collectFile(name: "shigatyper_hits.txt",
+        keepHeader: true,
+        sort: { file -> file.text },
+        storeDir: "${params.outdir}/shigatyper")
+      .set{ shigatyper_hits }
+
+    shigatyper.out.files
+      .collectFile(name: "shigatyper_summary.txt",
         keepHeader: true,
         sort: { file -> file.text },
         storeDir: "${params.outdir}/shigatyper")
       .set{ shigatyper_summary }
 
     // TODO:
-    // check all are in mutliqc
-    // check all are in summary file
-    // check kleborate getting amr
-    // known issues : emmtyper, kleborate, el gato, pbp, drprg
-
+    // for wiki: link result files to subworkflows
+    // - update file tree
+    // create params file and param to copy the params file
 
     amrfinderplus_summary
       .mix(drprg_summary)
       .mix(elgato_summary)
       .mix(emmtyper_summary)
       .mix(fastqc_summary)
-      //.mix(kaptive_summary)
+      .mix(kaptive_summary)
       .mix(kleborate_summary)
       .mix(mlst_summary)
       .mix(mykrobe_summary)
@@ -197,20 +206,21 @@ workflow information {
       .mix(quast_summary)
       .mix(seqsero2_summary)
       .mix(serotypefinder_summary)
+      .mix(shigatyper_hits)
       .mix(shigatyper_summary)
       .set { for_summary }
 
     ch_versions
-      .mix(amrfinderplus.out.versions)
+      .mix(amrfinderplus.out.versions.first())
       .mix(drprg.out.versions)
       .mix(elgato.out.versions)
       .mix(emmtyper.out.versions)
-      //.mix(kaptive.out.versions)
+      .mix(kaptive.out.versions)
       .mix(kleborate.out.versions)
-      .mix(mlst.out.versions)
+      .mix(mlst.out.versions.first())
       .mix(mykrobe.out.versions)
       .mix(pbptyper.out.versions)
-      .mix(plasmidfinder.out.versions)
+      .mix(plasmidfinder.out.versions.first())
       .mix(quast.out.versions)
       .mix(seqsero2.out.versions)
       .mix(serotypefinder.out.versions)
