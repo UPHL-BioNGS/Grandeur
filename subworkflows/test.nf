@@ -1,4 +1,4 @@
-include { download_sra }  from '../modules/local/download_sra' addParams(params)
+include { download_sra }  from '../modules/local/local' addParams(params)
 
 workflow test {
     take:
@@ -6,8 +6,14 @@ workflow test {
   
     main:
         download_sra(ch_accessions)
+
+        download_sra.out.fastq
+            .map { it ->
+                meta = [id:it[0]] 
+                tuple( meta, [file(it[1][0]), file(it[1][1])])}
+            .set { ch_fastq }
     
     emit:
-        fastq    = download_sra.out.fastq
+        fastq    = ch_fastq
         versions = download_sra.out.versions.first()
 }
