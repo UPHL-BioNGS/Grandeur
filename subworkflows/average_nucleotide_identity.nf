@@ -26,6 +26,8 @@ workflow average_nucleotide_identity {
 
             ch_fastani_ref = ch_fastani_ref.mix(datasets_download.out.genomes.flatten())
 
+            ch_versions = ch_versions.mix(datasets_summary.out.versions.first()).mix(datasets_download.out.versions)
+
             datasets_summary.out.genomes
                 .collectFile(
                    storeDir: "${params.outdir}/datasets/",
@@ -33,8 +35,6 @@ workflow average_nucleotide_identity {
                     sort: { file -> file.text },
                     name: "datasets_summary.csv")
                 .set { datasets_summary }
-            
-            ch_versions = ch_versions.mix(datasets_summary.out.versions.first()).mix(datasets_download.out.versions.first())
 
         } else {
             datasets_summary = Channel.empty()
