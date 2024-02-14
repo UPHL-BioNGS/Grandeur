@@ -41,7 +41,7 @@ jobs:
 
       - name: Check Klebsiella file
         run: |
-          for file in grandeur/emmtyper/emmtyper_summary.tsv
+          for file in grandeur/kleborate/kleborate_results.tsv
           do
             head $file
             wc -l $file
