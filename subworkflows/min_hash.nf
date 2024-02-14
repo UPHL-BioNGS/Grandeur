@@ -14,10 +14,9 @@ workflow min_hash {
         ch_mash_sketches = Channel.empty()
         ch_versions      = Channel.empty()
 
-        if ( params.sample_sheet || params.reads ) {
+        if ( params.sample_sheet || params.reads || params.sra_accessions ) {
             mash_sketch_fastq(ch_reads)
 
-            // TODO : test mash_err 
             mash_err(mash_sketch_fastq.out.err)
 
             ch_mash_sketches = ch_mash_sketches.mix(mash_sketch_fastq.out.msh.filter({it[1].size() > 0 }))
