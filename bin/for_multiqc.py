@@ -178,7 +178,6 @@ if exists(seqsero2_input):
     #if [ -f 'seqsero2_results.txt' ]       ; then cut -f 1,4-10 seqsero2_results.txt > seqsero2_mqc.txt ; fi
 
 if exists(serotypefinder_input):
-    # TODO type error
     serotypefinder_df = pd.read_table(serotypefinder_input)
     serotypefinder_df = serotypefinder_df.iloc[:, :6]
     serotypefinder_df = serotypefinder_df.replace(to_replace=' ', value='', regex=True)
