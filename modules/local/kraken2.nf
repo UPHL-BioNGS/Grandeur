@@ -3,7 +3,7 @@ process kraken2 {
   label         "process_high"
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/kraken2:2.1.3'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time          '1h'
   
   input:
@@ -11,6 +11,7 @@ process kraken2 {
 
   output:
   path "kraken2/*_kraken2_report.txt",                          emit: for_multiqc
+  path "kraken2/*",                                             emit: files
   path "logs/${task.process}/*.log",                            emit: log
   tuple val(meta), file("kraken2/*_reads_summary_kraken2.csv"), emit: results
   path  "versions.yml",                                         emit: versions
@@ -27,7 +28,7 @@ process kraken2 {
 
   kraken2 ${args} \
     --paired \
-    --classified-out kraken2/${prefix}.cseqs#.fq \
+    --classified-out kraken2/${prefix}.cseqs#.fastq \
     --unclassified-out kraken2/${prefix}.useqs#.fastq \
     --output ${prefix}.kraken2.classifiedreads.txt \
     --threads ${task.cpus} \
