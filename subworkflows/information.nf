@@ -7,7 +7,6 @@ include { flag }           from '../modules/local/local'          addParams(para
 include { json_convert }   from '../modules/local/local'          addParams(params)
 include { kaptive }        from '../modules/local/kaptive'        addParams(params)
 include { kleborate }      from '../modules/local/kleborate'      addParams(params)
-include { legsta }         from '../modules/local/legsta'         addParams(params)
 include { mlst }           from '../modules/local/mlst'           addParams(params)
 include { mykrobe }        from '../modules/local/mykrobe'        addParams(params)
 include { pbptyper }       from '../modules/local/pbptyper'       addParams(params)
