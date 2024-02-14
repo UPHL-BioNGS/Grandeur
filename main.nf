@@ -171,18 +171,16 @@ if (params.sample_sheet) {
                         "${params.reads}/*_{1,2}*.{fastq,fastq.gz,fq,fq.gz}"], size: 2 )
         .map { it ->
           meta = [id:it[0].replaceAll(~/_S[0-9]+_L[0-9]+/,"")] 
-          tuple( meta, 
-            file(it[0], checkIfExists: true), 
-            file(it[1], checkIfExists: true))
+          tuple( meta, [
+            file(it[1][0], checkIfExists: true), 
+            file(it[1][1], checkIfExists: true)])
         }
         .unique()
-        .view { "Paired-end fastq files found : ${it[0]}" }
+        .view { "Paired-end fastq files found : ${it[0].id}" }
     : Channel.empty()
 }
 
 if (params.fasta_list) {
-  // TODO : make sure this works
-
   // getting fastas from a file
   Channel
     .fromPath("${params.fasta_list}", type: "file")
@@ -268,8 +266,6 @@ ch_mash_db = params.mash_db
 ch_fastani_genomes = Channel.empty()
 
 if ( params.fastani_ref ) {
-
-  // TODO : test fastani_ref
   Channel
     .of( params.fastani_ref )
     .splitCsv()
@@ -316,7 +312,7 @@ workflow {
     ch_raw_reads = ch_reads
   }
 
-  if ( params.sample_sheet || params.reads ) {
+  if ( params.sample_sheet || params.reads || params.sra_accessions ) {
     de_novo_alignment(ch_raw_reads)
 
     ch_contigs     = ch_fastas.mix(de_novo_alignment.out.contigs)
@@ -340,9 +336,7 @@ workflow {
   // }
 
   // optional subworkflow kraken2 (useful for interspecies contamination)
-  if ( params.kraken2_db && ( params.sample_sheet || params.reads )) {
-    // TODO : figure out where the kraken2 fastq files are
-
+  if ( params.kraken2_db && ( params.sample_sheet || params.reads || params.sra_accessions )) {
     kmer_taxonomic_classification(ch_clean_reads, ch_kraken2_db )
 
     ch_for_multiqc = ch_for_multiqc.mix(kmer_taxonomic_classification.out.for_multiqc)
