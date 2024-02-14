@@ -17,8 +17,6 @@ workflow kmer_taxonomic_classification {
             name: "kraken2_summary.csv")
         .set { summary }
 
-    // TODO : get classified reads
-
     emit:
         for_flag    = kraken2.out.results
         for_summary = summary
