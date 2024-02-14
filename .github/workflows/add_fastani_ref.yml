@@ -51,7 +51,6 @@ jobs:
 
         - name: Download fastani refs
           run: |
-              mkdir refs
               for accession in GCA_009665515.2_ASM966551v2 GCA_009763645.1_ASM976364v1
               do
                   all=$(echo $accession | cut -f 2 -d "_")

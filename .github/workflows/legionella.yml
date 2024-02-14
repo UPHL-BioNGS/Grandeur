@@ -42,7 +42,7 @@ jobs:
 
       - name: Check Legionella file
         run: |
-          for file in grandeur/elgato/elgato_summary.csv
+          for file in grandeur/elgato/elgato_summary.tsv
           do
             head $file
             wc -l $file
