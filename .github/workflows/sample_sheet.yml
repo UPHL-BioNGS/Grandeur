@@ -38,7 +38,7 @@ jobs:
       
       - name: Check summary files
         run: |
-          for file in grandeur/mlst/mlst_summary.tsv
+          for file in grandeur/contigs/*_contigs.fa
           do
             head $file
             wc -l $file
