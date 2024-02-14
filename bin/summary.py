@@ -54,7 +54,6 @@ extended       = 'summary/grandeur_extended_summary'
 
 csv_files = [ legsta, mykrobe ]
 tsv_files = [ quast, drprg, elgato, seqsero2, kleborate, mlst, emmtyper, pbptyper, shigatyper ]
-top_hit   = [ fastani ]
 
 ##########################################
 # exiting if no input files              #
@@ -98,18 +97,6 @@ for file in tsv_files :
         print("Adding results for " + file)
         analysis = str(file).split("_")[0]
         new_df = pd.read_table(file, dtype = str, index_col= False)
-        new_df = new_df.add_prefix(analysis + "_")
-        new_df.columns = [x.lower() for x in new_df.columns]
-        summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
-        summary_df.drop(analysis + "_sample", axis=1, inplace=True)
-
-# extracting top hit for multiline result
-for file in top_hit :
-    if exists(file) : 
-        print("Adding results for " + file)
-        analysis = str(file).split("_")[0]
-        new_df = pd.read_csv(file, dtype = str, index_col= False)
-        new_df = new_df.drop_duplicates(subset=['sample'], keep='first')
         new_df = new_df.add_prefix(analysis + "_")
         new_df.columns = [x.lower() for x in new_df.columns]
         summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
@@ -170,8 +157,18 @@ if exists(fastani) :
     new_df['warning'] = new_df['genome (ANI estimate)'].apply(lambda x: "Multiple FastANI hits," if ','.join(x).count(',') >= 4 else "")
     new_df = new_df.add_prefix(analysis + '_')
     new_df.columns = [x.lower() for x in new_df.columns]
+
+    th_df = pd.read_csv(file, dtype = str, index_col= False)
+    th_df = th_df.sort_values(['ANI estimate', 'total query sequence fragments'], ascending= [False , False])
+    th_df = th_df.drop_duplicates(subset=['sample'], keep='first')
+    th_df = th_df.add_prefix(analysis + "_top_")
+    th_df.columns = [x.lower() for x in th_df.columns]
+    th_df['fastani_top_organism'] = th_df['fastani_top_reference'].astype(str).apply(lambda x: "_".join(x.split('_')[:2]))
+
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
+    summary_df = pd.merge(summary_df, th_df, left_on="sample", right_on=analysis + "_top_sample", how = 'left')
+    summary_df.drop(analysis + "_top_sample", axis=1, inplace=True)
     summary_df['warnings'] = summary_df['warnings'] + summary_df['fastani_warning']
 
 # fastqc : merging relevant rows into one
@@ -233,8 +230,8 @@ if exists(kraken2) :
     new_df['warning'] = new_df['organism (per fragment)'].apply(lambda x: "Kraken2 multiple organisms," if ','.join(x).count(',') >= 2 else "")
     new_df = new_df.add_prefix(analysis + '_')
     new_df.columns = [x.lower() for x in new_df.columns]
-    summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_Sample", how = 'left')
-    summary_df.drop(analysis + "_Sample", axis=1, inplace=True)
+    summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
+    summary_df.drop(analysis + "_sample", axis=1, inplace=True)
     summary_df = pd.merge(summary_df, tmp_df, left_on="sample", right_on=analysis + "_Sample", how = 'left')
     summary_df.drop(analysis + "_Sample", axis=1, inplace=True)
     summary_df['warnings'] = summary_df['warnings'] + summary_df['kraken2_warning']
@@ -368,7 +365,14 @@ print("Predicting organism")
 
 summary_df['predicted_organism'] = pd.NA
 
-# TODO : add in fastani
+if 'fastani_top_organism' in summary_df:
+    def fill_predicted_organism(row):
+        if pd.isna(row['predicted_organism']):
+            return row['fastani_top_organism']
+        else:
+            return row['predicted_organism']
+
+    summary_df['predicted_organism'] = summary_df.apply(fill_predicted_organism, axis=1)
 
 if 'blobtools_top_organism' in summary_df:
     def fill_predicted_organism(row):
@@ -400,8 +404,6 @@ if 'mash_organism' in summary_df:
 ##########################################
 # size and coverage estimates            #
 ##########################################
-
-print("Estimating coverage")
 
 if "fastqc_total sequences" and 'fastqc_avg_length' in summary_df:
     print("Estimating coverage")
@@ -438,7 +440,6 @@ if "fastqc_total sequences" and 'fastqc_avg_length' in summary_df:
         file = fastani_len
         print("getting size estimate from fastani top hit" + file)
         new_df = pd.read_csv(file, dtype = str, index_col= False)
-        new_df['predicted_organism'] = new_df["top_hit"].astype(str).apply(lambda x: "_".join(x.split('_')[:2]))
         new_df.rename(columns={'top_len': 'fastani_estimated_genome_size'}, inplace=True) 
         summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on="sample", how = 'left')
         summary_df['fastani_estimated_coverage'] = summary_df['total_bases'].astype(float) / summary_df['fastani_estimated_genome_size'].astype(float)
@@ -514,10 +515,10 @@ if "fastqc_total sequences" and 'fastqc_avg_length' in summary_df:
     summary_df['warnings']         = summary_df['warnings'] + summary_df['coverage_warning']
 
     if cov_columns:
-        summary_df['cov_average'] = summary_df[cov_columns].mean(axis = 1, skipna = True)
-        summary_df['cov_stdev'] = summary_df[cov_columns].std(axis = 1, skipna = True)
+        summary_df['cov_average']     = summary_df[cov_columns].mean(axis = 1, skipna = True)
+        summary_df['cov_stdev']       = summary_df[cov_columns].std(axis = 1, skipna = True)
         summary_df['cov_stdev_ratio'] = summary_df['cov_stdev']/summary_df['cov_average']
-        summary_df['warning'] = summary_df['cov_stdev_ratio'].apply(lambda x: "Variable genome size," if x >= 0.3 else "")
+        summary_df['warning']         = summary_df['warnings'] + summary_df['cov_stdev_ratio'].apply(lambda x: "Variable genome size," if x >= 0.3 else "")
 
 ##########################################
 # creating files                         #
@@ -547,10 +548,11 @@ final_columns = [
 'predicted_organism',
 'mlst_matching_PubMLST_scheme',
 'mlst_ST',
-'fastani_reference',
-'fastani_ANI_estimate',
-'fastani_total_query_sequence_fragments',
-'fastani_fragments_aligned_as_orthologous_matches',
+'fastani_top_organism',
+'fastani_top_reference',
+'fastani_top_ani_estimate',
+'fastani_top_total_query_sequence_fragments',
+'fastani_top_fragments_aligned_as_orthologous_matches',
 'mash_reference',
 'mash_mash-distance',
 'mash_p-value',
