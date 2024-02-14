@@ -2,33 +2,45 @@ process datasets_summary {
   tag           "${taxon}"
   label         "process_single"
   publishDir    params.outdir, mode: 'copy'
-  container     'quay.io/uphl/datasets:16.3.0-2024-01-23'
-  time          '1h'  
+  container     'staphb/ncbi-datasets:16.2.0'
+  time          '1h'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore' }
-  
+
   input:
   tuple val(taxon), file(script)
 
   output:
   path "datasets/*_genomes.csv", emit: genomes, optional: true
-  path "logs/${task.process}/*.${workflow.sessionId}.log", emit: log
   path "versions.yml", emit: versions
 
   when:
   task.ext.when == null || task.ext.when
 
   shell:
-  def args = task.ext.args ?: ''
+  def args     = task.ext.args  ?: '--reference --mag exclude'
+  def args2    = task.ext.args2 ?: '--annotated --assembly-level complete,scaffold --mag exclude'
+  def fields   = task.ext.fields ?: 'accession,assminfo-refseq-category,assminfo-level,organism-name,assmstats-total-ungapped-len'
+  def gen_spec = taxon.replaceAll(~/_.sp$/,"").split('_').join(" ")
   """
-    mkdir -p datasets logs/${task.process}
-    log_file=logs/${task.process}/${taxon}.${workflow.sessionId}.log 
+    mkdir -p datasets logs/!{task.process}
 
-    python3 ${script} ${taxon} ${params.datasets_max_genomes} \
-    | tee -a \$log_file
-    
+    datasets summary genome taxon "${gen_spec}" ${args}  --limit ${params.datasets_max_genomes} --as-json-lines | \
+      dataformat tsv genome --fields ${fields} | \
+      tee -a ${taxon}_genomes_rep.tsv
+
+    datasets summary genome taxon "${gen_spec}" ${args2} --limit ${params.datasets_max_genomes} --as-json-lines | \
+      dataformat tsv genome --elide-header --fields ${fields} | \
+      tee -a ${taxon}_genomes_etc.tsv
+
+    echo ${fields} > datasets/${taxon}_genomes.csv
+    cat ${taxon}_genomes*.tsv | awk '{if (\$NF < 15000000 ) print \$0}' | sort | uniq | tr "\\t" "," >> datasets/${taxon}_genomes.csv
+
+    echo "done"
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-      "datasets: \$(datasets --version)"
+        datasets: \$(datasets --version | awk '{print \$NF}' )
+        dataformat: \$(dataformat version | awk '{print \$NF}' )
     END_VERSIONS
   """
 }
@@ -40,7 +52,7 @@ process datasets_download {
   // because there's no way to specify threads
   label         "process_medium"
   publishDir    path: "${params.outdir}", mode: 'copy', pattern: "logs/*/*log"
-  container     'quay.io/uphl/datasets:16.3.0-2024-01-23'
+  container     'staphb/ncbi-datasets:16.2.0'
   time          '5h'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
@@ -81,7 +93,7 @@ process datasets_download {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-      "datasets: \$(datasets --version)"
+      datasets: \$(datasets --version | awk '{print \$NF}')
     END_VERSIONS
   """
 }
