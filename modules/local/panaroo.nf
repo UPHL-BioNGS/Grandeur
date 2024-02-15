@@ -4,7 +4,7 @@ process panaroo {
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/panaroo:1.3.4'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  time '10h'
+  time          '10h'
   
   input:
   file(gff)
