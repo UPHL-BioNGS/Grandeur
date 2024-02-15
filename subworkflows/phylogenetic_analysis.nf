@@ -5,7 +5,6 @@ include { mashtree }               from '../modules/local/mashtree'    addParams
 include { panaroo }                from '../modules/local/panaroo'     addParams(params)
 include { phytreeviz }             from '../modules/local/phytreeviz'  addParams(params)
 include { prokka }                 from '../modules/local/prokka'      addParams(params)
-include { roary }                  from '../modules/local/roary'       addParams(params)
 include { snp_dists }              from '../modules/local/snp-dists'   addParams(params)
 
 workflow phylogenetic_analysis {
