@@ -12,8 +12,8 @@ process panaroo {
   output:
   path "panaroo/*"                                                                         , emit: files
   tuple path("panaroo/core_gene_alignment.aln"), path("panaroo/gene_presence_absence.Rtab"), emit: core_gene_alignment
-  path "logs/${task.process}/*.log"                    , emit: log_files
-  path "versions.yml"                          , emit: versions
+  path "logs/${task.process}/*.log"                                                        , emit: log_files
+  path "versions.yml"                                                                      , emit: versions
 
   when:
   task.ext.when == null || task.ext.when
