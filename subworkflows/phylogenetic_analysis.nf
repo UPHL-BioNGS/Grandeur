@@ -54,12 +54,12 @@ workflow phylogenetic_analysis {
     // TODO : if channel doesn't go to to iqtree2, then send to mashtree
 
     // phylogenetic trees
-    mashtree(for_prokka.map{it -> tuple( it[1]) }.collect())
+    mashtree(for_prokka.map{it -> if (it) { tuple( it[1]) }}.collect())
     iqtree2(ch_core_genome)
     phytreeviz(iqtree2.out.newick.mix(mashtree.out.newick))
 
     // SNP matrix
-    snp_dists(core_genome_evaluation.out.evaluation.map(it->it[0]))
+    snp_dists(core_genome_evaluation.out.evaluation.map( it -> it[0] ))
     heatcluster(snp_dists.out.snp_matrix)
 
   emit:
