@@ -1,0 +1,33 @@
+name: Test Grandeur workflow profile test0
+
+on: [pull_request, workflow_dispatch]
+
+jobs:
+
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Checkout LFS objects
+        run: git lfs checkout
+            
+      - name: Install Nextflow
+        run: |
+          wget -qO- get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+          
+      - name: Run Grandeur
+        run: |
+          nextflow run . -profile docker,test0 -c .github/workflows/github_actions.config
+      
+      - name: Check contig files
+        run: |
+          for file in grandeur/contigs/*_contigs.fa
+          do
+            head $file
+            wc -l $file
+          done      
