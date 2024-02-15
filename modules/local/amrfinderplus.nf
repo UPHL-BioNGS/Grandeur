@@ -1,10 +1,10 @@
 process amrfinderplus {
   tag           "${meta.id}"
-  label         "process_medium"
+  label         "process_high"
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/ncbi-amrfinderplus:3.11.26-2023-11-15.1'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  time '10m'
+  time          '30m'
 
   input:
   tuple val(meta), file(contigs), val(genus), val(species)
