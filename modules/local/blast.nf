@@ -32,8 +32,6 @@ process blastn {
       ${args} \
       | tee -a \$log_file
 
-    exit 1
-
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         blast: \$(blastn -version 2>&1 | sed 's/^.*blastn: //; s/ .*\$//')
