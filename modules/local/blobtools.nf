@@ -4,7 +4,7 @@ process blobtools_create {
   publishDir    params.outdir, mode: 'copy'
   container     'chrishah/blobtools:v1.1.1'
   time          '45m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   tuple val(meta), file(contig), file(blastn), file(bam)
@@ -44,7 +44,7 @@ process blobtools_view {
   publishDir    params.outdir, mode: 'copy'
   container     'chrishah/blobtools:v1.1.1'
   time          '10m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   tuple val(meta), file(json)
@@ -81,7 +81,7 @@ process blobtools_plot {
   publishDir    params.outdir, mode: 'copy'
   container     'chrishah/blobtools:v1.1.1'
   time          '10m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   tuple val(meta), file(json)

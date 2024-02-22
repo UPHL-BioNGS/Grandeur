@@ -5,7 +5,7 @@ process circulocov {
   publishDir    path: params.outdir, mode: 'copy'
   container     'quay.io/uphl/circulocov:0.1.20240104-2024-02-21'
   time          '30m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   tuple val(meta), file(fastqs), file(contigs)

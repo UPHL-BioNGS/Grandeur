@@ -3,7 +3,7 @@ process blastn {
   label         "process_medium"
   publishDir    params.outdir, mode: 'copy'
   container     'staphb/blast:2.15.0'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time          '2h'
 
   input:
