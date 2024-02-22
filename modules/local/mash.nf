@@ -184,7 +184,6 @@ process mash_dist {
 //   label         "process_medium"
 //   publishDir    params.outdir, mode: 'copy'
 //   container     'staphb/mash:2.3'
-//   //#UPHLICA errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 //   time          '10m'
 
 //   input:
