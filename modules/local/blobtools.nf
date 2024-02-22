@@ -54,7 +54,12 @@ process blobtools_view {
   path "logs/${task.process}/*.log"                    , emit: log
   path "versions.yml"                                  , emit: versions
 
+  when:
+  task.ext.when == null || task.ext.when
+
   shell:
+  def args   = task.ext.args   ?: ''
+  def prefix = task.ext.prefix ?: "${meta.id}"
   """
     mkdir -p blobtools logs/${task.process}
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
@@ -86,9 +91,14 @@ process blobtools_plot {
   tuple val(meta), file("blobtools/*_blobtools.txt"), emit: results
   path "blobtools/*_summary.txt"                    , emit: collect
   path "logs/${task.process}/*.log"                 , emit: log
-  path  "versions.yml"                              , emit: versions
+  path "versions.yml"                               , emit: versions
+
+  when:
+  task.ext.when == null || task.ext.when
 
   shell:
+  def args   = task.ext.args   ?: '--format png -r species'
+  def prefix = task.ext.prefix ?: "${meta.id}"
   """
     mkdir -p blobtools logs/${task.process}
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
