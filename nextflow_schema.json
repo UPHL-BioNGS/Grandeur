@@ -1,129 +1,135 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema",
-    "$id": "https://raw.githubusercontent.com/UPHL-BioNGS/Grandeur/main/nextflow_schema.json",
-    "title": "Grandeur Parameters",
-    "description": "Grandeur is short-read de novo assembly pipeline with serotyping.",
-    "type": "object",
-    "properties": {
-        "blast_db": {
-            "type":         "string",
-            "description":  "directory with blast database"
-        },
-        "blast_db_type": {
-            "type":         "string",
-            "default":      "nt",
-            "description":  "type of blast database (i.e. 'nt')"
-        },
-        "config_file": {
-            "type":         "boolean",
-            "hidden":       true,
-            "description":  "if true, copies config and params template and exits"
-        },
-        "current_datasets": {
-            "type":         "boolean",
-            "hidden":       true,
-            "default":      false,
-            "description":  "toggles whether or not genomes are downloaded from NCBI"
-        },
-        "datasets_max_genomes": {
-            "type":         "number",
-            "hidden":       true,
-            "default":      5,
-            "description":  "the maxiumum number of genomes to download per organism"
-        },
-        "skip_extras": {
-            "type":         "boolean",
-            "hidden":       true,
-            "default":      false,
-            "description":  "turns off blobtools, kraken2, fastani, mash, and report generation subworkflows"
-        },
-        "fasta_list": {
-            "type":         "string",
-            "hidden":       true,
-            "description":  "A sample sheet for fasta files"
-        },
-        "fastani_include": {
-            "type":         "boolean",
-            "hidden":       true,
-            "default":      true,
-            "description":  "adds fastani top hit to msa"
-        },
-        "fastani_ref": {
-            "type":         "string",
-            "hidden":       true,
-            "description":  "additional fasta files for fastani references"
-        },
-        "fastani_ref_list": {
-            "type":         "string",
-            "hidden":       true,
-            "description":  "list of genomes for fastani references"
-        },
-        "fastas": {
-            "type":         "string",
-            "default":      "fastas",
-            "description":  "directory with fasta files"
-        },
-        "genome_sizes": {
-            "type":         "string",
-            "hidden":       true,
-            "description":  "file with pre-prepared genome sizes"
-        },
-        "gff": {
-            "type":         "string",
-            "hidden":       true,
-            "default":      "gff",
-            "description":  "directory of prokka-annotated gff files (only for use with msa)"
-        },
-        "kraken2_db": {
-            "type":         "string",
-            "description":  "directory of kraken2 database"
-        },
-        "mash_db": {
-            "type":         "string",
-            "description":  "prepared mash reference msh file"
-        },
-        "mash_max_hits": {
-            "type":         "number",
-            "hidden":       true,
-            "default":      25,
-            "description":  "the number of mash hits allowed in result file"
-        },
-        "minimum_reads": {
-            "type":         "number",
-            "hidden":       true,
-            "default":      10000,
-            "description":  "the minimum number of reads in a fastq file required to move to de novo alignment"
-        },
-        "min_core_genes": {
-            "type":         "number",
-            "hidden":       true,
-            "default":      1500,
-            "description":  "minimum number of genes in core genome alignment for iqtree2"
-        },
-        "msa": {
-            "type":         "string",
-            "hidden":       true,
-            "default":      "",
-            "description":  "toggles whether or not phylogenetic analysis will be run on samples"
-        },
-        "outdir": {
-            "type":         "string",
-            "description":  "result output directory",
-            "default":      "grandeur"
-        },
-        "reads": {
-            "type":         "string",
-            "default":      "reads",
-            "description":  "directory of reads"
-        },
-        "sample_sheet": {
-            "type":         "string",
-            "description":  "csv with sample,read1,read2"
-        },
-        "sra_accessions": {
-            "type":         "string",
-            "hidden":       true,
-            "description":  "list of SRA accessions to download"
-        }
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "https://raw.githubusercontent.com/UPHL-BioNGS/Grandeur/main/nextflow_schema.json",
+  "title": "Grandeur Parameters",
+  "description": "Grandeur is short-read de novo assembly pipeline with serotyping.",
+  "type": "object",
+  "properties": {
+    "blast_db": {
+      "type": "string",
+      "hidden": false,
+      "description": "directory with blast database"
+    },
+    "blast_db_type": {
+      "type": "string",
+      "hidden": false,
+      "description": "type of blast database (i.e. 'nt')"
+    },
+    "config_file": {
+      "type": "boolean",
+      "hidden": true,
+      "description": "if true, copies config and params template and exits"
+    },
+    "current_datasets": {
+      "type": "boolean",
+      "hidden": true,
+      "default": false,
+      "description": "toggles whether or not genomes are downloaded from NCBI"
+    },
+    "datasets_max_genomes": {
+      "type": "number",
+      "hidden": true,
+      "default": 5.0,
+      "description": "the maxiumum number of genomes to download per organism"
+    },
+    "exclude_top_hit": {
+      "type": "boolean",
+      "hidden": true,
+      "default": false,
+      "description": "removes fastani top hit from msa"
+    },
+    "fasta_list": {
+      "type": "string",
+      "hidden": false,
+      "description": "A sample sheet for fasta files"
+    },
+    "fastani_ref": {
+      "type": "string",
+      "hidden": true,
+      "description": "additional fasta files for fastani references"
+    },
+    "fastani_ref_list": {
+      "type": "string",
+      "hidden": true,
+      "description": "list of genomes for fastani references"
+    },
+    "fastas": {
+      "type": "string",
+      "hidden": false,
+      "default": "fastas",
+      "description": "directory with fasta files"
+    },
+    "genome_sizes": {
+      "type": "string",
+      "hidden": true,
+      "description": "file with pre-prepared genome sizes"
+    },
+    "iqtree2_outgroup": {
+      "type": "string",
+      "hidden": true,
+      "description": "to specify outgroup in iqtree2"
+    },    
+    "kraken2_db": {
+      "type": "string",
+      "hidden": false,
+      "description": "directory of kraken2 database"
+    },
+    "mash_db": {
+      "type": "string",
+      "hidden": true,
+      "description": "prepared mash reference msh file"
+    },
+    "mash_max_hits": {
+      "type": "number",
+      "hidden": true,
+      "default": 25.0,
+      "description": "the number of mash hits allowed in result file"
+    },
+    "min_core_genes": {
+      "type": "number",
+      "hidden": true,
+      "default": 1500.0,
+      "description": "minimum number of genes in core genome alignment for iqtree2"
+    },
+    "minimum_reads": {
+      "type": "number",
+      "hidden": true,
+      "default": 10000.0,
+      "description": "the minimum number of reads in a fastq file required to move to de novo alignment"
+    },
+    "msa": {
+      "type": "string",
+      "hidden": false,
+      "default": "",
+      "description": "toggles whether or not phylogenetic analysis will be run on samples"
+    },
+    "outdir": {
+      "type": "string",
+      "hidden": false,
+      "description": "result output directory",
+      "default": "grandeur"
+    },
+    "reads": {
+      "type": "string",
+      "default": "reads",
+      "hidden": true,
+      "description": "directory of reads"
+    },
+    "sample_sheet": {
+      "type": "string",
+      "hidden": false,
+      "description": "csv with sample,read1,read2"
+    },
+    "skip_extras": {
+      "type": "boolean",
+      "hidden": true,
+      "default": false,
+      "description": "turns off blobtools, kraken2, fastani, mash, and report generation subworkflows"
+    },
+    "sra_accessions": {
+      "type": "string",
+      "hidden": true,
+      "description": "list of SRA accessions to download"
     }
+  }
 }
