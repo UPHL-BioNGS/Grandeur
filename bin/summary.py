@@ -160,17 +160,17 @@ if exists(circulocov) :
 
     new_all_df = new_df[new_df['circulocov_contigs'] == 'all' ].copy()
     new_all_df = new_all_df.drop(['circulocov_circ', 'circulocov_contigs'], axis=1)
+    new_all_df['circulocov_illumina_meandepth'] = new_all_df['circulocov_illumina_meandepth'].astype('float')
 
     new_unmapped_df = new_df[new_df['circulocov_contigs'] == 'missing' ].copy()
     new_unmapped_df = new_unmapped_df.drop(['circulocov_circ', 'circulocov_contigs', 'circulocov_length', 'circulocov_illumina_covbases', 'circulocov_illumina_coverage', 'circulocov_illumina_meandepth'], axis=1)
     new_unmapped_df = new_unmapped_df.rename(columns={'circulocov_illumina_numreads': 'circulocov_unmapped_reads'})
+    new_unmapped_df['circulocov_unmapped_reads'] = new_unmapped_df['circulocov_unmapped_reads'].astype('int')
 
     summary_df = pd.merge(summary_df, new_all_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
     summary_df = pd.merge(summary_df, new_unmapped_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
-    summary_df['circulocov_unmapped_reads'] = summary_df['circulocov_unmapped_reads'].astype('int')
-    summary_df['circulocov_illumina_meandepth'] = summary_df['circulocov_illumina_meandepth'].astype('float')
 
 # fastani : merging relevant rows into one
 if exists(fastani) :
@@ -544,6 +544,10 @@ if "fastqc_total sequences" and 'fastqc_avg_length' in summary_df:
         summary_df['cov_stdev']       = summary_df[cov_columns].std(axis = 1, skipna = True)
         summary_df['cov_stdev_ratio'] = summary_df['cov_stdev']/summary_df['cov_average']
         summary_df['warning']         = summary_df['warnings'] + summary_df['cov_stdev_ratio'].apply(lambda x: "Variable genome size," if x >= 0.3 else "")
+
+# replacing Shigella with E. coli if ipaH+
+if 'predicted_organism' and 'shigatyper_hit' in summary_df.columns:
+    summary_df.loc[(summary_df['predicted_organism'].str.contains('Shigella')) & (~summary_df['shigatyper_hit'].str.contains('ipaH').notna()), 'predicted_organism'] = 'Escherichia coli'
 
 ##########################################
 # creating files                         #
