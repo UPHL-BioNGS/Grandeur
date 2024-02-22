@@ -14,6 +14,8 @@ amrfinder_input         = 'amrfinderplus.txt'
 amrfinder_output        = 'amrfinderplus_mqc.txt'
 blobtools_input         = 'blobtools_summary.txt'
 blobtools_output        = 'blobtools_mqc.tsv'
+circulocov_input        = 'circulocov_summary.tsv'
+circulocov_output       = 'circulocov_mqc.tsv'
 core_genome_input       = 'core_genome_evaluation.csv'
 core_genome_output      = 'core_genome_evaluation_mqc.csv' 
 drprg_input             = 'drprg_summary.tsv'
@@ -55,37 +57,38 @@ shigatyper_hit_output   = 'shigatyper_hits_mqc.tsv'
 snpdists_input          = 'snp_matrix.txt'
 snpdists_output         = 'snpdists_matrix_mqc.txt' 
 
-
 ##########################################
 # getting ready for multiqc              #
 ##########################################
 
 if exists(blobtools_input) :
     blobtools_df = pd.read_table(blobtools_input)
-    #TODO:
-    #   organisms=($(cut -f 2 blobtools_summary.txt | grep -v all  | grep -v name | sort | uniq ))
-    #   samples=($(cut -f 1 blobtools_summary.txt | grep -v all | grep -v sample | sort | uniq ))
+    blobtools_df = blobtools_df[~blobtools_df['name'].isin(['all', 'no-hit', 'undef'])]
 
-    #   echo \${organisms[@]} | tr ' ' '\t' | awk '{print "sample\t" \$0}' > blobtools_mqc.tsv
+    samples = blobtools_df['sample'].drop_duplicates().tolist()
+    organisms = sorted(blobtools_df['name'].drop_duplicates().tolist())
+    blobtools_result_df = pd.DataFrame(columns=["sample"] + organisms)
 
-    #   for sample in \${samples[@]}
-    #   do
-    #     line="\$sample"
+    for sample in samples:
+        result = [sample]
+        for organism in organisms:
+            readper = blobtools_df.loc[(blobtools_df['sample'] == sample) & (blobtools_df['name'] == organism), 'bam0_read_map_p']
+            orgper = readper.iloc[0] if not readper.empty else 0
+            result = result + [orgper]
+        
+        blobtools_result_df.loc[len(blobtools_result_df.index)] = result
 
-    #     for organism in \${organisms[@]}
-    #     do
-    #       num=\$(grep -w ^"\$sample" blobtools_summary.txt | grep -w "\$organism" | cut -f 13 )
-    #       if [ -z "\$num" ] ; then num=0 ; fi
-    #       line="\$line\t\$num"
-    #     done
-    #     echo -e \$line | sed 's/,//g' >>  blobtools_mqc.tsv
-    #   done
-    # fi
-    blobtools_df.to_csv(blobtools_output, index=False, sep="\t")
+    blobtools_result_df.to_csv(blobtools_output, index=False, sep="\t")
 
 if exists(drprg_input):
     drprg_df = pd.read_table(drprg_input)
     drprg_df.to_csv(drprg_output, index=False, sep="\t")
+
+if exists(circulocov_input):
+    circulocov_df = pd.read_table(circulocov_input)
+    circulocov_df = circulocov_df[circulocov_df['contigs'] == 'all']
+    circulocov_df = circulocov_df.drop(['circ', 'contigs'], axis=1)
+    circulocov_df.to_csv(circulocov_output, index=False, sep="\t")
 
 if exists(elgato_input):
     elgato_df = pd.read_table(elgato_input)
