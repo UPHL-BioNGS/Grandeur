@@ -17,6 +17,7 @@ from os.path import exists
 names          = 'input_files.csv'
 amrfinderplus  = 'amrfinderplus.txt'
 blobtools      = 'blobtools_summary.txt'
+circulocov     = 'circulocov_summary.tsv'
 core           = 'multiqc_core_genome_evaluation-plot.txt'
 datasets       = 'datasets_summary.csv'
 drprg          = 'drprg_summary.tsv'
@@ -125,7 +126,11 @@ if exists(blobtools) :
     print("Adding results for " + file)
     analysis = "blobtools"
     new_df = pd.read_table(file, dtype = str, index_col= False)
+    new_df['bam0_read_map_p'] = new_df['bam0_read_map_p'].astype(float)
     new_df = new_df[new_df['name'] != 'all']
+    new_df = new_df[new_df['name'] != 'undef']
+    new_df = new_df[new_df['name'] != 'no-hit']
+    new_df = new_df[new_df['name'] != 'other']
     new_df = new_df.sort_values('bam0_read_map_p', ascending = False)
     
     tmp_df = new_df.drop_duplicates(subset='sample', keep="first").copy()
@@ -133,7 +138,7 @@ if exists(blobtools) :
     tmp_df['top_organism'] = tmp_df['name']
     tmp_df = tmp_df.add_prefix(analysis + '_')
     
-    new_df['organism (per mapped reads)'] = new_df['name'] + ' (' + new_df['bam0_read_map_p'] + ')'
+    new_df['organism (per mapped reads)'] = new_df['name'] + ' (' + new_df['bam0_read_map_p'].astype(str) + ')'
     new_df = new_df[['sample', 'organism (per mapped reads)']]
     new_df = new_df.groupby('sample', as_index=False).agg({'organism (per mapped reads)': lambda x: list(x)})
     new_df['warning'] = new_df['organism (per mapped reads)'].apply(lambda x: "Blobtools multiple organisms," if ','.join(x).count(',') >= 2 else "")
@@ -144,6 +149,28 @@ if exists(blobtools) :
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
     summary_df = pd.merge(summary_df, tmp_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
     summary_df['warnings'] = summary_df['warnings'] + summary_df['blobtools_warning']
+
+if exists(circulocov) : 
+    file = circulocov
+    print("Adding results for " + file)
+    analysis = "circulocov"
+    new_df = pd.read_table(file, dtype = str, index_col= False)
+    new_df.columns = [x.lower() for x in new_df.columns]
+    new_df = new_df.add_prefix(analysis + '_')
+
+    new_all_df = new_df[new_df['circulocov_contigs'] == 'all' ].copy()
+    new_all_df = new_all_df.drop(['circulocov_circ', 'circulocov_contigs'], axis=1)
+
+    new_unmapped_df = new_df[new_df['circulocov_contigs'] == 'missing' ].copy()
+    new_unmapped_df = new_unmapped_df.drop(['circulocov_circ', 'circulocov_contigs', 'circulocov_length', 'circulocov_illumina_covbases', 'circulocov_illumina_coverage', 'circulocov_illumina_meandepth'], axis=1)
+    new_unmapped_df = new_unmapped_df.rename(columns={'circulocov_illumina_numreads': 'circulocov_unmapped_reads'})
+
+    summary_df = pd.merge(summary_df, new_all_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
+    summary_df.drop(analysis + "_sample", axis=1, inplace=True)
+    summary_df = pd.merge(summary_df, new_unmapped_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
+    summary_df.drop(analysis + "_sample", axis=1, inplace=True)
+    summary_df['circulocov_unmapped_reads'] = summary_df['circulocov_unmapped_reads'].astype('int')
+    summary_df['circulocov_illumina_meandepth'] = summary_df['circulocov_illumina_meandepth'].astype('float')
 
 # fastani : merging relevant rows into one
 if exists(fastani) :
@@ -351,12 +378,6 @@ if exists(core):
     summary_df['core_genome_warning'] = summary_df['per_core_genome_genes'].apply(lambda x: "Low core genes," if x <= 85 else "")
     summary_df['warnings']            = summary_df['warnings'] + summary_df['core_genome_warning']
 
-
-# size : getting the size and coverage and warning if there's too much stdev
-        
-# getting different size estimates
-# from circulocov
-
 ##########################################
 # predicting organism                    #
 ##########################################
@@ -456,9 +477,13 @@ if "fastqc_total sequences" and 'fastqc_avg_length' in summary_df:
         summary_df['quast_estimated_genome_size'] = summary_df['quast_Total length']
         summary_df['quast_estimated_coverage']    = summary_df['total_bases'].astype(float) / summary_df['quast_estimated_genome_size'].astype(float)
 
-    summary_df['coverage'] = pd.NA
-
     cov_columns = []
+
+    if 'circulocov_illumina_meandepth' in summary_df.columns:
+        cov_columns.append('circulocov_illumina_meandepth')
+        summary_df['coverage'] = summary_df['circulocov_illumina_meandepth']
+    else:
+        summary_df['coverage'] = pd.NA
 
     if 'rep_estimated_coverage' in summary_df:
         cov_columns.append('rep_estimated_coverage')
@@ -524,6 +549,8 @@ if "fastqc_total sequences" and 'fastqc_avg_length' in summary_df:
 # creating files                         #
 ##########################################
 
+summary_df = summary_df.sort_values(by='sample')
+
 summary_df.columns = summary_df.columns.str.replace(' ', '_')
 
 summary_df.to_csv(extended + '.tsv', index=False, sep="\t")
@@ -542,6 +569,7 @@ final_columns = [
 'quast_#_contigs',
 'quast_gc_(%)',
 'warnings',
+'circulocov_unmapped_reads',
 'amrfinder_genes_(per_cov/per_ident)',
 
 # species
