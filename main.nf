@@ -1,12 +1,24 @@
 #!/usr/bin/env nextflow
 
+//# For aesthetics - and, yes, we are aware that there are better ways to write this than a bunch of 'println' statements
+println('') 
+println('   /^^^^   /^^^^^^^          /^       /^^^     /^^/^^^^^    /^^^^^^^^/^^     /^^/^^^^^^^    ')
+println(' /^    /^^ /^^    /^^       /^ ^^     /^ /^^   /^^/^^   /^^ /^^      /^^     /^^/^^    /^^  ')
+println('/^^        /^^    /^^      /^  /^^    /^^ /^^  /^^/^^    /^^/^^      /^^     /^^/^^    /^^  ')
+println('/^^        /^ /^^         /^^   /^^   /^^  /^^ /^^/^^    /^^/^^^^^^  /^^     /^^/^ /^^      ')
+println('/^^   /^^^^/^^  /^^      /^^^^^^ /^^  /^^   /^ /^^/^^    /^^/^^      /^^     /^^/^^  /^^    ')
+println(' /^^    /^ /^^    /^^   /^^       /^^ /^^    /^ ^^/^^   /^^ /^^      /^^     /^^/^^    /^^  ')
+println('  /^^^^^   /^^      /^^/^^         /^^/^^      /^^/^^^^^    /^^^^^^^^  /^^^^^   /^^      /^^')
+println('')                                                                            
+
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
 // Welcome to this workflow! Issues and contributions are gladly accepted at https://github.com/UPHL-BioNGS/Grandeur .
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
-println("Currently using the Grandeur workflow for use with microbial sequencing. The view is great from 8299 feet (2530 meters) above sea level.\n")
+println("Currently using the Grandeur workflow for use with microbial sequencing.")
+println("The view is great from 8299 feet (2530 meters) above sea level.\n")
 println("Author: Erin Young")
 println("email: eriny@utah.gov")
 println("Version: ${workflow.manifest.version}")
@@ -47,6 +59,7 @@ params.fasta_list           = ""
 // external files
 params.kraken2_db           = ""
 params.blast_db             = ""
+params.blast_db_type        = ""
 params.mash_db              = ""
 params.fastani_ref          = ""
 params.fastani_ref_list     = ""
@@ -87,6 +100,7 @@ def paramCheck(keys) {
     "sample_sheet",
     "fasta_list",
     "blast_db",
+    "blast_db_type",
     "fastani_ref",
     "fastani_ref_list",
     "iqtree2_outgroup",
@@ -120,12 +134,13 @@ paramCheck(params.keySet())
 // TODO : https://oldsite.nf-co.re/pipeline_schema_builder nf-core schema build
 
 include { average_nucleotide_identity }   from "./subworkflows/average_nucleotide_identity"   addParams(params)
-//include { blobtools }                     from "./subworkflows/blobtools"                     addParams(params)
+include { blobtools }                     from "./subworkflows/blobtools"                     addParams(params)
 include { de_novo_alignment }             from "./subworkflows/de_novo_alignment"             addParams(params)
 include { information }                   from "./subworkflows/information"                   addParams(params)
 include { kmer_taxonomic_classification } from "./subworkflows/kmer_taxonomic_classification" addParams(params)
 include { min_hash }                      from "./subworkflows/min_hash"                      addParams(params)
 include { phylogenetic_analysis }         from "./subworkflows/phylogenetic_analysis"         addParams(params)
+include { quality_assessment }            from "./subworkflows/quality_assessment"            addParams(params)
 include { report }                        from "./subworkflows/report"                        addParams(params)
 include { test }                          from "./subworkflows/test"                          addParams(params)
 
@@ -315,6 +330,7 @@ workflow {
   if ( params.sample_sheet || params.reads || params.sra_accessions ) {
     de_novo_alignment(ch_raw_reads)
 
+    ch_assembled   = de_novo_alignment.out.contigs
     ch_contigs     = ch_fastas.mix(de_novo_alignment.out.contigs)
     ch_clean_reads = de_novo_alignment.out.clean_reads
     ch_for_multiqc = ch_for_multiqc.mix(de_novo_alignment.out.for_multiqc)
@@ -323,29 +339,41 @@ workflow {
   } else {
     ch_contigs     = ch_fastas
     ch_clean_reads = Channel.empty()
+    ch_assembled   = Channel.empty()
   }
 
-  // optional subworkflow blobtools (useful for interspecies contamination)
-  // if ( params.blast_db && ( params.sample_sheet || params.reads )) {
-  //   blobtools(ch_clean_reads, ch_contigs, ch_blast_db )
-
-  //   ch_for_multiqc = ch_for_multiqc.mix(blobtools.out.for_multiqc)
-  //   ch_for_summary = ch_for_summary.mix(blobtools.out.for_summary)
-  //   ch_for_flag    = ch_for_flag.mix(blobtools.out.for_flag)
-  // ch_versions = ch_versions.mix(blobtools.out.versions)
-  // }
-
-  // optional subworkflow kraken2 (useful for interspecies contamination)
-  if ( params.kraken2_db && ( params.sample_sheet || params.reads || params.sra_accessions )) {
-    kmer_taxonomic_classification(ch_clean_reads, ch_kraken2_db )
-
-    ch_for_multiqc = ch_for_multiqc.mix(kmer_taxonomic_classification.out.for_multiqc)
-    ch_for_summary = ch_for_summary.mix(kmer_taxonomic_classification.out.for_summary)
-    ch_for_flag    = ch_for_flag.mix(kmer_taxonomic_classification.out.for_flag)
-    ch_versions    = ch_versions.mix(kmer_taxonomic_classification.out.versions)
-  } 
-  
+  // getting a summary of everything
   if ( ! params.skip_extras ) {
+    quality_assessment(
+      ch_raw_reads,
+      ch_contigs,
+      summfle_script)
+
+    ch_for_multiqc = ch_for_multiqc.mix(quality_assessment.out.for_multiqc)
+    ch_for_summary = ch_for_summary.mix(quality_assessment.out.for_summary)
+    ch_versions    = ch_versions.mix(quality_assessment.out.versions)
+  
+
+    // optional subworkflow blobtools (useful for interspecies contamination)
+    if ( params.blast_db && ( params.sample_sheet || params.reads || params.sra_accessions )) {
+      blobtools(ch_clean_reads, ch_assembled, quality_assessment.out.bams, ch_blast_db )
+
+      ch_for_summary = ch_for_summary.mix(blobtools.out.for_summary)
+      ch_for_flag    = ch_for_flag.mix(blobtools.out.for_flag)
+      
+      ch_versions = ch_versions.mix(blobtools.out.versions)
+    }
+
+    // optional subworkflow kraken2 (useful for interspecies contamination)
+    if ( params.kraken2_db && ( params.sample_sheet || params.reads || params.sra_accessions )) {
+      kmer_taxonomic_classification(ch_clean_reads, ch_kraken2_db )
+
+      ch_for_multiqc = ch_for_multiqc.mix(kmer_taxonomic_classification.out.for_multiqc)
+      ch_for_summary = ch_for_summary.mix(kmer_taxonomic_classification.out.for_summary)
+      ch_for_flag    = ch_for_flag.mix(kmer_taxonomic_classification.out.for_flag)
+      ch_versions    = ch_versions.mix(kmer_taxonomic_classification.out.versions)
+    } 
+  
     // subworkflow mash for species determination
     min_hash(ch_clean_reads, ch_fastas, ch_mash_db)
 
@@ -359,17 +387,15 @@ workflow {
     ch_for_flag = ch_for_flag.mix(average_nucleotide_identity.out.for_flag).mix(min_hash.out.for_flag)
     ch_top_hit  = average_nucleotide_identity.out.top_hit
 
-    // getting all the other information
-    information(
-      ch_raw_reads, 
-      ch_contigs, 
-      ch_for_flag, 
-      summfle_script,
-      jsoncon_script)
+    // // getting all the other information
+    // information(
+    //   ch_contigs, 
+    //   ch_for_flag, 
+    //   summfle_script,
+    //   jsoncon_script)
 
-    ch_for_summary = ch_for_summary.mix(information.out.for_summary).mix(min_hash.out.for_summary).mix(average_nucleotide_identity.out.for_summary)
-    ch_for_multiqc = ch_for_multiqc.mix(information.out.for_multiqc)
-    ch_versions    = ch_versions.mix(min_hash.out.versions).mix(average_nucleotide_identity.out.versions).mix(information.out.versions)
+    // ch_for_summary = ch_for_summary.mix(information.out.for_summary).mix(min_hash.out.for_summary).mix(average_nucleotide_identity.out.for_summary)
+    // ch_versions    = ch_versions.mix(min_hash.out.versions).mix(average_nucleotide_identity.out.versions).mix(information.out.versions)
   } else {
     ch_top_hit = Channel.empty()
   }
