@@ -2,56 +2,24 @@ include { amrfinderplus }  from '../modules/local/amrfinderplus'  addParams(para
 include { drprg }          from '../modules/local/drprg'          addParams(params)
 include { elgato }         from '../modules/local/elgato'         addParams(params)
 include { emmtyper }       from '../modules/local/emmtyper'       addParams(params)
-include { fastqc }         from '../modules/local/fastqc'         addParams(params)
 include { flag }           from '../modules/local/local'          addParams(params)
 include { json_convert }   from '../modules/local/local'          addParams(params)
 include { kaptive }        from '../modules/local/kaptive'        addParams(params)
 include { kleborate }      from '../modules/local/kleborate'      addParams(params)
-include { mlst }           from '../modules/local/mlst'           addParams(params)
 include { mykrobe }        from '../modules/local/mykrobe'        addParams(params)
 include { pbptyper }       from '../modules/local/pbptyper'       addParams(params)
-include { plasmidfinder }  from '../modules/local/plasmidfinder'  addParams(params)
-include { quast }          from '../modules/local/quast'          addParams(params)
 include { seqsero2 }       from '../modules/local/seqsero2'       addParams(params)
 include { serotypefinder } from '../modules/local/serotypefinder' addParams(params)
 include { shigatyper }     from '../modules/local/shigatyper'     addParams(params)
 
 workflow information {
   take:
-    ch_reads
     ch_contigs
     ch_flag
     summfle_script
     jsoncon_script
 
   main:
-    for_multiqc = Channel.empty()
-    ch_versions = Channel.empty()
-
-    // fastq files only
-    if ( params.sample_sheet || params.reads ) {
-      fastqc(ch_reads)
-
-      for_multiqc = for_multiqc.mix(fastqc.out.for_multiqc)
-
-      fastqc.out.collect
-        .collectFile(name: "fastqc_summary.csv",
-          keepHeader: true,
-          sort: { file -> file.text },
-          storeDir: "${params.outdir}/fastqc")
-        .set{ fastqc_summary }
-
-      ch_versions = ch_versions.mix(fastqc.out.versions.first())
-
-    } else {
-      fastqc_summary = Channel.empty()
-    }
-
-    // contigs
-    mlst(ch_contigs.combine(summfle_script))
-    quast(ch_contigs)
-    plasmidfinder(ch_contigs.combine(summfle_script))
-
     // species specific
     // TODO : add blobtools
     int grouptuplesize = 2
@@ -123,13 +91,6 @@ workflow information {
         storeDir: "${params.outdir}/kleborate")
       .set{ kleborate_summary }
 
-    mlst.out.collect
-      .collectFile(name: "mlst_summary.tsv",
-        keepHeader: true,
-        sort: { file -> file.text },
-        storeDir: "${params.outdir}/mlst")
-      .set{ mlst_summary }
-
     mykrobe.out.collect
       .collectFile(name: "mykrobe_summary.csv",
         keepHeader: true,
@@ -137,26 +98,12 @@ workflow information {
         storeDir: "${params.outdir}/mykrobe")
       .set{ mykrobe_summary }
 
-    quast.out.collect
-      .collectFile(name: "quast_report.tsv",
-        keepHeader: true,
-        sort: { file -> file.text },
-        storeDir: "${params.outdir}/quast")
-      .set{ quast_summary }
-
     pbptyper.out.collect
       .collectFile(name: "pbptyper_summary.tsv",
         keepHeader: true,
         sort: { file -> file.text },
         storeDir: "${params.outdir}/pbptyper")
       .set{ pbptyper_summary }
-
-    plasmidfinder.out.collect
-      .collectFile(name: "plasmidfinder_result.tsv",
-        keepHeader: true,
-        sort: { file -> file.text },
-        storeDir: "${params.outdir}/plasmidfinder")
-      .set{ plasmidfinder_summary }
 
     seqsero2.out.collect
       .collectFile(name: "seqsero2_results.txt",
@@ -186,41 +133,28 @@ workflow information {
         storeDir: "${params.outdir}/shigatyper")
       .set{ shigatyper_summary }
 
-    // TODO:
-    // for wiki: link result files to subworkflows
-    // - update file tree
-    // create params file and param to copy the params file
-
     amrfinderplus_summary
       .mix(drprg_summary)
       .mix(elgato_summary)
       .mix(emmtyper_summary)
-      .mix(fastqc_summary)
       .mix(kaptive_summary)
       .mix(kleborate_summary)
-      .mix(mlst_summary)
       .mix(mykrobe_summary)
       .mix(pbptyper_summary)
-      .mix(plasmidfinder_summary)
-      .mix(quast_summary)
       .mix(seqsero2_summary)
       .mix(serotypefinder_summary)
       .mix(shigatyper_hits)
       .mix(shigatyper_summary)
       .set { for_summary }
 
-    ch_versions
-      .mix(amrfinderplus.out.versions.first())
+    amrfinderplus.out.versions.first()
       .mix(drprg.out.versions)
       .mix(elgato.out.versions)
       .mix(emmtyper.out.versions)
       .mix(kaptive.out.versions)
       .mix(kleborate.out.versions)
-      .mix(mlst.out.versions.first())
       .mix(mykrobe.out.versions)
       .mix(pbptyper.out.versions)
-      .mix(plasmidfinder.out.versions.first())
-      .mix(quast.out.versions)
       .mix(seqsero2.out.versions)
       .mix(serotypefinder.out.versions)
       .mix(shigatyper.out.versions)
@@ -228,6 +162,5 @@ workflow information {
 
   emit:
     for_summary = for_summary.collect()
-    for_multiqc = for_multiqc.mix(quast.out.for_multiqc).collect()
     versions    = for_versions
 }
