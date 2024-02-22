@@ -25,7 +25,8 @@ workflow information {
     int grouptuplesize = 2
     if ( params.kraken2_db && ( params.sample_sheet || params.reads )) { grouptuplesize = grouptuplesize +1 }
 
-    flag(ch_flag.groupTuple(size : grouptuplesize, remainder: true ))
+    //flag(ch_flag.groupTuple(size : grouptuplesize, remainder: true ))
+    flag(ch_flag.groupTuple())
 
     amrfinderplus(ch_contigs.join(flag.out.organism,    by:0))
     drprg(ch_contigs.join(flag.out.myco_flag,           by:0))
