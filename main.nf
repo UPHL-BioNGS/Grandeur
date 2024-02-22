@@ -387,15 +387,15 @@ workflow {
     ch_for_flag = ch_for_flag.mix(average_nucleotide_identity.out.for_flag).mix(min_hash.out.for_flag)
     ch_top_hit  = average_nucleotide_identity.out.top_hit
 
-    // // getting all the other information
-    // information(
-    //   ch_contigs, 
-    //   ch_for_flag, 
-    //   summfle_script,
-    //   jsoncon_script)
+    // getting all the other information
+    information(
+      ch_contigs, 
+      ch_for_flag, 
+      summfle_script,
+      jsoncon_script)
 
-    // ch_for_summary = ch_for_summary.mix(information.out.for_summary).mix(min_hash.out.for_summary).mix(average_nucleotide_identity.out.for_summary)
-    // ch_versions    = ch_versions.mix(min_hash.out.versions).mix(average_nucleotide_identity.out.versions).mix(information.out.versions)
+    ch_for_summary = ch_for_summary.mix(information.out.for_summary).mix(min_hash.out.for_summary).mix(average_nucleotide_identity.out.for_summary)
+    ch_versions    = ch_versions.mix(min_hash.out.versions).mix(average_nucleotide_identity.out.versions).mix(information.out.versions)
   } else {
     ch_top_hit = Channel.empty()
   }
