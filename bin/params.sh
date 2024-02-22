@@ -15,14 +15,14 @@
 # finding all the params                        #####
 ##### ##### ##### ##### ##### ##### ##### ##### #####
 
-params=$(grep param grandeur.nf | awk '{ ( $1=$1 ) ; print $0 }' | grep ^param | awk '{print $1}' | sort | uniq | cut -f 2 -d '.')
+params=$(grep param main.nf | awk '{ ( $1=$1 ) ; print $0 }' | grep ^param | awk '{print $1}' | sort | uniq | cut -f 2 -d '.')
 
 for param in ${params[@]}
 do
     echo "evaluating params.$param"
 
     # default value
-    default="$(grep -w params.$param grandeur.nf | grep "=" | head -n 1 | sed 's/.*=//g' | awk '{ ( $1=$1 ) ; print $0 }' ) "
+    default="$(grep -w params.$param main.nf | grep "=" | head -n 1 | sed 's/.*=//g' | awk '{ ( $1=$1 ) ; print $0 }' ) "
     echo -e "default:\t$default"
 
     # 2. checks that they are in nextflow_schema.json
@@ -57,7 +57,7 @@ echo "# Now for the processes #####"
 echo "##### ##### ##### ##### #####"
 
 
-processes=$(grep ^process -h modules/*nf | awk '{print $2}' | sort | uniq )
+processes=$(grep ^process -h modules/local/*nf | awk '{print $2}' | sort | uniq )
 
 for process in ${processes[@]}
 do
@@ -73,7 +73,7 @@ do
             value=$(echo $line | sed "s|$key||g" | awk '{ ( $1=$1 ) ; print $0 }' | sed 's/\"${params.outdir}\"/grandeur/g')
             echo -e "//\t\t$key = \"$value\""
         fi
-    done < <(grep "process $process {" -h modules/*nf -A 200 | grep -e "when:" -e "input:" -B 200 -m 1 | grep -v "#UPHLICA" | grep -v "when:" | grep -v "input:" | grep -v "tag")
+    done < <(grep "process $process {" -h modules/local/*nf -A 200 | grep -e "when:" -e "input:" -B 200 -m 1 | grep -v "#UPHLICA" | grep -v "when:" | grep -v "input:" | grep -v "tag")
     echo -e "//\t}"
 
 done
