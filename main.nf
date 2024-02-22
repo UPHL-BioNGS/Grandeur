@@ -39,6 +39,11 @@ if ( params.config_file ) {
   def dst = new File("${workflow.launchDir}/edit_me.config")
   dst << src.text
   println("A config file can be found at ${workflow.launchDir}/edit_me.config")
+
+  def src1 = new File("${workflow.projectDir}/configs/grandeur_params.yml")
+  def dst1 = new File("${workflow.launchDir}/edit_me.yml")
+  dst1 << src1.text
+  println("A params file can be found at ${workflow.launchDir}/edit_me.yml")
   exit 0
 }
 
