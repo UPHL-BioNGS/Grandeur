@@ -1,0 +1,45 @@
+name: Test Grandeur workflow with Mycobacterium
+
+on: [pull_request, workflow_dispatch]
+
+jobs:
+
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nextflow
+        run: |
+          wget -qO- get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+
+          nextflow -version
+          
+      - name: Run Grandeur
+        run: |
+          docker --version
+          
+          mkdir fastas 
+          for accession in GCA_010729105.1_ASM1072910v1 GCA_000195955.2_ASM19595v2
+          do
+            all=$(echo $accession | cut -f 2 -d "_")
+            fir=$(echo $all | cut -c 1-3)
+            mid=$(echo $all | cut -c 4-6)
+            end=$(echo $all | cut -c 7-9)
+            wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/${fir}/${mid}/${end}/${accession}/${accession}_genomic.fna.gz
+            gzip -d ${accession}_genomic.fna.gz
+            mv ${accession}_genomic.fna fastas/.
+          done
+
+          nextflow run . -profile docker -c .github/workflows/github_actions.config --fastas fastas
+          cat grandeur/grandeur_summary.tsv
+
+      - name: Check Mycobacterium file
+        run: |
+          for file in grandeur/drprg/drprg_summary.tsv grandeur/mykrobe/mykrobe_summary.csv
+          do
+            head $file
+            wc -l $file
+          done

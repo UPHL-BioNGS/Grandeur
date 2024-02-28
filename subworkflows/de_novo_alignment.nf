@@ -1,6 +1,6 @@
-include { fastp }   from '../modules/fastp'   addParams(params)
-include { bbduk }   from '../modules/bbmap'   addParams(params)
-include { spades }  from '../modules/spades'  addParams(params)
+include { fastp }   from '../modules/local/fastp'  addParams(params)
+include { bbduk }   from '../modules/local/bbduk'  addParams(params)
+include { spades }  from '../modules/local/spades' addParams(params)
 
 workflow de_novo_alignment {
   take: reads
@@ -23,4 +23,5 @@ workflow de_novo_alignment {
 
     // for multiqc
     for_multiqc = fastp.out.fastp_files.mix(bbduk.out.stats)
+    versions    = bbduk.out.versions.mix(fastp.out.versions).mix(spades.out.versions)
 }

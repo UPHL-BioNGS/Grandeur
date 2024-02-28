@@ -8,17 +8,14 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          lfs: true
-
-      - name: Checkout LFS objects
-        run: git lfs checkout
+        uses: actions/checkout@v4
             
       - name: Install Nextflow
         run: |
           wget -qO- get.nextflow.io | bash
           sudo mv nextflow /usr/local/bin/
+
+          nextflow -version
           
       - name: Run Grandeur
         run: |
@@ -36,8 +33,14 @@ jobs:
             mv ${accession}_genomic.fna fastas/.
           done
 
-          nextflow run . -profile docker --maxcpus 2 --medcpus 2
+          nextflow run . -profile docker -c .github/workflows/github_actions.config --fastas fastas
           cat grandeur/grandeur_summary.tsv
 
       - name: Check Vibrio species
-        run: grep -i vibrio grandeur/fastani/fastani_summary.csv
+        run: |
+          grep -i vibrio grandeur/fastani/fastani_summary.csv
+          for file in grandeur/kaptive/kaptive_summary.txt
+          do
+            head $file
+            wc -l $file
+          done

@@ -1,50 +1,49 @@
-include { core_genome_evaluation } from '../modules/grandeur'    addParams(params)
-include { heatcluster }            from '../modules/heatcluster' addParams(params)
-include { iqtree2 }                from '../modules/iqtree2'     addParams(params)
-include { mashtree }               from '../modules/mashtree'    addParams(params)
-include { panaroo }                from '../modules/panaroo'     addParams(params)
-include { phytreeviz }             from '../modules/phytreeviz'  addParams(params)
-include { prokka }                 from '../modules/prokka'      addParams(params)
-include { roary }                  from '../modules/roary'       addParams(params)
-include { snp_dists }              from '../modules/snp-dists'   addParams(params)
+include { core_genome_evaluation } from '../modules/local/local'       addParams(params)
+include { heatcluster }            from '../modules/local/heatcluster' addParams(params)
+include { iqtree2 }                from '../modules/local/iqtree2'     addParams(params)
+include { mashtree }               from '../modules/local/mashtree'    addParams(params)
+include { panaroo }                from '../modules/local/panaroo'     addParams(params)
+include { phytreeviz }             from '../modules/local/phytreeviz'  addParams(params)
+include { prokka }                 from '../modules/local/prokka'      addParams(params)
+include { snp_dists }              from '../modules/local/snp-dists'   addParams(params)
 
 workflow phylogenetic_analysis {
   take:
     evaluat_script
     ch_contigs
-    ch_gff
     ch_top_hit
 
   main:
-    for_prokka  = Channel.empty()
-    ch_organism = Channel.empty()
 
-    if (params.extras) {
-      ch_organism = ch_organism.mix(ch_top_hit.map { it -> if (it) { tuple( it[0] , [ it[1].split("_")[0], it[1].split("_")[1]] )}})
+    // adding in organism and top ani hit
+    if ( ! params.skip_extras ) {
+      ch_organism = ch_top_hit.map { it -> if (it) { tuple( it[0] , [ it[1].split("_")[0], it[1].split("_")[1]] )}}
 
-      if ( params.fastani_include ) {
+      if ( ! params.exclude_top_hit ) {
         ch_top_hit
           .map { it -> if (it) { tuple( it[1].split("_", 3)[2], it[2], it[1].split("_")[0, 1]) }}
           .groupTuple(by: 0)
-          .map { it -> if (it) { tuple( it[1][0].baseName, it[1][0], it[2][0] ) }}
+          .map { it -> 
+            if (it) {
+              meta = [id:it[1][0].baseName] 
+              tuple( meta, it[1][0], it[2][0] ) }}
           .unique()
           .set { ch_representative }
 
-        for_prokka = for_prokka.mix(ch_representative)
+        for_prokka = ch_contigs.join( ch_organism, by: 0, remainder: true).mix(ch_representative)
+      } else {
+        for_prokka = ch_contigs.join( ch_organism, by: 0, remainder: true)
       }
+    } else {
+      // skipping ani and top hit
+      ch_organism = Channel.empty() 
+      for_prokka  = ch_contigs.map{ it -> tuple(it[0], it[1], null)}
     }
 
-    ch_contig_organism = ch_contigs.join( ch_organism, by: 0, remainder: true)
+    prokka(for_prokka.unique())
 
-    for_prokka = for_prokka.mix(ch_contig_organism).unique()
-
-    prokka(for_prokka)
-
-    // panaroo(prokka.out.gffs.concat(ch_gff).unique().collect())
-    // core_genome_evaluation(panaroo.out.core_gene_alignment.combine(evaluat_script))
-
-    roary(prokka.out.gffs.concat(ch_gff).unique().collect())
-    core_genome_evaluation(roary.out.core_gene_alignment.combine(evaluat_script))
+    panaroo(prokka.out.gff.unique().collect())
+    core_genome_evaluation(panaroo.out.core_gene_alignment.combine(evaluat_script))
 
     core_genome_evaluation.out.evaluation
       .filter({it[1] as int >= 4})
@@ -52,14 +51,18 @@ workflow phylogenetic_analysis {
       .map ( it -> it[0] )
       .set{ ch_core_genome }
 
-    // TODO : if channel doesn't to to iqtree2, then send to mashtree
-    ch_top_hit.view()
-    mashtree(ch_contigs.map{it -> tuple( it[1]) }.collect())
+    // TODO : if channel doesn't go to to iqtree2, then send to mashtree
+
+    // phylogenetic trees
+    mashtree(for_prokka.map{it -> if (it) { tuple( it[1]) }}.collect())
     iqtree2(ch_core_genome)
-    snp_dists(core_genome_evaluation.out.evaluation.map(it->it[0]))
-    heatcluster(snp_dists.out.snp_matrix)
     phytreeviz(iqtree2.out.newick.mix(mashtree.out.newick))
+
+    // SNP matrix
+    snp_dists(core_genome_evaluation.out.evaluation.map( it -> it[0] ))
+    heatcluster(snp_dists.out.snp_matrix)
 
   emit:
     for_multiqc = prokka.out.for_multiqc.mix(snp_dists.out.snp_matrix).mix(heatcluster.out.for_multiqc).mix(phytreeviz.out.for_multiqc).mix(core_genome_evaluation.out.for_multiqc)
+    versions    = prokka.out.versions.first().mix(panaroo.out.versions).mix(mashtree.out.versions).mix(iqtree2.out.versions).mix(phytreeviz.out.versions.first()).mix(snp_dists.out.versions).mix(heatcluster.out.versions)
 }

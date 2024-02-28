@@ -22,7 +22,6 @@ Grandeur is a [Nextflow](https://www.nextflow.io/) workflow developed by [@eriny
 
 - [Nextflow](https://www.nextflow.io/docs/latest/getstarted.html)
 - [Singularity](https://singularity.lbl.gov/install-linux) or [Docker](https://docs.docker.com/get-docker/)
-- [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 
 ## Usage
 
@@ -34,20 +33,19 @@ nextflow run UPHL-BioNGS/Grandeur -profile singularity --reads <path to reads>
 nextflow run UPHL-BioNGS/Grandeur -profile docker --fastas <path to fastas>
 ```
 
-WARNING : "Grandeur" will automatically grab any fastq files in `workflow.launchDir + '/reads'`, fasta files in `workflow.launchDir + '/fastas'`, and gff files in `workflow.launchDir + '/gff'`. This is a **feature** of the workflow.
-
 ### Commonly adjusted parameters
-- params.reads / --reads : specify directory with paired-end files
-- params.fastas / --fastas : specify directory with fasta files
 - params.sample_sheet / --sample_sheet : specify sample sheet with sample id, forward reads in fastq.gz format, and reverse reads in fastq.gz format
 - params.outdir / --outdir : specify directly where results are saved (basic result patterns are granduer/analysis/sample*)
+- params.reads / --reads : specify directory with paired-end files
+- params.fastas / --fastas : specify directory with fasta files
+
 
 ### Not-as-commonly adjusted parameters
 - params.kraken2_db / --kraken2_db : specify directory of kraken2 database
-- params.blast_db / --blast_db : specify directory of blast database
+- params.blast_db / --blast_db : specify directory of blast database (must accompany value for params.blast_db_type)
 - params.mash_db / --mash_db : specify reference file for mash 
 - params.current_datasets / --current_datasets : set to false to avoid downloading genomes from NCBI genomes
-- params.iqtree2_outgroup / --iqtree2_outgroup : set outgroup for iqtree2 (is most successful when included as input)
+- params.iqtree2_outgroup / --iqtree2_outgroup : set outgroup for iqtree2
 
 ## Wiki sections
 
@@ -72,26 +70,36 @@ Please submit any issues and problems to [issues](https://github.com/UPHL-BioNGS
 Grandeur wouldn't be possible without the following tools:
 - [amrfinderplus](https://www.ncbi.nlm.nih.gov/pathogens/antimicrobial-resistance/AMRFinder/) - identification of genes associated with antimicrobial resistence
 - [bbduk](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/bb-tools-user-guide/bbduk-guide/) - removal of PhiX
-- [bbmap](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/bb-tools-user-guide/bbduk-guide/) - maps reads to contigs for blobtools
 - [blastn](https://www.ncbi.nlm.nih.gov/books/NBK279684/) - read identification with blobtools
 - [blobtools](https://blobtools.readme.io/docs) - contamination
+- [circulocov](https://github.com/erinyoung/CirculoCov) - coverage determination
 - [datasets](https://github.com/ncbi/datasets) - downloads genomes from NCBI
+- [drprg](https://github.com/mbhall88/drprg) - TB AMR predictions
+- [elgato](https://github.com/appliedbinf/el_gato) - Legionella pneumophila Sequence Based Typing (SBT)
+- [emmtyper](https://github.com/MDU-PHL/emmtyper) - Group A Strep "emm" typing
 - [fastani](https://github.com/ParBLiSS/FastANI) - species evaluator
 - [fastp](https://github.com/OpenGene/fastp) - cleaning reads
 - [fastqc](https://github.com/s-andrews/FastQC) - fastq file QC
+- [heatcluster](https://github.com/DrB-S/heatcluster) - visualizes SNP matrix from SNP dists
 - [iqtree2](http://www.iqtree.org/) - phylogenetic tree creation - used after core genome alignment
 - [kleborate](https://github.com/katholt/Kleborate) - Klebsiella serotyping
 - [kraken2](https://ccb.jhu.edu/software/kraken2/) - contamination
 - [mash](https://github.com/marbl/Mash) - species identifier
+- [mashtree](https://github.com/lskatz/mashtree) - tree based on mash distances (not impacted by size of core genome)
 - [mlst](https://github.com/tseemann/mlst) - identification of MLST subtype
 - [multiqc](https://multiqc.info/) - summarizes QC efforts
+- [mykrobe](https://github.com/Mykrobe-tools/mykrobe) - Mycobacterium subtyping
+- [panaroo](https://github.com/gtonkinhill/panaroo) - core genome alignment - optional (set with params.msa = true)
+- [pbptyper](https://github.com/rpetit3/pbptyper) - Penicillin Binding Protein (PBP) typer for Streptococcus pneumoniae assemblies
+- [phytreeviz](https://github.com/moshi4/phyTreeViz) - basic tree visualization
 - [plasmidfinder](https://bitbucket.org/genomicepidemiology/plasmidfinder/) - MLST typing for plasmids
 - [prokka](https://github.com/tseemann/prokka) - gene annotation - used for core genome alignment
+  - will be replaced with [bakta](https://github.com/oschwengers/bakta) in a future release
 - [quast](http://quast.sourceforge.net/quast) - contig QC
-- [roary](https://sanger-pathogens.github.io/Roary/) - core genome alignment - optional
 - [seqsero2](https://github.com/denglab/SeqSero2) - Salmonella serotyping
 - [serotypefinder](https://cge.cbs.dtu.dk/services/SerotypeFinder/) - E. coli serotyping
 - [shigatyper](https://github.com/CFSAN-Biostatistics/shigatyper) - Shigella serotyping
 - [snp-dists](https://github.com/tseemann/snp-dists) - SNP matrix - used after core genome aligment
 - [spades](https://cab.spbu.ru/software/spades/) - _de novo_ alignment
-- [sra toolkit](https://hpc.nih.gov/apps/sratoolkit.html) - for downloading fastq files for testing
+
+The expected tools are split into multiple processes. Each [process has its own wiki page](https://github.com/UPHL-BioNGS/Grandeur/wiki/Processes) that we encourage users to view.

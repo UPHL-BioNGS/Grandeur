@@ -1,6 +1,8 @@
-include { names }   from '../modules/grandeur' addParams(params)
-include { multiqc } from '../modules/multiqc'  addParams(params)
-include { summary } from '../modules/grandeur' addParams(params)
+include { names }    from '../modules/local/local'   addParams(params)
+include { mqc_prep } from '../modules/local/local'   addParams(params)
+include { multiqc }  from '../modules/local/multiqc' addParams(params)
+include { summary }  from '../modules/local/local'   addParams(params)
+include { versions } from '../modules/local/multiqc' addParams(params)
 
 workflow report {
     take:
@@ -8,9 +10,24 @@ workflow report {
         ch_fastas
         for_multiqc
         for_summary
+        ch_versions
+        multiqc_script
+        version_script
   
     main:
-        multiqc(for_multiqc.mix(for_summary).collect())
+        ch_versions
+            .collectFile(
+                keepHeader: false,
+                name: "versions.yml")
+            .set { ch_collated_versions }
+
+        versions(ch_collated_versions, version_script)
+
+        mqc_prep(for_multiqc.mix(for_summary).collect(), multiqc_script)
+
+        multiqc(for_multiqc.mix(for_summary).mix(mqc_prep.out.for_multiqc).mix(versions.out.for_multiqc).collect())
+
+        //multiqc(for_multiqc.mix(for_summary).mix(mqc_prep.out.for_multiqc).collect())
 
         names(ch_reads.mix(ch_fastas))
 

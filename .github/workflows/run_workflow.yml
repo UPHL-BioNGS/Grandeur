@@ -8,17 +8,14 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          lfs: true
-
-      - name: Checkout LFS objects
-        run: git lfs checkout
+        uses: actions/checkout@v4
             
       - name: Install Nextflow
         run: |
           wget -qO- get.nextflow.io | bash
           sudo mv nextflow /usr/local/bin/
+
+          nextflow -version
           
       - name: Run Grandeur
         run: |
@@ -29,7 +26,8 @@ jobs:
           wget -q ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR283/002/SRR2838702/SRR2838702_1.fastq.gz
           wget -q ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR283/002/SRR2838702/SRR2838702_2.fastq.gz
           mv *fastq.gz reads/.
-          nextflow run . -profile docker --maxcpus 2 --medcpus 2
+          
+          nextflow run . -profile docker -c .github/workflows/github_actions.config --reads reads
           cat grandeur/grandeur_summary.tsv
       
       - name: Check summary files

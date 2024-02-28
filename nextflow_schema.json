@@ -1,346 +1,135 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema",
-    "$id": "https://raw.githubusercontent.com/UPHL-BioNGS/Grandeur/main/nextflow_schema.json",
-    "title": "Grandeur Parameters",
-    "description": "Grandeur is short-read de novo assembly pipeline with serotyping.",
-    "type": "object",
-    "properties": {
-        "amrfinderplus_options": {
-            "type": "string",
-            "hidden": true,
-            "description": "additional options for editing for process"
-        },
-        "bbduk_options": {
-            "type": "string",
-            "hidden": true,
-            "default": "k=31 hdist=1",
-            "description": "additional options for editing for process"
-        },
-        "bbmap_options": {
-            "type": "string",
-            "hidden": true,
-            "description": "additional options for editing for process"
-        },
-        "blast_db": {
-            "type": "string",
-            "description": "directory with blast database"
-        },
-        "blast_db_type": {
-            "type": "string",
-            "default": "nt",
-            "description": "type of blast database (i.e. 'nt')"
-        },
-        "blastn_options": {
-            "type": "string",
-            "hidden": true,
-            "default": "-max_target_seqs 10 -max_hsps 1 -evalue 1e-25",
-            "description": "additional options for editing for process"
-        },
-        "blobtools_bbmap_options": {
-            "type": "string",
-            "hidden": true,
-            "description": "additional options for editing for process"
-        },
-        "blobtools_create_options": {
-            "type": "string",
-            "hidden": true,
-            "description": "additional options for editing for process"
-        },
-        "blobtools_plot_options": {
-            "type": "string",
-            "hidden": true,
-            "default": "--format png -r species",
-            "description": "additional options for editing for process"
-        },
-        "blobtools_view_options": {
-            "type": "string",
-            "hidden": true,
-            "description": "additional options for editing for process"
-        },
-        "config_file": {
-            "type": "boolean",
-            "hidden": true,
-            "description": "if true, copies template and exits"
-        },
-        "current_datasets": {
-            "type": "boolean",
-            "hidden": true,
-            "default": false,
-            "description": "toggles whether or not genomes are downloaded from NCBI"
-        },
-        "datasets_max_genomes": {
-            "type": "number",
-            "hidden": true,
-            "default": 5,
-            "description": "the maxiumum number of genomes to download per organism"
-        },
-        "donut_falls_wf": {
-            "type": "string",
-            "hidden": true,
-            "default": false,
-            "description": "directory of donut falls nextflow workflow"
-        },
-        "emmtyper_options":{
-            "type": "string",
-            "hidden": true,
-            "description": "options for emmtyper"
-        },
-        "extras": {
-            "type": "boolean",
-            "hidden": true,
-            "default": true,
-            "description": "turns off blobtools, kraken2, fastani, mash, and report generation subworkflows"
-        },
-        "fasta_list": {
-            "type": "string",
-            "hidden": true,
-            "description": "A sample sheet for fasta files"
-        },
-        "fastani_include": {
-            "type": "boolean",
-            "hidden": true,
-            "default": true,
-            "description": "adds fastani top hit to msa"
-        },
-        "fastani_options": {
-            "type": "string",
-            "hidden": true,
-            "description": "additional options for editing for process"
-        },
-        "fastani_ref": {
-            "type": "string",
-            "hidden": true,
-            "description": "additional fasta files for fastani references"
-        },
-        "fastani_ref_list": {
-            "type": "string",
-            "hidden": true,
-            "description": "list of genomes for fastani references"
-        },
-        "fastas": {
-            "type": "string",
-            "default": "fastas",
-            "description": "directory with fasta files"
-        },
-        "fasterqdump_options": {
-            "type": "string",
-            "hidden": true,
-            "description": "additional options for editing for process"
-        },
-        "fastp_options": {
-            "type": "string",
-            "hidden": true,
-            "default": "--detect_adapter_for_pe",
-            "description": "additional options for editing for process"
-        },
-        "fastqc_options": {
-            "type": "string",
-            "hidden": true,
-            "description": "additional options for editing for process"
-        },
-        "genome_sizes": {
-            "type": "string",
-            "hidden": true,
-            "description": "file with pre-prepared genome sizes"
-        },
-        "gff": {
-            "type": "string",
-            "hidden": true,
-            "default": "gff",
-            "description": "directory of prokka-annotated gff files (only for use with msa)"
-        },
-        "heatcluster_options": {
-            "type": "string",
-            "hidden": true,
-            "default": "-t png",
-            "description": "additional options for editing for process"
-        },
-        "iqtree2_options": {
-            "type": "string",
-            "hidden": true,
-            "default": "-t RANDOM -m GTR+F+I -bb 1000 -alrt 1000",
-            "description": "additional options for editing for process"
-        },
-        "iqtree2_outgroup": {
-            "type": "string",
-            "hidden": true,
-            "description": "specify outgroup for iqtree2"
-        },
-        "kaptive_options": {
-            "type": "string",
-            "hidden": true,
-            "description": "options for process"
-        },
-        "kleborate_options": {
-            "type": "string",
-            "hidden": true,
-            "default": "-all",
-            "description": "additional options for editing for process"
-        },
-        "kraken2_db": {
-            "type": "string",
-            "description": "directory of kraken2 database"
-        },
-        "kraken2_options": {
-            "type": "string",
-            "hidden": true,
-            "description": "additional options for editing for process"
-        },
-        "legsta_options": {
-            "type": "string",
-            "hidden": true,
-            "description": "additonal options for editing for process"
-        },
-        "mashtree_options": {
-            "type": "string",
-            "hidden": true,
-            "description": "additonal options for editing for process"
-        },
-        "mash_db": {
-            "type": "string",
-            "description": "prepared mash reference msh file"
-        },
-        "mash_dist_options": {
-            "type": "string",
-            "hidden": true,
-            "default": "-v 0 -d 0.5",
-            "description": "additional options for editing for process"
-        },
-        "mash_max_hits": {
-            "type": "number",
-            "hidden": true,
-            "default": 25,
-            "description": "the number of mash hits allowed in result file"
-        },
-        "mash_sketch_options": {
-            "type": "string",
-            "hidden": true,
-            "default": "-m 2",
-            "description": "additional options for editing for process"
-        },
-        "maxcpus": {
-            "type": "number",
-            "hidden": true,
-            "description": "the maximum number of cpus for any one process (if using labels)",
-            "default": 12
-        },
-        "medcpus": {
-            "type": "number",
-            "hidden": true,
-            "description": "for those processes that aren't as intensive (if using labels)",
-            "default": 4
-        },
-        "minimum_reads": {
-            "type": "number",
-            "hidden": true,
-            "default": 10000,
-            "description": "the minimum number of reads in a fastq file required to move to de novo alignment"
-        },
-        "min_core_genes": {
-            "type": "number",
-            "hidden": true,
-            "default": 1500,
-            "description": "minimum number of genes in core genome alignment for iqtree2"
-        },
-        "mlst_options": {
-            "type": "string",
-            "hidden": true,
-            "description": "additional options for editing for process"
-        },
-        "msa": {
-            "type": "boolean",
-            "hidden": true,
-            "default": false,
-            "description": "toggles whether or not phylogenetic analysis will be run on samples"
-        },
-        "multiqc_options": {
-            "type": "string",
-            "hidden": true,
-            "description": "additional options for editing for process"
-        },
-        "outdir": {
-            "type": "string",
-            "description": "result output directory",
-            "default": "grandeur"
-        },
-        "panaroo_options": {
-            "type": "string",
-            "hidden": true,
-            "default":	"--clean-mode strict --remove-invalid-genes",
-            "description": "additional options for editing for process"
-        },
-        "pbptyper_options": {
-            "type": "string",
-            "hidden": true,
-            "description": "additional options for editing for process"
-        },
-        "plasmidfinder_options": {
-            "type": "string",
-            "hidden": true,
-            "description": "additional options for editing for process"
-        },
-        "phytreeviz_options": {
-            "type": "string",
-            "hidden": true,
-            "description": "additional options for editing for process"
-        },
-        "prokka_options": {
-            "type": "string",
-            "hidden": true,
-            "default": "--mincontiglen 500 --compliant --locustag locus_tag --centre STAPHB",
-            "description": "additional options for editing for process"
-        },
-        "quast_options": {
-            "type": "string",
-            "hidden": true,
-            "description": "additional options for editing for process"
-        },
-        "reads": {
-            "type": "string",
-            "default": "reads",
-            "description": "directory of reads"
-        },
-        "roary_options": {
-            "type": "string",
-            "hidden": true,
-            "description": "additional options for editing for process"
-        },
-        "sample_sheet": {
-            "type": "string",
-            "description": "csv with sample,read1,read2"
-        },
-        "seqsero2_options": {
-            "type": "string",
-            "hidden": true,
-            "default": "-m a -b mem",
-            "description": "additional options for editing for process"
-        },
-        "serotypefinder_options": {
-            "type": "string",
-            "hidden": true,
-            "description": "additional options for editing for process"
-        },
-        "shigatyper_options": {
-            "type": "string",
-            "hidden": true,
-            "description": "additional options for editing for process"
-        },
-        "snp_dists_options": {
-            "type": "string",
-            "hidden": true,
-            "default": "-c",
-            "description": "additional options for editing for process"
-        },
-        "spades_options": {
-            "type": "string",
-            "hidden": true,
-            "default": "--isolate",
-            "description": "additional options for editing for process"
-        },
-        "sra_accessions": {
-            "type": "string",
-            "hidden": true,
-            "description": "list of SRA accessions to download"
-        }
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "https://raw.githubusercontent.com/UPHL-BioNGS/Grandeur/main/nextflow_schema.json",
+  "title": "Grandeur Parameters",
+  "description": "Grandeur is short-read de novo assembly pipeline with serotyping.",
+  "type": "object",
+  "properties": {
+    "blast_db": {
+      "type": "string",
+      "hidden": false,
+      "description": "directory with blast database"
+    },
+    "blast_db_type": {
+      "type": "string",
+      "hidden": false,
+      "description": "type of blast database (i.e. 'nt')"
+    },
+    "config_file": {
+      "type": "boolean",
+      "hidden": true,
+      "description": "if true, copies config and params template and exits"
+    },
+    "current_datasets": {
+      "type": "boolean",
+      "hidden": true,
+      "default": false,
+      "description": "toggles whether or not genomes are downloaded from NCBI"
+    },
+    "datasets_max_genomes": {
+      "type": "number",
+      "hidden": true,
+      "default": 5.0,
+      "description": "the maxiumum number of genomes to download per organism"
+    },
+    "exclude_top_hit": {
+      "type": "boolean",
+      "hidden": true,
+      "default": false,
+      "description": "removes fastani top hit from msa"
+    },
+    "fasta_list": {
+      "type": "string",
+      "hidden": false,
+      "description": "A sample sheet for fasta files"
+    },
+    "fastani_ref": {
+      "type": "string",
+      "hidden": true,
+      "description": "additional fasta files for fastani references"
+    },
+    "fastani_ref_list": {
+      "type": "string",
+      "hidden": true,
+      "description": "list of genomes for fastani references"
+    },
+    "fastas": {
+      "type": "string",
+      "hidden": false,
+      "default": "fastas",
+      "description": "directory with fasta files"
+    },
+    "genome_sizes": {
+      "type": "string",
+      "hidden": true,
+      "description": "file with pre-prepared genome sizes"
+    },
+    "iqtree2_outgroup": {
+      "type": "string",
+      "hidden": true,
+      "description": "to specify outgroup in iqtree2"
+    },    
+    "kraken2_db": {
+      "type": "string",
+      "hidden": false,
+      "description": "directory of kraken2 database"
+    },
+    "mash_db": {
+      "type": "string",
+      "hidden": true,
+      "description": "prepared mash reference msh file"
+    },
+    "mash_max_hits": {
+      "type": "number",
+      "hidden": true,
+      "default": 25.0,
+      "description": "the number of mash hits allowed in result file"
+    },
+    "min_core_genes": {
+      "type": "number",
+      "hidden": true,
+      "default": 1500.0,
+      "description": "minimum number of genes in core genome alignment for iqtree2"
+    },
+    "minimum_reads": {
+      "type": "number",
+      "hidden": true,
+      "default": 10000.0,
+      "description": "the minimum number of reads in a fastq file required to move to de novo alignment"
+    },
+    "msa": {
+      "type": "string",
+      "hidden": false,
+      "default": "",
+      "description": "toggles whether or not phylogenetic analysis will be run on samples"
+    },
+    "outdir": {
+      "type": "string",
+      "hidden": false,
+      "description": "result output directory",
+      "default": "grandeur"
+    },
+    "reads": {
+      "type": "string",
+      "default": "reads",
+      "hidden": true,
+      "description": "directory of reads"
+    },
+    "sample_sheet": {
+      "type": "string",
+      "hidden": false,
+      "description": "csv with sample,read1,read2"
+    },
+    "skip_extras": {
+      "type": "boolean",
+      "hidden": true,
+      "default": false,
+      "description": "turns off blobtools, kraken2, fastani, mash, and report generation subworkflows"
+    },
+    "sra_accessions": {
+      "type": "string",
+      "hidden": true,
+      "description": "list of SRA accessions to download"
     }
+  }
 }

@@ -1,0 +1,41 @@
+name: Test Grandeur workflow with sample sheet
+
+on: [pull_request, workflow_dispatch]
+
+jobs:
+
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+            
+      - name: Install Nextflow
+        run: |
+          wget -qO- get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+
+          nextflow -version
+          
+      - name: Run Grandeur
+        run: |
+          docker --version
+          
+          mkdir reads
+          # lecleria genome - not an actual use-case
+          wget -q ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR283/002/SRR2838702/SRR2838702_1.fastq.gz
+          wget -q ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR283/002/SRR2838702/SRR2838702_2.fastq.gz
+          mv *fastq.gz reads/.
+
+          echo "sample,fastq_1,fastq_2" > sample_sheet.csv
+          echo "SRR2838702,reads/SRR2838702_1.fastq.gz,reads/SRR2838702_2.fastq.gz" >> sample_sheet.csv
+
+          nextflow run . -profile docker -c .github/workflows/github_actions.config --sample_sheet sample_sheet.csv --skip_extras
+      
+      - name: Check summary files
+        run: |
+          for file in grandeur/contigs/*_contigs.fa
+          do
+            head $file
+            wc -l $file
+          done

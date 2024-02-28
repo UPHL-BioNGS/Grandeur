@@ -8,17 +8,14 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          lfs: true
+        uses: actions/checkout@v4
 
-      - name: Checkout LFS objects
-        run: git lfs checkout
-            
       - name: Install Nextflow
         run: |
           wget -qO- get.nextflow.io | bash
           sudo mv nextflow /usr/local/bin/
+
+          nextflow -version
           
       - name: Run Grandeur
         run: |
@@ -33,11 +30,9 @@ jobs:
           mkdir fastas
           mv *fna fastas/.
 
-          nextflow run . -profile docker --maxcpus 2 --medcpus 2
+          nextflow run . -profile docker,msa -c .github/workflows/github_actions.config --fastas fastas
 
           cat grandeur/grandeur_summary.tsv
-
-          nextflow run . -profile docker,msa --maxcpus 2 --medcpus 2 -resume
 
       - name: Check MSA files
         run: |
