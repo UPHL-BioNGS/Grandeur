@@ -2,7 +2,7 @@ process mykrobe {
   tag           "${meta.id}"
   label         "process_medium"
   stageInMode   "copy"
-  publishDir    path: params.outdir, mode: 'copy'
+  publishDir    path: params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/mykrobe:0.13.0'
   time          '1h'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}

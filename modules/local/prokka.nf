@@ -1,7 +1,7 @@
 process prokka {
   tag           "${meta.id}"
   label         "process_high"
-  publishDir    params.outdir, mode: 'copy'
+  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/prokka:1.14.6'
   time          '2h'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}

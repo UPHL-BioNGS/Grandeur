@@ -2,7 +2,7 @@ process pbptyper {
   tag           "${meta.id}"
   label         "process_medium"
   stageInMode   "copy"
-  publishDir    path: params.outdir, mode: 'copy'
+  publishDir    path: params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/pbptyper:1.0.4'
   time          '1h'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}

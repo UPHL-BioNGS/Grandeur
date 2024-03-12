@@ -1,7 +1,7 @@
 process mashtree {
   tag           "Phylogenetic analysis"
   label         "process_medium"
-  publishDir    params.outdir, mode: 'copy'
+  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/mashtree:1.4.6'
   stageInMode 'copy'
   time      '4h'

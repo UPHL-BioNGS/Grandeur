@@ -41,7 +41,7 @@ process multiqc {
 process versions {
   tag           "extracting versions"
   label         "process_single"
-  publishDir    "${params.outdir}/summary", mode: 'copy'
+  // no publishDir
   container     'staphb/multiqc:1.19'
   time          '10m'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
