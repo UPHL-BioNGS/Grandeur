@@ -1,8 +1,8 @@
 process mlst {
   tag           "${meta.id}"
   label         "process_medium"
-  publishDir    params.outdir, mode: 'copy'
-  container     'staphb/mlst:2.23.0-2024-01'
+  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
+  container     'staphb/mlst:2.23.0-2024-03-11'
   maxForks      10
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time          '10m'
