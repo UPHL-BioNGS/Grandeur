@@ -29,6 +29,8 @@ jobs:
           
           nextflow run . -profile docker -c .github/workflows/github_actions.config --reads reads
           cat grandeur/grandeur_summary.tsv
+          cat grandeur/summary/software_versions.yml
+          ls  grandeur/multiqc/multiqc_report.html
       
       - name: Check summary files
         run: |

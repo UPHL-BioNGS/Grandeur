@@ -33,6 +33,8 @@ jobs:
           nextflow run . -profile docker,msa -c .github/workflows/github_actions.config --fastas fastas --exclude_top_hit
 
           cat grandeur/grandeur_summary.tsv
+          cat grandeur/summary/software_versions.yml
+          ls  grandeur/multiqc/multiqc_report.html
 
       - name: Check MSA files
         run: |
