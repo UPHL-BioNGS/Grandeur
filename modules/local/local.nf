@@ -43,7 +43,6 @@ process download_sra {
   output:
   tuple val(SRR), file("reads/${SRR}_{1,2}.fastq.gz"), emit: fastq
   path "logs/${task.process}/*.log", emit: log
-  path "versions.yml", emit: versions
 
   when:
   task.ext.when == null || task.ext.when
@@ -63,11 +62,6 @@ process download_sra {
     wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/\${sra:0:6}/0\${sra: -2 }/${SRR}/${SRR}_2.fastq.gz
 
     mv *fastq.gz reads/.
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-      sratools: \$(fasterq-dump --version 2>&1 | grep -Eo '[0-9.]+')
-    END_VERSIONS
   """
 }
 
@@ -284,7 +278,7 @@ process references {
   tag       "Preparing references"
   // no publishDir
   label     "process_single"
-  container 'quay.io/uphl/grandeur_ref:20240124'
+  container 'quay.io/uphl/grandeur_ref:2024-03-07'
   time      '10m'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
