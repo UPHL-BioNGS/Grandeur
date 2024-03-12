@@ -1,7 +1,7 @@
 process fastqc {
   tag           "${meta.id}"
   label         "process_single"
-  publishDir    params.outdir, mode: 'copy'
+  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/fastqc:0.12.1'
   time          '10m'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}

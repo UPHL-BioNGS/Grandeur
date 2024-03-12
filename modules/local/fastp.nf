@@ -1,7 +1,7 @@
 process fastp {
   tag           "${meta.id}"
   label         "process_low"
-  publishDir    params.outdir, mode: 'copy'
+  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/fastp:0.23.4'
   time          '30m'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
