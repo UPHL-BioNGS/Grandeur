@@ -2,7 +2,7 @@ process drprg {
   tag           "${meta.id}"
   label         "process_medium"
   stageInMode   "copy"
-  publishDir    path: params.outdir, mode: 'copy'
+  publishDir    path: params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/drprg:0.1.1'
   time          '10m'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
