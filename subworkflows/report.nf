@@ -27,8 +27,6 @@ workflow report {
 
         multiqc(for_multiqc.mix(for_summary).mix(mqc_prep.out.for_multiqc).mix(versions.out.for_multiqc).collect())
 
-        //multiqc(for_multiqc.mix(for_summary).mix(mqc_prep.out.for_multiqc).collect())
-
         names(ch_reads.mix(ch_fastas))
 
         names.out.collect
