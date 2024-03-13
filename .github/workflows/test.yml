@@ -20,9 +20,6 @@ jobs:
       - name: Run Grandeur
         run: |
           nextflow run . -profile docker,test0 -c .github/workflows/github_actions.config
-          cat grandeur/grandeur_summary.tsv
-          cat grandeur/summary/software_versions.yml
-          ls  grandeur/multiqc/multiqc_report.html
           
       - name: Check contig files
         run: |
