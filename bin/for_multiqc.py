@@ -705,12 +705,12 @@ if exists(serotypefinder_input):
    
 if exists(core_genome_input):
     # core,soft,shell,cloud
-    line = "# plot_type: 'table'\n"
+    line = "# plot_type: 'bargraph'\n"
     line = line + "# section_name: 'Core Genome Evaluation'\n"
     line = line + "# description: 'Genes Identified'\n"
     line = line + "# pconfig:\n"
     line = line + "#     namespace: 'Cust Data'\n"
-    line = line + "# format: 'csv'"
+    line = line + "# format: 'csv'\n"
     with open(core_genome_output,'w') as f:
         f.write(line)
 
