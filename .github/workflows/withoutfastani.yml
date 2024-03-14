@@ -21,7 +21,7 @@ jobs:
         run: |
           docker --version
 
-          wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/904/864/595/GCA_904864595.1_INF333/GCA_904864595.1_INF333_genomic.fna.gz             && gzip -d GCA_904864595.1_INF333_genomic.fna.gz
+          # wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/904/864/595/GCA_904864595.1_INF333/GCA_904864595.1_INF333_genomic.fna.gz             && gzip -d GCA_904864595.1_INF333_genomic.fna.gz
           wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/013/783/245/GCA_013783245.1_ASM1378324v1/GCA_013783245.1_ASM1378324v1_genomic.fna.gz && gzip -d GCA_013783245.1_ASM1378324v1_genomic.fna.gz
           wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/026/626/185/GCA_026626185.1_ASM2662618v1/GCA_026626185.1_ASM2662618v1_genomic.fna.gz && gzip -d GCA_026626185.1_ASM2662618v1_genomic.fna.gz 
           wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/020/808/985/GCA_020808985.1_ASM2080898v1/GCA_020808985.1_ASM2080898v1_genomic.fna.gz && gzip -d GCA_020808985.1_ASM2080898v1_genomic.fna.gz
