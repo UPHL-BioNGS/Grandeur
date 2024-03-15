@@ -2,7 +2,7 @@ process emmtyper {
   tag           "${meta.id}"
   label         "process_medium"
   stageInMode   "copy"
-  publishDir    path: params.outdir, mode: 'copy'
+  publishDir    path: params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/emmtyper:0.2.0'
   time          '10m'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}

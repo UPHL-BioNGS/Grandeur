@@ -1,7 +1,7 @@
 process heatcluster {
   tag           "HeatCluster"
   label         "process_single"
-  publishDir    params.outdir, mode: 'copy'
+  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/heatcluster:1.0.2c'
   time          '10m'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}

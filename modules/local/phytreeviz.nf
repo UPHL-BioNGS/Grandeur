@@ -1,8 +1,8 @@
 process phytreeviz {
   tag           "${analysis}"
   label         "process_medium"
-  publishDir    params.outdir, mode: 'copy'
-  container     'staphb/phytreeviz:0.1.0'
+  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
+  container     'staphb/phytreeviz:0.2.0'
   time          '1h'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   

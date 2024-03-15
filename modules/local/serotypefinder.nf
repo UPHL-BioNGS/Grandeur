@@ -1,7 +1,7 @@
 process serotypefinder {
   tag           "${meta.id}"
   label         "process_medium"
-  publishDir    params.outdir, mode: 'copy'
+  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/serotypefinder:2.0.1'
   maxForks      10
   time          '10m'

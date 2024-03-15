@@ -2,8 +2,8 @@ process circulocov {
   tag           "${meta.id}"
   label         "process_medium"
   stageInMode   "copy"
-  publishDir    path: params.outdir, mode: 'copy'
-  container     'quay.io/uphl/circulocov:0.1.20240104-2024-02-21'
+  publishDir    path: params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
+  container     'staphb/circulocov:0.1.20240104'
   time          '30m'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   

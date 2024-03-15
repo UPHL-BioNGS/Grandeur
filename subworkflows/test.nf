@@ -15,5 +15,4 @@ workflow test {
     
     emit:
         fastq    = ch_fastq
-        versions = download_sra.out.versions.first()
 }

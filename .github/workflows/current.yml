@@ -33,3 +33,5 @@ jobs:
           nextflow run . -profile docker --current_datasets -c .github/workflows/github_actions.config --fastas fastas
 
           cat grandeur/grandeur_summary.tsv
+          cat grandeur/summary/software_versions.yml
+          ls  grandeur/multiqc/multiqc_report.html

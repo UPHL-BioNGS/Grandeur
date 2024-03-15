@@ -1,7 +1,7 @@
 process snp_dists {
   tag           "SNP matrix"
   label         "process_medium"
-  publishDir    params.outdir, mode: 'copy'
+  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/snp-dists:0.8.2'
   maxForks      10
   time          '2h'

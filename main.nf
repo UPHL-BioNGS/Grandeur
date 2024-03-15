@@ -327,7 +327,6 @@ workflow {
   if ( ! params.sra_accessions.isEmpty() ) { 
     test(ch_sra_accessions)
     ch_raw_reads = ch_reads.mix(test.out.fastq)
-    ch_versions = ch_versions.mix(test.out.versions)
   } else {
     ch_raw_reads = ch_reads
   }

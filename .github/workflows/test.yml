@@ -20,7 +20,7 @@ jobs:
       - name: Run Grandeur
         run: |
           nextflow run . -profile docker,test0 -c .github/workflows/github_actions.config
-      
+          
       - name: Check contig files
         run: |
           for file in grandeur/contigs/*_contigs.fa

@@ -1,7 +1,7 @@
 process mash_sketch_fastq {
   tag           "${meta.id}"
   label         "process_medium"
-  publishDir    params.outdir, mode: 'copy'
+  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/mash:2.3'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time          '10m'
@@ -41,7 +41,7 @@ process mash_sketch_fastq {
 process mash_sketch_fasta {
   tag           "${meta.id}"
   label         "process_medium"
-  publishDir    params.outdir, mode: 'copy'
+  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/mash:2.3'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time          '10m'
@@ -80,7 +80,7 @@ process mash_sketch_fasta {
 process mash_dist {
   tag           "${meta.id}"
   label         "process_medium"
-  publishDir    params.outdir, mode: 'copy'
+  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/mash:2.3'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time          '10m'

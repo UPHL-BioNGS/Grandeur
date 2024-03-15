@@ -46,7 +46,7 @@ def _make_versions_html(versions):
             )
         html.append("</tbody>")
     html.append("</table>")
-    return "\\n".join(html)
+    return "\n".join(html)
 
 
 def main():

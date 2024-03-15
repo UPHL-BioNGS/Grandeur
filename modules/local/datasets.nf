@@ -1,7 +1,7 @@
 process datasets_summary {
   tag           "${taxon}"
   label         "process_single"
-  publishDir    params.outdir, mode: 'copy'
+  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/ncbi-datasets:16.2.0'
   time          '1h'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore' }

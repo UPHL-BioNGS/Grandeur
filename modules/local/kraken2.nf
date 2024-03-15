@@ -1,7 +1,7 @@
 process kraken2 {
   tag           "${meta.id}"
   label         "process_high"
-  publishDir    params.outdir, mode: 'copy'
+  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/kraken2:2.1.3'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time          '1h'

@@ -1,7 +1,7 @@
 process shigatyper {
   tag           "${meta.id}"
   label         "process_medium"
-  publishDir    params.outdir, mode: 'copy'
+  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/shigatyper:2.0.5'
   stageInMode   'copy'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
