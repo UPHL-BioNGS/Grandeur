@@ -2,7 +2,7 @@ process seqsero2 {
   tag           "${meta.id}"
   label         "process_medium"
   publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
-  container     'staphb/seqsero2:1.2.1'
+  container     'staphb/seqsero2:1.3.1'
   time          '10m'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
