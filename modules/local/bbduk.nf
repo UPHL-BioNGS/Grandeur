@@ -32,7 +32,7 @@ process bbduk {
       out1=bbduk/${prefix}_rmphix_R1.fastq.gz \
       out2=bbduk/${prefix}_rmphix_R2.fastq.gz \
       outm=bbduk/${prefix}.matched_phix.fq \
-      ref=/opt/bbmap/resources/phix174_ill.ref.fa.gz \
+      ref=/bbmap/resources/phix174_ill.ref.fa.gz \
       stats=bbduk/${prefix}.phix.stats.txt \
       threads=${task.cpus} \
       | tee -a \$log_file
