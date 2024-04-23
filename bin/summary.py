@@ -38,6 +38,7 @@ mykrobe        = 'mykrobe_summary.csv'
 pbptyper       = 'pbptyper_summary.tsv'
 plasmidfinder  = 'plasmidfinder_result.tsv'
 quast          = 'quast_report.tsv'
+quast_contig   = 'quast_contig_report.tsv'
 seqsero2       = 'seqsero2_results.txt'
 serotypefinder = 'serotypefinder_results.txt'
 shigatyper_hit = 'shigatyper_hits.txt'
@@ -54,7 +55,7 @@ extended       = 'summary/grandeur_extended_summary'
 ##########################################
 
 csv_files = [ legsta, mykrobe ]
-tsv_files = [ quast, drprg, elgato, seqsero2, kleborate, mlst, emmtyper, pbptyper, shigatyper ]
+tsv_files = [ drprg, elgato, seqsero2, kleborate, mlst, emmtyper, pbptyper, shigatyper ]
 
 ##########################################
 # exiting if no input files              #
@@ -289,6 +290,32 @@ if exists(plasmidfinder) :
     new_df.columns = [x.lower() for x in new_df.columns]
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
+
+# quast : combining both files
+q_df  = pd.DataFrame()
+qc_df = pd.DataFrame()
+if exists(quast):
+    print("Adding results for " + quast)
+    file = quast
+    analysis = str(file).split("_")[0]
+    q_df = pd.read_table(file, dtype = str, index_col= False)
+    q_df = q_df.add_prefix(analysis + "_")
+    q_df.columns = [x.lower() for x in q_df.columns]
+
+if exists(quast_contig):
+    print("Adding results for " + quast_contig)
+    file = quast_contig
+    analysis = str(file).split("_")[0]
+    qc_df = pd.read_table(file, dtype = str, index_col= False)
+    qc_df = qc_df.add_prefix(analysis + "_")
+    qc_df.columns = [x.lower() for x in qc_df.columns]
+
+exit()
+#    summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
+#    summary_df.drop(analysis + "_sample", axis=1, inplace=True)
+
+
+
 
 # serotypefinder : splitting O and H groups, getting the top hit for O and H group, combining rows
 if exists(serotypefinder) :
