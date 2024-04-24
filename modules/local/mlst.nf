@@ -25,7 +25,8 @@ process mlst {
 
     mlst ${args} \
       --threads ${task.cpus} \
-      ${contig} \
+      ${contig} | \
+      tr ' ' '_' \
       > ${prefix}_mlst.txt
 
     python3 ${script} ${prefix}_mlst.txt mlst/${prefix}_mlst.tsv mlst ${prefix}
