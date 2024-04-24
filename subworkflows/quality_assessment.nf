@@ -97,6 +97,7 @@ workflow quality_assessment {
       .set { for_versions }
 
   emit:
+    bams        = ch_bams
     for_summary = for_summary.collect()
     for_multiqc = for_multiqc.mix(quast.out.for_multiqc).collect()
     versions    = for_versions
