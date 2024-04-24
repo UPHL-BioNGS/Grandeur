@@ -14,7 +14,8 @@ process fastp {
   path "fastp/*_fastp.html",                              emit: html, optional: true
   path "fastp/*_fastp.json",                              emit: fastp_files, optional: true
   path "logs/${task.process}/*.{log,err}",                emit: log
-  path "versions.yml",                                    emit: versions
+  tuple val(meta), env(passed_reads),                     emit: fastp_results
+  path  "versions.yml",                                   emit: versions
 
   when:
   task.ext.when == null || task.ext.when
@@ -35,6 +36,9 @@ process fastp {
       -h fastp/${prefix}_fastp.html \
       -j fastp/${prefix}_fastp.json \
       2>> \$err_file | tee -a \$log_file
+
+    passed_reads=\$(grep "reads passed filter" \$err_file | tail -n 1 | cut -f 2 -d ":" | sed 's/ //g' )
+    if [ -z "\$passed_reads" ] ; then passed_reads="0" ; fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
