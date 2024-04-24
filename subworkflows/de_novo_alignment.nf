@@ -10,13 +10,13 @@ workflow de_novo_alignment {
     bbduk(reads)
     fastp(bbduk.out.fastq)
 
-    fastp.out.fastq.view()
-
     fastp.out.fastq
-      .map{it -> tuple(it , it[1][0].splitFastq( limit: params.minimum_reads , file: true) | count)}
-      .view{ "From fastp : $it" }
+      .join(fastp.out.fastp_results)
+      .filter ({ it[2] as int >= params.minimum_reads })
+      .map ( it -> tuple (it[0], it[1]))
+      .set{ read_check }
 
-    spades(fastp.out.fastq.filter{it[1][0].countFastq() >= params.minimum_reads})
+    spades(read_check)
 
   emit:
     // for downstream analyses
