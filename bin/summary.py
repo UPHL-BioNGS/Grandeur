@@ -310,12 +310,10 @@ if exists(quast_contig):
     qc_df = qc_df.add_prefix(analysis + "_")
     qc_df.columns = [x.lower() for x in qc_df.columns]
 
-exit()
-#    summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
-#    summary_df.drop(analysis + "_sample", axis=1, inplace=True)
-
-
-
+if exists(quast) or exists(quast_contig):
+    new_df = pd.concat([q_df, qc_df])
+    summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
+    summary_df.drop(analysis + "_sample", axis=1, inplace=True)
 
 # serotypefinder : splitting O and H groups, getting the top hit for O and H group, combining rows
 if exists(serotypefinder) :
@@ -502,6 +500,10 @@ if "fastqc_total sequences" and 'fastqc_avg_length' in summary_df:
 
     if 'quast_Total length' in summary_df:
         summary_df['quast_estimated_genome_size'] = summary_df['quast_Total length']
+
+    if 'quast_avg. coverage dept' in summary_df:
+        summary_df['quast_estimated_coverage']    = summary_df['quast_avg. coverage dept'].astype(float)
+    elif 'quast_Total length' in summary_df:
         summary_df['quast_estimated_coverage']    = summary_df['total_bases'].astype(float) / summary_df['quast_estimated_genome_size'].astype(float)
 
     cov_columns = []
