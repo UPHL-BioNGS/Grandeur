@@ -5,6 +5,7 @@ include { mashtree }               from '../modules/local/mashtree'    addParams
 include { panaroo }                from '../modules/local/panaroo'     addParams(params)
 include { phytreeviz }             from '../modules/local/phytreeviz'  addParams(params)
 include { prokka }                 from '../modules/local/prokka'      addParams(params)
+include { roary }                  from '../modules/local/roary'       addParams(params)
 include { snp_dists }              from '../modules/local/snp-dists'   addParams(params)
 
 workflow phylogenetic_analysis {
@@ -14,6 +15,7 @@ workflow phylogenetic_analysis {
     ch_top_hit
 
   main:
+    ch_versions = Channel.empty()
 
     // adding in organism and top ani hit
     if ( ! params.skip_extras ) {
@@ -42,8 +44,24 @@ workflow phylogenetic_analysis {
 
     prokka(for_prokka.unique())
 
-    panaroo(prokka.out.gff.unique().collect())
-    core_genome_evaluation(panaroo.out.core_gene_alignment.combine(evaluat_script))
+    if (params.aligner == 'panaroo') {
+      panaroo(prokka.out.gff.unique().collect())
+
+      ch_core     = panaroo.out.core_gene_alignment
+      ch_versions = ch_versions.mix(panaroo.out.versions.first())
+
+    } else if (params.aligner == 'roary') {
+      roary(prokka.out.gff.unique().collect())
+
+      ch_core     = roary.out.core_gene_alignment
+      ch_versions = ch_versions.mix(roary.out.versions.first())
+
+    } else {
+      ch_core     = Channel.empty()
+    }
+
+
+    core_genome_evaluation(ch_core.combine(evaluat_script))
 
     core_genome_evaluation.out.evaluation
       .filter({it[1] as int >= 4})
@@ -64,5 +82,5 @@ workflow phylogenetic_analysis {
 
   emit:
     for_multiqc = prokka.out.for_multiqc.mix(snp_dists.out.snp_matrix).mix(heatcluster.out.for_multiqc).mix(phytreeviz.out.for_multiqc).mix(core_genome_evaluation.out.for_multiqc)
-    versions    = prokka.out.versions.first().mix(panaroo.out.versions).mix(mashtree.out.versions).mix(iqtree2.out.versions).mix(phytreeviz.out.versions.first()).mix(snp_dists.out.versions).mix(heatcluster.out.versions)
+    versions    = ch_versions.mix(prokka.out.versions.first()).mix(mashtree.out.versions).mix(iqtree2.out.versions).mix(phytreeviz.out.versions.first()).mix(snp_dists.out.versions).mix(heatcluster.out.versions)
 }
