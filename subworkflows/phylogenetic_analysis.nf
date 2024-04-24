@@ -48,13 +48,13 @@ workflow phylogenetic_analysis {
       panaroo(prokka.out.gff.unique().collect())
 
       ch_core     = panaroo.out.core_gene_alignment
-      ch_versions = ch_versions.mix(panaroo.out.versions.first())
+      ch_versions = ch_versions.mix(panaroo.out.versions)
 
     } else if (params.aligner == 'roary') {
       roary(prokka.out.gff.unique().collect())
 
       ch_core     = roary.out.core_gene_alignment
-      ch_versions = ch_versions.mix(roary.out.versions.first())
+      ch_versions = ch_versions.mix(roary.out.versions)
 
     } else {
       ch_core     = Channel.empty()
