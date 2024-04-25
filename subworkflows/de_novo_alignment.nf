@@ -3,7 +3,9 @@ include { bbduk }   from '../modules/local/bbduk'  addParams(params)
 include { spades }  from '../modules/local/spades' addParams(params)
 
 workflow de_novo_alignment {
-  take: reads
+  take: 
+    reads
+  
   main:
     bbduk(reads)
     fastp(bbduk.out.fastq)

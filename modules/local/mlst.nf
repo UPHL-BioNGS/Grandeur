@@ -2,7 +2,7 @@ process mlst {
   tag           "${meta.id}"
   label         "process_medium"
   publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
-  container     'staphb/mlst:2.23.0-2024-03-11'
+  container     'staphb/mlst:2.23.0-2024-04-01'
   maxForks      10
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time          '10m'
@@ -25,7 +25,8 @@ process mlst {
 
     mlst ${args} \
       --threads ${task.cpus} \
-      ${contig} \
+      ${contig} | \
+      tr ' ' '_' \
       > ${prefix}_mlst.txt
 
     python3 ${script} ${prefix}_mlst.txt mlst/${prefix}_mlst.tsv mlst ${prefix}

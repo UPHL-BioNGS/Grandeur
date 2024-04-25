@@ -19,8 +19,8 @@ process panaroo {
   task.ext.when == null || task.ext.when
 
   shell:
-  def args       = task.ext.args   ?: '--clean-mode strict --remove-invalid-genes'
-  def prefix     = task.ext.prefix ?: "panaroo"
+  def args       = task.ext.args   ?: '--clean-mode strict --remove-invalid-genes --alignment core'
+  def prefix     = task.ext.prefix ?: 'panaroo'
   def assemblies = gff.join(' ')
   """
     mkdir -p logs/${task.process}

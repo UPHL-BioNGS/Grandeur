@@ -2,7 +2,7 @@ process amrfinderplus {
   tag           "${meta.id}"
   label         "process_high"
   publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
-  container     'staphb/ncbi-amrfinderplus:3.12.8-2024-01-31.1'
+  container     'staphb/ncbi-amrfinderplus:3.12.8-2024-01-31.1_2'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time          '30m'
 

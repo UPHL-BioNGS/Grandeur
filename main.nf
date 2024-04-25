@@ -85,6 +85,7 @@ params.current_datasets     = false
 params.skip_extras          = false
 params.exclude_top_hit      = false
 params.msa                  = false
+params.aligner              = 'panaroo'
 
 
 // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
@@ -117,7 +118,8 @@ def paramCheck(keys) {
     "min_core_genes",
     "current_datasets",
     "skip_extras",
-    "exclude_top_hit"]
+    "exclude_top_hit",
+    "aligner"]
 
   for(key in keys){
     if (key !in set_keys){
@@ -218,7 +220,7 @@ if (params.fasta_list) {
   ch_fastas = params.fastas
     ? Channel
       .fromPath("${params.fastas}/*{.fa,.fasta,.fna}")
-      .view { "fasta file : $it" }
+      .view { "Fasta file found : ${it.baseName}" }
       .map { it ->
         meta = [id: it.baseName]
         tuple( meta, file(it, checkIfExists: true))

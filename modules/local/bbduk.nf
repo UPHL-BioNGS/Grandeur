@@ -3,14 +3,14 @@ process bbduk {
   label         "process_medium"
   publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/bbtools:39.01'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time          '10m'
 
   input:
   tuple val(meta), file(reads)
 
   output:
-  tuple val(meta), file("bbduk/*_rmphix_R{1,2}.fastq.gz"),  emit: fastq
+  tuple val(meta), file("bbduk/*_rmphix_R{1,2}.fastq.gz"),  emit: fastq, optional: true
   path "bbduk/*",                                           emit: files
   path "bbduk/*.phix.stats.txt",                            emit: stats
   path "logs/${task.process}/*.log",  emit: log
@@ -31,7 +31,7 @@ process bbduk {
       in2=${reads[1]} \
       out1=bbduk/${prefix}_rmphix_R1.fastq.gz \
       out2=bbduk/${prefix}_rmphix_R2.fastq.gz \
-      outm=bbduk/${prefix}.matched_phix.fq \
+      outm=bbduk/${prefix}.matched_phix.fastq.gz \
       ref=/opt/bbmap/resources/phix174_ill.ref.fa.gz \
       stats=bbduk/${prefix}.phix.stats.txt \
       threads=${task.cpus} \
@@ -43,3 +43,5 @@ process bbduk {
     END_VERSIONS
   """
 }
+
+//ref=/bbmap/resources/phix174_ill.ref.fa.gz \

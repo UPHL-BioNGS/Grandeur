@@ -23,6 +23,7 @@ workflow quality_assessment {
         ch_reads
             .join(ch_contigs, by: 0, remainder: true)
             .filter {it[1]}
+            .filter {it[2]}
             .set { for_circulocov }
 
         circulocov(for_circulocov)
@@ -50,8 +51,8 @@ workflow quality_assessment {
     }
 
     // contigs
-    mlst(ch_contigs.combine(summfle_script))
-    quast(ch_contigs)
+    quast(ch_contigs.join(ch_reads, by: 0, remainder: true ))
+    mlst(ch_contigs.combine(summfle_script))    
     plasmidfinder(ch_contigs.combine(summfle_script))
 
     mlst.out.collect
@@ -75,10 +76,18 @@ workflow quality_assessment {
             storeDir: "${params.outdir}/quast")
         .set{ quast_summary }
 
+    quast.out.collect_contig
+        .collectFile(name: "quast_contig_report.tsv",
+            keepHeader: true,
+            sort: { file -> file.text },
+            storeDir: "${params.outdir}/quast")
+        .set{ quast_contig_summary }
+
     ch_summary
         .mix(mlst_summary)
         .mix(plasmidfinder_summary)
         .mix(quast_summary)
+        .mix(quast_contig_summary)
         .set { for_summary }
 
     ch_versions
@@ -88,8 +97,8 @@ workflow quality_assessment {
       .set { for_versions }
 
   emit:
+    bams        = ch_bams
     for_summary = for_summary.collect()
     for_multiqc = for_multiqc.mix(quast.out.for_multiqc).collect()
     versions    = for_versions
-    bams        = ch_bams
 }

@@ -5,6 +5,16 @@
   "description": "Grandeur is short-read de novo assembly pipeline with serotyping.",
   "type": "object",
   "properties": {
+    "aligner": {
+      "type": "string",
+      "hidden": true,
+      "description": "chooses core genome aligner (params.msa must be set to true)",
+      "default": "panaroo",
+      "enum": [
+        "roary",
+        "panaroo"
+      ]
+    },
     "blast_db": {
       "type": "string",
       "hidden": false,
