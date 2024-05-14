@@ -2,7 +2,7 @@ process panaroo {
   tag           "Core Genome Alignment"
   label         "process_high"
   publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
-  container     'staphb/panaroo:1.3.4'
+  container     'staphb/panaroo:1.5.0'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time          '10h'
   
