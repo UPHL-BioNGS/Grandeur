@@ -7,7 +7,7 @@ process blobtools_create {
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
-  tuple val(meta), file(contig), file(blastn), file(bam)
+  tuple val(meta), file(contig), file(bam), file(blastn)
 
   output:
   tuple val(meta), file("blobtools/*.blobDB.json"), emit: json
