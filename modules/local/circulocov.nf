@@ -2,16 +2,19 @@ process circulocov {
   tag           "${meta.id}"
   label         "process_medium"
   stageInMode   "copy"
-  publishDir    path: params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
+  publishDir    path: params.outdir, mode: 'copy', pattern: 'logs/*/*log'
+  publishDir    path: params.outdir, mode: 'copy', pattern: 'circulocov/*'
+  publishDir    path: params.outdir, mode: 'copy', pattern: 'circulocov/*/*'
   container     'staphb/circulocov:0.1.20240104'
   time          '30m'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
-  tuple val(meta), file(fastqs), file(contigs)
+  tuple val(meta), file(contigs), file(fastqs)
 
   output:
   tuple val(meta), file("circulocov/*/*sr.bam*"), emit: bam
+  tuple val(meta), file(contigs), file("circulocov/*/*sr.bam*"), emit: contig_bam
   path "circulocov/*/overall_summary.txt", emit: collect
   path "circulocov/*", emit: everything
   path "circulocov/fastq/*", emit: fastq, optional: true
