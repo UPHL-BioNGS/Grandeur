@@ -10,8 +10,7 @@ workflow de_novo_alignment {
     bbduk(reads)
     fastp(bbduk.out.fastq)
 
-    fastp.out.fastq
-      .join(fastp.out.fastp_results)
+    fastp.out.fastp_results
       .filter ({ it[2] as int >= params.minimum_reads })
       .map ( it -> tuple (it[0], it[1]))
       .set{ read_check }
@@ -20,10 +19,11 @@ workflow de_novo_alignment {
 
   emit:
     // for downstream analyses
-    clean_reads = fastp.out.fastq
-    contigs     = spades.out.contigs
+    reads_contigs = spades.out.reads_contigs
+    clean_reads   = fastp.out.fastq
+    contigs       = spades.out.contigs.filter{it[1] != null}
 
     // for multiqc
     for_multiqc = fastp.out.fastp_files.mix(bbduk.out.stats)
-    versions    = bbduk.out.versions.mix(fastp.out.versions).mix(spades.out.versions)
+    versions    = bbduk.out.versions.first().mix(fastp.out.versions.first()).mix(spades.out.versions.first())
 }

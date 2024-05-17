@@ -20,25 +20,41 @@ workflow information {
     jsoncon_script
 
   main:
+
     // species specific
-    // TODO : add blobtools
-    int grouptuplesize = 2
-    if ( params.kraken2_db && ( params.sample_sheet || params.reads )) { grouptuplesize = grouptuplesize +1 }
+    // branch + join = faster than groupTuple
+    ch_flag
+      .branch {
+        blobtools: it[1] =~ /blobtools.txt/
+        kraken2:   it[1] =~ /kraken2.csv/
+        mash:      it[1] =~ /mash.csv/
+        fastani:   it[1] =~ /fastani.csv/
+      }
+      .set { ch_flag_branch }
+    
+    ch_contigs
+      .filter{it[1] != null}
+      .join(ch_flag_branch.blobtools, by:0, failOnMismatch: false, remainder: true)
+      .join(ch_flag_branch.kraken2,   by:0, failOnMismatch: false, remainder: true)
+      .join(ch_flag_branch.mash,      by:0, failOnMismatch: false, remainder: true)
+      .join(ch_flag_branch.fastani,   by:0, failOnMismatch: false, remainder: true)
+      .filter{it[1] != null}
+      .map{ it -> tuple(it[0],[it[1], it[2], it[3], it[4], it[5]])}
+      .set {ch_for_flag}
 
-    //flag(ch_flag.groupTuple(size : grouptuplesize, remainder: true ))
-    flag(ch_flag.groupTuple())
+    flag(ch_for_flag)
 
-    amrfinderplus(ch_contigs.join(flag.out.organism,    by:0))
-    drprg(ch_contigs.join(flag.out.myco_flag,           by:0))
-    emmtyper(ch_contigs.join(flag.out.strepa_flag,      by:0).combine(summfle_script)) 
-    kaptive(ch_contigs.join(flag.out.vibrio_flag,       by:0))      
-    kleborate(ch_contigs.join(flag.out.klebsiella_flag, by:0).combine(summfle_script))
-    elgato(ch_contigs.join(flag.out.legionella_flag,    by:0))
-    mykrobe(ch_contigs.join(flag.out.myco_flag,         by:0))
-    pbptyper(ch_contigs.join(flag.out.streppneu_flag,   by:0))
-    seqsero2(ch_contigs.join(flag.out.salmonella_flag,  by:0))
-    serotypefinder(ch_contigs.join(flag.out.ecoli_flag, by:0).combine(summfle_script))
-    shigatyper(ch_contigs.join(flag.out.ecoli_flag,     by:0).combine(summfle_script))
+    amrfinderplus(flag.out.organism)
+    drprg(flag.out.myco_flag)
+    emmtyper(flag.out.strepa_flag.combine(summfle_script)) 
+    kaptive(flag.out.vibrio_flag)      
+    kleborate(flag.out.klebsiella_flag.combine(summfle_script))
+    elgato(flag.out.legionella_flag)
+    mykrobe(flag.out.myco_flag)
+    pbptyper(flag.out.streppneu_flag)
+    seqsero2(flag.out.salmonella_flag)
+    serotypefinder(flag.out.ecoli_flag.combine(summfle_script))
+    shigatyper(flag.out.ecoli_flag.combine(summfle_script))
 
     json_convert(drprg.out.json.combine(jsoncon_script))
 
