@@ -336,16 +336,18 @@ workflow {
   if ( params.sample_sheet || params.reads || params.sra_accessions ) {
     de_novo_alignment(ch_raw_reads)
 
-    ch_assembled   = de_novo_alignment.out.contigs
-    ch_contigs     = ch_fastas.mix(de_novo_alignment.out.contigs)
-    ch_clean_reads = de_novo_alignment.out.clean_reads
-    ch_for_multiqc = ch_for_multiqc.mix(de_novo_alignment.out.for_multiqc)
-    ch_versions = ch_versions.mix(de_novo_alignment.out.versions)
+    ch_assembled     = de_novo_alignment.out.contigs
+    ch_contigs       = ch_fastas.mix(de_novo_alignment.out.contigs)
+    ch_reads_contigs = ch_fastas.map{it -> tuple{it[0], it[1], null}}.mix(de_novo_alignment.out.reads_contigs)
+    ch_clean_reads   = de_novo_alignment.out.clean_reads
+    ch_for_multiqc   = ch_for_multiqc.mix(de_novo_alignment.out.for_multiqc)
+    ch_versions      = ch_versions.mix(de_novo_alignment.out.versions)
 
   } else {
-    ch_contigs     = ch_fastas
-    ch_clean_reads = Channel.empty()
-    ch_assembled   = Channel.empty()
+    ch_contigs       = ch_fastas
+    ch_reads_contigs = Channel.empty()
+    ch_clean_reads   = Channel.empty()
+    ch_assembled     = Channel.empty()
   }
 
   // getting a summary of everything
@@ -353,6 +355,7 @@ workflow {
     quality_assessment(
       ch_raw_reads,
       ch_contigs,
+      ch_reads_contigs,
       summfle_script)
 
     ch_for_multiqc = ch_for_multiqc.mix(quality_assessment.out.for_multiqc)
@@ -362,7 +365,7 @@ workflow {
 
     // optional subworkflow blobtools (useful for interspecies contamination)
     if ( params.blast_db && ( params.sample_sheet || params.reads || params.sra_accessions )) {
-      blobtools(ch_clean_reads, ch_assembled, quality_assessment.out.bams, ch_blast_db )
+      blobtools(quality_assessment.out.bams, ch_blast_db )
 
       ch_for_summary = ch_for_summary.mix(blobtools.out.for_summary)
       ch_for_flag    = ch_for_flag.mix(blobtools.out.for_flag)

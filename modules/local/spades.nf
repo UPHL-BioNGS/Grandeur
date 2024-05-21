@@ -1,7 +1,10 @@
 process spades {
   tag           "${meta.id}"
   label         "process_high"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
+  publishDir    path: params.outdir, mode: 'copy', pattern: 'logs/*/*log'
+  publishDir    path: params.outdir, mode: 'copy', pattern: 'spades/*'
+  publishDir    path: params.outdir, mode: 'copy', pattern: 'spades/*/*'
+  publishDir    path: params.outdir, mode: 'copy', pattern: 'contigs/*'
   container     'staphb/spades:3.15.5'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time          '5h'
@@ -10,10 +13,11 @@ process spades {
   tuple val(meta), file(reads)
 
   output:
-  path "spades/*/*",                                              emit: files
+  path "spades/*/*", emit: files
   tuple val(meta), file("contigs/*_contigs.fa"), optional: true,  emit: contigs
-  path "logs/${task.process}/*.log",                              emit: log
-  path  "versions.yml",                                           emit: versions
+  tuple val(meta), file("contigs/*_contigs.fa"), file(reads), optional: true,  emit: reads_contigs
+  path "logs/${task.process}/*.log", emit: log
+  path  "versions.yml", emit: versions
 
   when:
   task.ext.when == null || task.ext.when

@@ -8,6 +8,7 @@ workflow quality_assessment {
   take:
     ch_reads
     ch_contigs
+    ch_reads_contigs
     summfle_script
 
   main:
@@ -20,13 +21,7 @@ workflow quality_assessment {
     if ( params.sample_sheet || params.reads || params.sra_accessions ) {
         fastqc(ch_reads)
 
-        ch_reads
-            .join(ch_contigs, by: 0, remainder: true)
-            .filter {it[1]}
-            .filter {it[2]}
-            .set { for_circulocov }
-
-        circulocov(for_circulocov)
+        circulocov(ch_reads_contigs.filter{it[1]}.filter{it[2]})
 
         for_multiqc = for_multiqc.mix(fastqc.out.for_multiqc)
 
@@ -46,12 +41,11 @@ workflow quality_assessment {
 
         ch_summary  = ch_summary.mix(circulocov_summary).mix(fastqc_summary)
         ch_versions = ch_versions.mix(fastqc.out.versions.first()).mix(circulocov.out.versions.first())
-        ch_bams     = ch_bams.mix(circulocov.out.bam)
-
+        ch_bams     = ch_bams.mix(circulocov.out.contig_bam)
     }
 
     // contigs
-    quast(ch_contigs.join(ch_reads, by: 0, remainder: true ))
+    quast(ch_reads_contigs.filter{it[2]})
     mlst(ch_contigs.combine(summfle_script))    
     plasmidfinder(ch_contigs.combine(summfle_script))
 

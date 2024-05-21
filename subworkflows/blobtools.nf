@@ -5,14 +5,14 @@ include { blobtools_view }    from '../modules/local/blobtools'  addParams(param
                                                                     
 workflow blobtools {
   take:
-    ch_clean_reads
-    ch_contigs
-    ch_bams
+    ch_contig_bams
     ch_blast_db
   
   main:
-    blastn(ch_clean_reads.join(ch_contigs, by: 0).map{it -> tuple(it[0],it[2])}.combine(ch_blast_db))
-    blobtools_create(ch_contigs.join(blastn.out.blastn, by: 0).join(ch_bams, by: 0))
+    ch_contigs = ch_contig_bams.filter{it[1]}.map{it -> tuple(it[0], it[1])}
+  
+    blastn(ch_contigs.combine(ch_blast_db))
+    blobtools_create(ch_contig_bams.join(blastn.out.blastn, by: 0, failOnMismatch: false, remainder: false))
     blobtools_view(blobtools_create.out.json)
     blobtools_plot(blobtools_create.out.json)
   

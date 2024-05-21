@@ -77,18 +77,18 @@ process flag {
   tuple val(meta), file(files)
 
   output:
-  tuple val(meta), env(salmonella_flag)    , emit: salmonella_flag
-  tuple val(meta), env(klebsiella_flag)    , emit: klebsiella_flag
-  tuple val(meta), env(ecoli_flag)         , emit: ecoli_flag
-  tuple val(meta), env(streppneu_flag)     , emit: streppneu_flag
-  tuple val(meta), env(legionella_flag)    , emit: legionella_flag
-  tuple val(meta), env(klebacin_flag)      , emit: klebacin_flag
-  tuple val(meta), env(strepa_flag)        , emit: strepa_flag
-  tuple val(meta), env(vibrio_flag)        , emit: vibrio_flag
-  tuple val(meta), env(myco_flag)          , emit: myco_flag
-  tuple val(meta), env(genus), env(species), emit: organism
-  path "flag/*_flag.csv"                   , emit: collect
-  path "logs/${task.process}/*.log"        , emit: log_files
+  tuple val(meta), file("${files[0]}"), env(salmonella_flag)    , emit: salmonella_flag
+  tuple val(meta), file("${files[0]}"), env(klebsiella_flag)    , emit: klebsiella_flag
+  tuple val(meta), file("${files[0]}"), env(ecoli_flag)         , emit: ecoli_flag
+  tuple val(meta), file("${files[0]}"), env(streppneu_flag)     , emit: streppneu_flag
+  tuple val(meta), file("${files[0]}"), env(legionella_flag)    , emit: legionella_flag
+  tuple val(meta), file("${files[0]}"), env(klebacin_flag)      , emit: klebacin_flag
+  tuple val(meta), file("${files[0]}"), env(strepa_flag)        , emit: strepa_flag
+  tuple val(meta), file("${files[0]}"), env(vibrio_flag)        , emit: vibrio_flag
+  tuple val(meta), file("${files[0]}"), env(myco_flag)          , emit: myco_flag
+  tuple val(meta), file("${files[0]}"), env(genus), env(species), emit: organism
+  path "flag/*_flag.csv", emit: collect
+  path "logs/${task.process}/*.log", emit: log_files
 
   shell:
   def prefix = task.ext.prefix ?: "${meta.id}"

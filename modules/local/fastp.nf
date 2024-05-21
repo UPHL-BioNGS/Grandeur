@@ -11,11 +11,11 @@ process fastp {
 
   output:
   tuple val(meta), file("fastp/*_fastp_R{1,2}.fastq.gz"), emit: fastq, optional: true
-  path "fastp/*_fastp.html",                              emit: html, optional: true
-  path "fastp/*_fastp.json",                              emit: fastp_files, optional: true
-  path "logs/${task.process}/*.{log,err}",                emit: log
-  tuple val(meta), env(passed_reads),                     emit: fastp_results
-  path  "versions.yml",                                   emit: versions
+  path "fastp/*_fastp.html", emit: html, optional: true
+  path "fastp/*_fastp.json", emit: fastp_files, optional: true
+  path "logs/${task.process}/*.{log,err}", emit: log
+  tuple val(meta), file("fastp/*_fastp_R{1,2}.fastq.gz"), env(passed_reads), emit: fastp_results
+  path  "versions.yml", emit: versions
 
   when:
   task.ext.when == null || task.ext.when
