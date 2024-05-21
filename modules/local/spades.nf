@@ -4,6 +4,7 @@ process spades {
   publishDir    path: params.outdir, mode: 'copy', pattern: 'logs/*/*log'
   publishDir    path: params.outdir, mode: 'copy', pattern: 'spades/*'
   publishDir    path: params.outdir, mode: 'copy', pattern: 'spades/*/*'
+  publishDir    path: params.outdir, mode: 'copy', pattern: 'contigs/*'
   container     'staphb/spades:3.15.5'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time          '5h'
