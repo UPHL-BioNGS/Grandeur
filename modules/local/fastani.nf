@@ -25,12 +25,11 @@ process fastani {
   shell:
   def args   = task.ext.args ?: ''
   def prefix = task.ext.prefix ?: "${meta.id}"
-  def ref    = genomes.join(",")
+  def ends   = genomes.collect { it.Name[-6..-1] }.flatten().unique().join(' *')
   """
     mkdir -p fastani logs/${task.process}
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
-
-    echo ${ref} | tr "," "\\n" | sort > reference_list.txt
+    ls *${ends} | grep -v ${contigs} | sort > reference_list.txt
 
     fastANI ${args} \
       --threads ${task.cpus} \
