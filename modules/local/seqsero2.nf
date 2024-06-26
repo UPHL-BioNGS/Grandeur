@@ -7,7 +7,7 @@ process seqsero2 {
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
-  tuple val(meta), file(file), val(flag)
+  tuple val(meta), file(file)
 
   output:
   path "seqsero2/*/*"                                    , emit: files
@@ -16,7 +16,7 @@ process seqsero2 {
   path  "versions.yml"                          , emit: versions
 
   when:
-  (task.ext.when == null || task.ext.when) && flag =~ 'found'
+  (task.ext.when == null || task.ext.when)
 
   shell:
   def args = task.ext.args     ?: '-m a -b mem'

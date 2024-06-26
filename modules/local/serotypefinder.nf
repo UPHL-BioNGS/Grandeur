@@ -8,7 +8,7 @@ process serotypefinder {
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}  
 
   input:
-  tuple val(meta), file(file), val(flag), file(script)
+  tuple val(meta), file(file), file(script)
 
   output:
   path "serotypefinder/*/*"                 , emit: files
@@ -17,7 +17,7 @@ process serotypefinder {
   path "versions.yml"                       , emit: versions
 
   when:
-  (task.ext.when == null || task.ext.when) && flag =~ 'found'
+  (task.ext.when == null || task.ext.when)
 
   shell:
   def args   = task.ext.args   ?: ''
