@@ -65,110 +65,6 @@ process download_sra {
   """
 }
 
-process flag {
-  tag           "${meta.id}"
-  label         "process_single"
-  //no publishDir    params.outdir, mode: 'copy'
-  container     'quay.io/biocontainers/pandas:1.5.2'
-  time          '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-
-  input:
-  tuple val(meta), file(files)
-
-  output:
-  tuple val(meta), file("${files[0]}"), env(salmonella_flag)    , emit: salmonella_flag
-  tuple val(meta), file("${files[0]}"), env(klebsiella_flag)    , emit: klebsiella_flag
-  tuple val(meta), file("${files[0]}"), env(ecoli_flag)         , emit: ecoli_flag
-  tuple val(meta), file("${files[0]}"), env(streppneu_flag)     , emit: streppneu_flag
-  tuple val(meta), file("${files[0]}"), env(legionella_flag)    , emit: legionella_flag
-  tuple val(meta), file("${files[0]}"), env(klebacin_flag)      , emit: klebacin_flag
-  tuple val(meta), file("${files[0]}"), env(strepa_flag)        , emit: strepa_flag
-  tuple val(meta), file("${files[0]}"), env(vibrio_flag)        , emit: vibrio_flag
-  tuple val(meta), file("${files[0]}"), env(myco_flag)          , emit: myco_flag
-  tuple val(meta), file("${files[0]}"), env(genus), env(species), emit: organism
-  path "flag/*_flag.csv", emit: collect
-  path "logs/${task.process}/*.log", emit: log_files
-
-  shell:
-  def prefix = task.ext.prefix ?: "${meta.id}"
-  """
-    mkdir -p flag logs/${task.process}
-    log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
-
-    if [ -f "${prefix}_fastani.csv" ]
-    then 
-      awk -F "," '{if (\$4 > 90) print \$0}' ${prefix}_fastani.csv > smaller_fastani.csv
-      genus=\$(head   -n 2 ${prefix}_fastani.csv | tail -n 1 | cut -f 3 -d , | cut -f 1 -d "_")
-      species=\$(head -n 2 ${prefix}_fastani.csv | tail -n 1 | cut -f 3 -d , | cut -f 2 -d "_")
-    else
-      touch smaller_fastani.csv
-      genus="unknown"
-      species="unknown"
-    fi
-
-    touch ${prefix}_reads_summary_kraken2.csv  ${prefix}.summary.mash.csv ${prefix}_blobtools.txt
-
-    files="smaller_fastani.csv ${prefix}_reads_summary_kraken2.csv ${prefix}.summary.mash.csv ${prefix}_blobtools.txt"
-
-    echo "Looking for Salmonella:" >> \$log_file
-    salmonella_flag=''
-    find_salmonella=\$(head -n 10 \$files | grep "Salmonella" | tee -a \$log_file | head -n 1 )
-    if [ -n "\$find_salmonella" ] ; then salmonella_flag="found" ; else salmonella_flag="not" ; fi
-    
-    echo "Looking for E. coli and Shigella:" >> \$log_file
-    ecoli_flag=''
-    find_ecoli=\$(head -n 10 \$files | grep -e "Escherichia" -e "Shigella" | tee -a \$log_file | head -n 1 )
-    if [ -n "\$find_ecoli" ] ; then ecoli_flag="found" ; else ecoli_flag="not" ; fi
-
-    echo "Looking for Klebsiella:" >> \$log_file
-    klebsiella_flag=''
-    find_klebsiella=\$(head -n 10 \$files | grep -e "Klebsiella" -e "Enterobacter" -e "Serratia" | tee -a \$log_file | head -n 1 )
-    if [ -n "\$find_klebsiella" ] ; then klebsiella_flag="found" ; else klebsiella_flag="not" ; fi
-    
-    echo "Looking for Strep A organisms:" >> \$log_file
-    strepa_flag=''
-    find_strepa=\$(head -n 10 \$files | grep "Streptococcus" | grep -e "pyogenes" -e "dysgalactiae" -e "anginosus" | tee -a \$log_file | head -n 1 )
-    if [ -n "\$find_strepa" ] ; then strepa_flag='found' ; else strepa_flag='not' ; fi
-
-    echo "Looking for Streptococcus pneumoniae organisms:" >> \$log_file
-    streppneu_flag_flag=''
-    find_streppneu=\$(head -n 10 \$files | grep "Streptococcus" | grep "pneumoniae" | tee -a \$log_file | head -n 1 )
-    if [ -n "\$find_streppneu" ] ; then streppneu_flag='found' ; else streppneu_flag='not' ; fi
-  
-    echo "Looking for Legionella organisms:" >> \$log_file
-    legionella_flag=''
-    find_legionella=\$(head -n 10 \$files | grep "Legionella" | tee -a \$log_file | head -n 1 )
-    if [ -n "\$find_legionella" ] ; then legionella_flag='found' ; else legionella_flag='not' ; fi
-
-    echo "Looking for Vibrio organisms:" >> \$log_file
-    vibrio_flag=''
-    find_vibrio=\$(head -n 10 \$files | grep "Vibrio" | tee -a \$log_file | head -n 1 )
-    if [ -n "\$find_vibrio" ] ; then vibrio_flag='found' ; else vibrio_flag='not' ; fi
-
-    echo "Looking for Klebsiella or Acinetobacter:" >> \$log_file
-    klebacin_flag=''
-    if [ -n "\$find_klebsiella" ]
-    then
-      klebacin_flag='found'
-    else
-      find_acin=\$(head -n 10 \$files | grep "Acinetobacter" | tee -a \$log_file | head -n 1 )
-      if [ -n "\$find_acin" ] ; then klebacin_flag='found' ; else klebacin_flag='not' ; fi
-    fi
-
-    echo "Looking for Mycobacterium/Mycobacteria"
-    myco_flag=''
-    find_myco=\$(head -n 10 \$files | grep "Mycobacteri" | tee -a \$log_file | head -n 1 )
-    if [ -n "\$find_myco" ] ; then myco_flag='found' ; else myco_flag='not' ; fi
-
-    if [ -z "\$genus" ]   ; then genus=unknown   ; fi
-    if [ -z "\$species" ] ; then species=unknown ; fi
-
-    echo "sample,genus,species,salmonella_flag,ecoli_flag,klebsiella_flag,klebacin_flag,myco_flag,strepa_flag,streppneu_flag,legionella_flag,vibrio_flag" > flag/${prefix}_flag.csv
-    echo "${prefix},\$genus,\$species,\$salmonella_flag,\$ecoli_flag,\$klebsiella_flag,\$klebacin_flag,\$myco_flag,\$strepa_flag,\$streppneu_flag,\$legionella_flag,\$vibrio_flag" >> flag/${prefix}_flag.csv
-  """
-}
-
 process json_convert {
   tag       "${meta.id}"
   label     "process_single"
@@ -278,7 +174,7 @@ process references {
   tag       "Preparing references"
   // no publishDir
   label     "process_single"
-  container 'quay.io/uphl/grandeur_ref:2024-03-07'
+  container 'quay.io/uphl/grandeur_ref:2024-06-26'
   time      '10m'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
