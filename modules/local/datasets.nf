@@ -52,7 +52,7 @@ process datasets_download {
   // because there's no way to specify threads
   label         "process_medium"
   publishDir    path: "${params.outdir}", mode: 'copy', pattern: "logs/*/*log"
-  container     'staphb/ncbi-datasets:16.10.3'
+  container     'staphb/ncbi-datasets:16.15.0'
   time          '5h'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
