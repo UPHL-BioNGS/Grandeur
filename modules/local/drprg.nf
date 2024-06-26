@@ -8,7 +8,7 @@ process drprg {
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
-  tuple val(meta), file(contigs), val(flag)
+  tuple val(meta), file(contigs)
 
   output:
   tuple val(meta), val("drprg"), file("drprg/*/*.drprg.json"), emit: json
@@ -17,7 +17,7 @@ process drprg {
   path "versions.yml", emit: versions
 
   when:
-  (task.ext.when == null || task.ext.when) && flag =~ 'found'
+  (task.ext.when == null || task.ext.when)
 
   shell:
   def args   = task.ext.args   ?: ''
@@ -35,7 +35,7 @@ process drprg {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        drprg: \$( drprg --version )
+        drprg: \$( drprg --version | awk '{print \$NF}')
     END_VERSIONS
   """
 }
