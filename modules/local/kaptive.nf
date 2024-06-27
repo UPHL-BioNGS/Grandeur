@@ -8,7 +8,7 @@ process kaptive {
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
-  tuple val(meta), file(contigs), val(flag)
+  tuple val(meta), file(contigs)
 
   output:
   path "kaptive/${meta.id}_table.txt", emit: collect
@@ -17,7 +17,7 @@ process kaptive {
   path "versions.yml", emit: versions
 
   when:
-  (task.ext.when == null || task.ext.when) && flag =~ 'found'
+  (task.ext.when == null || task.ext.when)
 
   shell:
   def args   = task.ext.args   ?: ''

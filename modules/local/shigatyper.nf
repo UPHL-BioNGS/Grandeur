@@ -8,7 +8,7 @@ process shigatyper {
   time          '10m'
   
   input:
-  tuple val(meta), file(input), val(flag), file(script)
+  tuple val(meta), file(input), file(script)
 
   output:
   path "shigatyper/*_shigatyper.tsv", optional: true, emit: files
@@ -17,7 +17,7 @@ process shigatyper {
   path "versions.yml", emit: versions
 
   when:
-  (task.ext.when == null || task.ext.when) && flag =~ 'found'
+  (task.ext.when == null || task.ext.when)
 
   shell:
   def args = task.ext.args ?: ''

@@ -3,7 +3,7 @@ process bbduk {
   label         "process_medium"
   publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/bbtools:39.01'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time          '10m'
 
   input:

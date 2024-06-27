@@ -8,10 +8,10 @@ process emmtyper {
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   when:
-  (task.ext.when == null || task.ext.when) && flag =~ 'found'
+  (task.ext.when == null || task.ext.when)
 
   input:
-  tuple val(meta), file(contigs), val(flag), file(script)
+  tuple val(meta), file(contigs), file(script)
 
   output:
   path "emmtyper/*_emmtyper.txt"   , emit: collect

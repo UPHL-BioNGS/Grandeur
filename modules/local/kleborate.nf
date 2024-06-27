@@ -7,7 +7,7 @@ process kleborate {
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
-  tuple val(meta), file(contig), val(flag), file(script)
+  tuple val(meta), file(contig), file(script)
 
   output:
   path "kleborate/*_results.tsv"   , emit: collect, optional: true
@@ -16,7 +16,7 @@ process kleborate {
   path "versions.yml"              , emit: versions
 
   when:
-  (task.ext.when == null || task.ext.when) && flag =~ 'found'
+  (task.ext.when == null || task.ext.when)
 
   shell:
   def args   = task.ext.args   ?: '--all'
