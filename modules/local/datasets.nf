@@ -2,7 +2,7 @@ process datasets_summary {
   tag           "${taxon}"
   label         "process_single"
   publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
-  container     'staphb/ncbi-datasets:16.22.1'
+  container     'staphb/ncbi-datasets:16.30.0'
   time          '1h'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore' }
 
@@ -52,7 +52,7 @@ process datasets_download {
   // because there's no way to specify threads
   label         "process_medium"
   publishDir    path: "${params.outdir}", mode: 'copy', pattern: "logs/*/*log"
-  container     'staphb/ncbi-datasets:16.22.1'
+  container     'staphb/ncbi-datasets:16.30.0'
   time          '5h'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
