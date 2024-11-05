@@ -27,8 +27,6 @@ process pbptyper {
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
     
     pbptyper ${args} \
-      --yaml data/pbptyper.yaml \
-      --targets data/pbptyper.fasta \
       --input ${contigs} \
       --prefix ${prefix} \
       --outdir pbptyper \
