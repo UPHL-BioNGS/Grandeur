@@ -2,7 +2,7 @@ process blastn {
   tag           "${meta.id}"
   label         "process_medium"
   publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
-  container     'staphb/blast:2.15.0'
+  container     'staphb/blast:2.16.0'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   time          '2h'
 
