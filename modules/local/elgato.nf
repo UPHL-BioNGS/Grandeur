@@ -2,7 +2,7 @@ process elgato {
   tag           "${meta.id}"
   label         "process_medium"
   publishDir    path: params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
-  container     'staphb/elgato:1.19.0'
+  container     'staphb/elgato:1.20.1'
   time          '10m'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 

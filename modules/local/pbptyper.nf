@@ -3,7 +3,7 @@ process pbptyper {
   label         "process_medium"
   stageInMode   "copy"
   publishDir    path: params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
-  container     'staphb/pbptyper:1.0.4'
+  container     'staphb/pbptyper:2.0.0'
   time          '1h'
   errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
@@ -27,7 +27,7 @@ process pbptyper {
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
     
     pbptyper ${args} \
-      --assembly ${contigs} \
+      --input ${contigs} \
       --prefix ${prefix} \
       --outdir pbptyper \
       | tee -a \$log_file
