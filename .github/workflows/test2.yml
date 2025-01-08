@@ -1,4 +1,4 @@
-name: Test Grandeur workflow profile test
+name: Test Grandeur workflow profile test2
 
 on: [pull_request, workflow_dispatch]
 
@@ -19,7 +19,7 @@ jobs:
           
       - name: Run Grandeur
         run: |
-          nextflow run . -profile docker,test -c .github/workflows/github_actions.config
+          nextflow run . -profile docker,test2 -c .github/workflows/github_actions.config
           
       - name: Check contig files
         run: |

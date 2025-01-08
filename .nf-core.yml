@@ -1,0 +1,13 @@
+repository_type: pipeline
+lint:
+  actions_awsfulltest: False
+  files_exist: False
+  files_unchanged: False
+  multiqc_config: False
+  template_strings: False
+  nextflow_config:
+    - "process.cpus"
+    - "process.memory"
+    - "process.time"
+    - "manifest.name"
+    - "manifest.homePage"

@@ -83,4 +83,5 @@ jobs:
             cat grandeur3/summary/software_versions.yml
             ls  grandeur3/multiqc/multiqc_report.html
 
-    
+        - name: tree
+          run: tree grandeur*

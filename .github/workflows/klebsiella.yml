@@ -45,3 +45,7 @@ jobs:
             head $file
             wc -l $file
           done
+
+          
+      - name: tree
+        run: tree grandeur*

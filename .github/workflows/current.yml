@@ -35,3 +35,7 @@ jobs:
           cat grandeur/grandeur_summary.tsv
           cat grandeur/summary/software_versions.yml
           ls  grandeur/multiqc/multiqc_report.html
+
+      - name: tree
+        run: tree grandeur*
+
