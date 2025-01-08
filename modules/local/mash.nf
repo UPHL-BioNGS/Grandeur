@@ -1,10 +1,7 @@
-process mash_sketch_fastq {
+process MASH_SKETCH {
   tag           "${meta.id}"
   label         "process_medium"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/mash:2.3'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  time          '10m'
 
   input:
   tuple val(meta), file(fastq)
@@ -18,7 +15,7 @@ process mash_sketch_fastq {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args   = task.ext.args   ?: "-m 2"
   def prefix = task.ext.prefix ?: "${meta.id}"
   """
@@ -41,10 +38,7 @@ process mash_sketch_fastq {
 process mash_sketch_fasta {
   tag           "${meta.id}"
   label         "process_medium"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/mash:2.3'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  time          '10m'
 
   input:
   tuple val(meta), file(fasta)
@@ -57,7 +51,7 @@ process mash_sketch_fasta {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args   = task.ext.args   ?: ""
   def prefix = task.ext.prefix ?: "${meta.id}"
   
@@ -77,13 +71,10 @@ process mash_sketch_fasta {
   """
 }
 
-process mash_dist {
+process MASH_DIST {
   tag           "${meta.id}"
   label         "process_medium"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/mash:2.3'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  time          '10m'
 
   input:
   tuple val(meta), file(msh), file(reference)
@@ -97,7 +88,7 @@ process mash_dist {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args   = task.ext.args   ?: "-v 0 -d 0.5"
   def prefix = task.ext.prefix ?: "${meta.id}"
   if ( reference =~ "input" ) {
@@ -178,30 +169,3 @@ process mash_dist {
     """
   }
 }
-
-// process mash_screen {
-//   tag           "${meta.id}"
-//   label         "process_medium"
-//   publishDir    params.outdir, mode: 'copy'
-//   container     'staphb/mash:2.3'
-//   time          '10m'
-
-//   input:
-//   tuple val(meta), file(fasta), file(fastq), file(reference)
-
-//   output:
-//   path "mash/*",                          emit: mashdist
-//   path "logs/${task.process}/*.log",                   emit: log
-//   path  "versions.yml",                                emit: versions
-
-//   when:
-//   task.ext.when == null || task.ext.when
-
-//   shell:
-//   def args   = task.ext.args   ?: "-m 2"
-//   def prefix = task.ext.prefix ?: "${meta.id}"
-  
-//   """
-//    echo "whatever"
-//   """
-// }

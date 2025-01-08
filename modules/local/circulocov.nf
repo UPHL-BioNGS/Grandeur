@@ -1,13 +1,8 @@
-process circulocov {
+process CIRCULOCOV {
   tag           "${meta.id}"
   label         "process_medium"
-  stageInMode   "copy"
-  publishDir    path: params.outdir, mode: 'copy', pattern: 'logs/*/*log'
-  publishDir    path: params.outdir, mode: 'copy', pattern: 'circulocov/*'
-  publishDir    path: params.outdir, mode: 'copy', pattern: 'circulocov/*/*'
+  //stageInMode   "copy"
   container     'staphb/circulocov:0.1.20240104'
-  time          '30m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   tuple val(meta), file(contigs), file(fastqs)
@@ -24,7 +19,7 @@ process circulocov {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args   = task.ext.args ?: ''
   def prefix = task.ext.prefix ?: "${meta.id}"
   def reads  = fastqs.join(" ")

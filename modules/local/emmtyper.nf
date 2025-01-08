@@ -1,14 +1,7 @@
-process emmtyper {
+process EMMTYPER {
   tag           "${meta.id}"
   label         "process_medium"
-  stageInMode   "copy"
-  publishDir    path: params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/emmtyper:0.2.0'
-  time          '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  
-  when:
-  (task.ext.when == null || task.ext.when)
 
   input:
   tuple val(meta), file(contigs), file(script)
@@ -19,7 +12,10 @@ process emmtyper {
   path "logs/${task.process}/*.log", emit: log
   path "versions.yml"              , emit: versions
 
-  shell:
+  when:
+  task.ext.when == null || task.ext.when
+
+  script:
   def args   = task.ext.args   ?: ''
   def prefix = task.ext.prefix ?: "${meta.id}"
   """
@@ -40,7 +36,7 @@ process emmtyper {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        emmtyper: \$( echo \$(emmtyper --version 2>&1) | sed 's/^.*emmtyper v//' )
+      emmtyper: \$( echo \$(emmtyper --version 2>&1) | sed 's/^.*emmtyper v//' )
     END_VERSIONS
   """
 }

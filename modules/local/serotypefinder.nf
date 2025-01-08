@@ -1,11 +1,8 @@
-process serotypefinder {
+process SEROTYPEFINDER {
   tag           "${meta.id}"
   label         "process_medium"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/serotypefinder:2.0.2'
-  maxForks      10
-  time          '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}  
+ 
 
   input:
   tuple val(meta), file(file), file(script)
@@ -17,9 +14,9 @@ process serotypefinder {
   path "versions.yml"                       , emit: versions
 
   when:
-  (task.ext.when == null || task.ext.when)
+  task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args   = task.ext.args   ?: ''
   def prefix = task.ext.prefix ?: "${meta.id}"
   """

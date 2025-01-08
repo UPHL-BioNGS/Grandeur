@@ -1,11 +1,8 @@
-process snp_dists {
+process SNPDISTS {
   tag           "SNP matrix"
   label         "process_medium"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/snp-dists:0.8.2'
-  maxForks      10
-  time          '2h'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+
   
   input:
   file(contigs)
@@ -17,7 +14,7 @@ process snp_dists {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args = task.ext.args ?: '-c'
   """
     mkdir -p snp-dists

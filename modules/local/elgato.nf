@@ -1,10 +1,7 @@
-process elgato {
+process ELGATO {
   tag           "${meta.id}"
   label         "process_medium"
-  publishDir    path: params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/elgato:1.20.1'
-  time          '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   tuple val(meta), file(contigs)
@@ -15,9 +12,9 @@ process elgato {
   path "versions.yml"               , emit: versions
 
   when:
-  (task.ext.when == null || task.ext.when)
+  task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args   = task.ext.args   ?: ''
   def prefix = task.ext.prefix ?: "${meta.id}"
   """

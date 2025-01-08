@@ -1,25 +1,21 @@
-process drprg {
+process DRPRG {
   tag           "${meta.id}"
   label         "process_medium"
-  stageInMode   "copy"
-  publishDir    path: params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/drprg:0.1.1'
-  time          '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   tuple val(meta), file(contigs)
 
   output:
-  tuple val(meta), val("drprg"), file("drprg/*/*.drprg.json"), emit: json
+  tuple val(meta), file("drprg/*/*.drprg.json"), emit: json
   path "drprg/*/*", emit: results
   path "logs/${task.process}/*.log", emit: log
   path "versions.yml", emit: versions
 
   when:
-  (task.ext.when == null || task.ext.when)
+  task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args   = task.ext.args   ?: ''
   def prefix = task.ext.prefix ?: "${meta.id}"
   """

@@ -1,10 +1,8 @@
-process phytreeviz {
+process PHYTREEVIZ {
   tag           "${analysis}"
   label         "process_medium"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/phytreeviz:0.2.0'
-  time          '1h'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+
   
   input:
   tuple val(analysis), file(newick)
@@ -17,7 +15,7 @@ process phytreeviz {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args   = task.ext.args   ?: ''
   def prefix = task.ext.prefix ?: "${analysis}"
   """

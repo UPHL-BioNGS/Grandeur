@@ -1,10 +1,7 @@
-process panaroo {
+process PANAROO {
   tag           "Core Genome Alignment"
   label         "process_high"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/panaroo:1.5.0'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  time          '10h'
   
   input:
   file(gff)
@@ -18,7 +15,7 @@ process panaroo {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args       = task.ext.args   ?: '--clean-mode strict --remove-invalid-genes --alignment core'
   def prefix     = task.ext.prefix ?: 'panaroo'
   def assemblies = gff.join(' ')

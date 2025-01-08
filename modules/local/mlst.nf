@@ -1,11 +1,7 @@
-process mlst {
+process MLST {
   tag           "${meta.id}"
   label         "process_medium"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
-  container     'staphb/mlst:2.23.0-2024-11-01'
-  maxForks      10
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  time          '10m'
+  container     'staphb/mlst:2.23.0-2025-01-01'
 
   input:
   tuple val(meta), file(contig), file(script)
@@ -17,7 +13,7 @@ process mlst {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args   = task.ext.args   ?: ''
   def prefix = task.ext.prefix ?: "${meta.id}"
   """

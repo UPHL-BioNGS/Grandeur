@@ -1,10 +1,7 @@
-process multiqc {
+process MULTIQC {
   tag           "multiqc"
   label         "process_single"
-  publishDir    params.outdir, mode: 'copy'
-  container     'staphb/multiqc:1.19'
-  time          '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  container     'staphb/multiqc:1.26'
 
   input:
   file(input)
@@ -17,7 +14,7 @@ process multiqc {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args = task.ext.args ?: ''
   """
     mkdir -p multiqc quast logs/${task.process}
@@ -38,13 +35,10 @@ process multiqc {
   """
 }
 
-process versions {
+process VERSIONS {
   tag           "extracting versions"
   label         "process_single"
-  publishDir    "${params.outdir}/summary/", mode: 'copy', pattern: 'software_versions.yml'
-  container     'staphb/multiqc:1.19'
-  time          '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  container     'staphb/multiqc:1.26'
 
   input:
   file(input)
@@ -57,7 +51,7 @@ process versions {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   """
     cat <<-END_VERSIONS >> versions.yml
     "report:multiqc":

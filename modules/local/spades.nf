@@ -1,13 +1,7 @@
-process spades {
+process SPADES {
   tag           "${meta.id}"
   label         "process_high"
-  publishDir    path: params.outdir, mode: 'copy', pattern: 'logs/*/*log'
-  publishDir    path: params.outdir, mode: 'copy', pattern: 'spades/*'
-  publishDir    path: params.outdir, mode: 'copy', pattern: 'spades/*/*'
-  publishDir    path: params.outdir, mode: 'copy', pattern: 'contigs/*'
   container     'staphb/spades:4.0.0'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  time          '5h'
   
   input:
   tuple val(meta), file(reads)
@@ -22,7 +16,7 @@ process spades {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args   = task.ext.args   ?: '--isolate'
   def prefix = task.ext.prefix ?: "${meta.id}"
   """

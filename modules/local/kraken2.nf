@@ -1,10 +1,7 @@
-process kraken2 {
+process KRAKEN2 {
   tag           "${meta.id}"
   label         "process_high"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/kraken2:2.1.3'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  time          '1h'
   
   input:
   tuple val(meta), file(fastq), path(kraken2_db)
@@ -19,7 +16,7 @@ process kraken2 {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args   = task.ext.args   ?: ''
   def prefix = task.ext.prefix ?: "${meta.id}"
   """

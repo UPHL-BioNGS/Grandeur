@@ -1,22 +1,17 @@
-process core_genome_evaluation {
+process CORE_GENOME_EVALUATION {
   tag         "Evaluating core genome"
   label       "process_single"
-  publishDir  path: params.outdir, mode: 'copy', pattern: 'logs/*/*log'
-  publishDir  path: params.outdir, mode: 'copy', pattern: 'core_genome_evaluation/core_genome_evaluation.csv'
   container   'quay.io/biocontainers/pandas:1.5.2'
-  time        '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   tuple file(fasta), file(summary), file(script)
 
   output:
-  tuple file(fasta), env(num_samples), env(num_core_genes), emit: evaluation
+  tuple file(fasta), env("num_samples"), env("num_core_genes"), emit: evaluation
   path "core_genome_evaluation/core_genome_evaluation.csv", emit: for_multiqc
   path "logs/${task.process}/*.log"                       , emit: log_files
 
-  shell:
-  def args = task.ext.args ?: ''
+  script:
   """
     mkdir -p core_genome_evaluation logs/${task.process}
     log_file=logs/${task.process}/${task.process}.${workflow.sessionId}.log
@@ -29,13 +24,10 @@ process core_genome_evaluation {
   """
 }
 
-process download_sra {
+process DOWNLOAD_SRA {
   tag           "${SRR}"
   label         "process_single"
-  publishDir    params.outdir, mode: 'copy'
   container     'quay.io/biocontainers/pandas:1.5.2'
-  time          '2h'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   val(SRR)
@@ -47,9 +39,7 @@ process download_sra {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
-  def args = task.ext.args ?: ''
-  def prefix = task.ext.prefix ?: "${SRR}"
+  script:
   """
     mkdir -p reads logs/${task.process}
     log_file=logs/${task.process}/${SRR}.${workflow.sessionId}.log
@@ -65,13 +55,10 @@ process download_sra {
   """
 }
 
-process json_convert {
+process JSON_CONVERT {
   tag       "${meta.id}"
   label     "process_single"
-  // no publishDir
   container 'quay.io/biocontainers/pandas:1.5.2'
-  time      '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   tuple val(meta), val(analysis), file(json), file(script)
@@ -79,7 +66,7 @@ process json_convert {
   output:
   path "${analysis}/*_${analysis}*", emit: collect
 
-  shell:
+  script:
   """
   mkdir -p ${analysis}
 
@@ -89,13 +76,10 @@ process json_convert {
   """
 }
 
-process mash_err {
+process MASH_ERR {
   tag           "${meta.id}"
-  // no publishDir
   label         "process_single"
   container     'quay.io/biocontainers/pandas:1.5.2'
-  time          '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   tuple val(meta), file(error_file)
@@ -106,7 +90,7 @@ process mash_err {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def prefix = task.ext.prefix ?: "${meta.id}"
   """
 
@@ -118,13 +102,10 @@ process mash_err {
   """
 }
 
-process mqc_prep {
+process MQC_PREP {
   tag           "prepping files"
-  // no publishDir
   label         "process_single"
   container     'quay.io/biocontainers/pandas:1.5.2'
-  time          '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   file(input)
@@ -136,19 +117,16 @@ process mqc_prep {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   """
   python3 ${script}
   """
 }
 
-process names {
+process NAMES {
   tag           "${meta.id}"
-  // no publishDir
   label         "process_single"
   container     'quay.io/biocontainers/pandas:1.5.2'
-  time          '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   tuple val(meta), file(input)
@@ -159,7 +137,7 @@ process names {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def prefix = task.ext.prefix ?: "${meta.id}"
   def files  = input.join(" ")
   """
@@ -170,13 +148,10 @@ process names {
   """
 }
 
-process references {
+process REFERENCES {
   tag       "Preparing references"
-  // no publishDir
   label     "process_single"
   container 'quay.io/uphl/grandeur_ref:2024-06-26'
-  time      '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   output:
   path "ref/*", emit: fastas
@@ -184,7 +159,7 @@ process references {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   """
   mkdir ref
 
@@ -192,13 +167,10 @@ process references {
   """
 }
 
-process species {
+process SPECIES {
   tag           "Creating list of species"
   label         "process_single"
-  publishDir    params.outdir, mode: 'copy'
   container     'quay.io/biocontainers/pandas:1.5.2'
-  time          '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   file(results)
@@ -209,7 +181,8 @@ process species {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
+
   """
     mkdir -p datasets
 
@@ -232,9 +205,8 @@ process species {
   """
 }
 
-process summary {
+process SUMMARY {
   tag           "Creating summary files"
-  publishDir    params.outdir, mode: 'copy'
   container     'quay.io/biocontainers/pandas:1.5.2'
   label         "process_single"
   time          '10m'
@@ -252,8 +224,7 @@ process summary {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
-  def args = task.ext.args ?: ''
+  script:
   """
     mkdir -p summary
 

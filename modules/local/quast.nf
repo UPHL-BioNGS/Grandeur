@@ -1,10 +1,7 @@
-process quast {
+process QUAST {
   tag           "${meta.id}"
   label         "process_medium"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
-  container     'staphb/quast:5.2.0'
-  time          '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  container     'staphb/quast:5.3.0'
 
   input:
   tuple val(meta), file(contigs), file(reads)
@@ -21,7 +18,7 @@ process quast {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args   = task.ext.args   ?: ''
   def prefix = task.ext.prefix ?: "${meta.id}"
   def fastq  = reads[1] ? "--pe1 ${reads[0]} --pe2 ${reads[1]}" : ""
