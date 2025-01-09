@@ -7,10 +7,10 @@ process KLEBORATE {
   tuple val(meta), file(contig), file(script)
 
   output:
-  path "kleborate/*_results.tsv"   , emit: collect, optional: true
-  path "kleborate/*_results.txt"   , emit: result, optional: true
+  path "kleborate/*_results.tsv", emit: collect, optional: true
+  path "kleborate/*/*_output.txt", emit: result, optional: true
   path "logs/${task.process}/*.log", emit: log
-  path "versions.yml"              , emit: versions
+  path "versions.yml", emit: versions
 
   when:
   task.ext.when == null || task.ext.when
@@ -27,14 +27,14 @@ process KLEBORATE {
       -a ${contig} \
       | tee -a \$log_file
 
-    if [ -f "kleborate/${prefix}_results.txt" ]
+    if ls kleborate/${prefix}/*output.txt 1>/dev/null 2>&1
     then
-      python3 ${script} kleborate/${prefix}_results.txt kleborate/${prefix}_results.tsv kleborate ${prefix}
+      python3 ${script} kleborate/${prefix}/*output.txt kleborate/${prefix}_results.tsv kleborate ${prefix}
     fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        kleborate: \$( echo \$(kleborate --version | sed 's/Kleborate v//;'))
+      kleborate: \$( echo \$(kleborate --version | sed 's/Kleborate v//;'))
     END_VERSIONS
   """
 }
