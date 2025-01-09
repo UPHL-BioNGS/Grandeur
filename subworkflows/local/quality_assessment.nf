@@ -48,7 +48,7 @@ workflow QUALITY_ASSESSMENT {
     }
 
     // contigs
-    QUAST(ch_reads_contigs.filter{it[2]})
+    QUAST(ch_reads_contigs)
     ch_versions = ch_versions.mix(QUAST.out.versions.first())
 
     QUAST.out.collect
