@@ -31,6 +31,8 @@ process PLASMIDFINDER {
 
     python3 ${script} plasmidfinder/${prefix}/results_tab.tsv plasmidfinder/${prefix}_plasmidfinder.tsv plasmidfinder ${prefix}
 
+    rm -rf plasmidfinder/${prefix}/tmp
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         plasmidfinder: "${task.container}"

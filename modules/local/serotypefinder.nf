@@ -33,6 +33,8 @@ process SEROTYPEFINDER {
 
     python3 ${script} serotypefinder/${prefix}/results_tab.tsv serotypefinder/${prefix}_serotypefinder.tsv serotypefinder ${prefix}
 
+    rm -rf serotypefinder/${prefix}/tmp
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
       serotypefinder.py: ${task.container}
