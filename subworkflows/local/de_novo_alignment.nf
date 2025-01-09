@@ -6,6 +6,8 @@ workflow DE_NOVO_ALIGNMENT {
     reads
   
   main:
+    ch_versions = Channel.empty()
+
     FASTP(reads)
 
     FASTP.out.fastp_results
@@ -15,7 +17,11 @@ workflow DE_NOVO_ALIGNMENT {
       }
       .set{ read_check }
 
+    ch_versions = ch_versions.mix(FASTP.out.versions.first())
+
     SPADES(read_check)
+
+    ch_versions = ch_versions.mix(SPADES.out.versions.first())
 
   emit:
     // for downstream analyses
@@ -25,5 +31,5 @@ workflow DE_NOVO_ALIGNMENT {
 
     // for multiqc
     for_multiqc = FASTP.out.fastp_files
-    versions    = FASTP.out.versions.first().mix(SPADES.out.versions.first())
+    versions    = ch_versions
 }
