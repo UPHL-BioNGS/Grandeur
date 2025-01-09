@@ -3,7 +3,6 @@ process SHIGATYPER {
   label         "process_medium"
   container     'staphb/shigatyper:2.0.5'
 
-  
   input:
   tuple val(meta), file(input), file(script)
 
@@ -31,7 +30,7 @@ process SHIGATYPER {
     python3 ${script} ${prefix}-hits.tsv shigatyper/${prefix}_shigatyper-hits.tsv shigatyper ${prefix}
 
     if [ -f "${prefix}.tsv" ] ; then cp ${prefix}.tsv shigatyper/${prefix}_shigatyper.tsv ; fi
-    
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
       shigatyper: \$(echo \$(shigatyper --version 2>&1) | sed 's/^.*ShigaTyper //' )
