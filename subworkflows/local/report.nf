@@ -37,4 +37,7 @@ workflow REPORT {
             .set { ch_names }
 
         SUMMARY(for_summary.mix(ch_names).mix(MULTIQC.out.data_folder).collect())
+
+    emit:
+        SUMMARY.out.extended_tsv
 }
