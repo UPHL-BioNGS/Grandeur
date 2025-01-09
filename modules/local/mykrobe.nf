@@ -7,8 +7,8 @@ process MYKROBE {
   tuple val(meta), file(contigs)
 
   output:
-  path "mykrobe/*.csv", emit: collect
-  path "mykrobe/*.json", emit: json
+  path "mykrobe/*.csv", optional: true, emit: collect
+  path "mykrobe/*.json", optional: true, emit: json
   path "logs/${task.process}/*.log", emit: log
   path "versions.yml", emit: versions
 
@@ -16,19 +16,17 @@ process MYKROBE {
   task.ext.when == null || task.ext.when
 
   script:
-  def args   = task.ext.args   ?: ''
+  def args   = task.ext.args   ?: '--species tb --format json_and_csv'
   def prefix = task.ext.prefix ?: "${meta.id}"
   """
     mkdir -p tmp/ logs/${task.process}
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
     mykrobe predict ${args} \
-      --species tb \
       --sample ${prefix} \
       --output mykrobe/${prefix} \
       --seq ${contigs} \
       --threads ${task.cpus} \
-      --format json_and_csv \
       | tee -a \$log_file
 
     cat <<-END_VERSIONS > versions.yml
