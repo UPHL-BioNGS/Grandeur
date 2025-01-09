@@ -86,7 +86,7 @@ process MQC_PREP {
   file(script)
 
   output:
-  path "*mqc*", emit: for_multiqc
+  path "*mqc*", emit: for_multiqc, optional: true
 
   when:
   task.ext.when == null || task.ext.when
