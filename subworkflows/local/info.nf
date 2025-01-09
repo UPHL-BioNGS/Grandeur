@@ -5,6 +5,7 @@ include { AMRFINDER }      from '../../modules/local/amrfinderplus'
 include { DRPRG }          from '../../modules/local/drprg'
 include { ELGATO }         from '../../modules/local/elgato'
 include { EMMTYPER }       from '../../modules/local/emmtyper'
+include { JSON_CONVERT }   from '../../modules/local/local'
 include { KAPTIVE }        from '../../modules/local/kaptive'
 include { KLEBORATE }      from '../../modules/local/kleborate'
 include { MENINGOTYPE }    from '../../modules/local/meningotype'
@@ -108,34 +109,6 @@ def topOrg(org_files) {
   }
   return [genus, species]
 }
-
-
-// def jsonConvert(it) {
-
-
-//   def filename = it[1]
-
-//   // Read and parse the JSON file
-//   def jsonSlurper = new JsonSlurper()
-//   def contents = [:]
-
-//   new File(filename).withReader { reader ->
-//       contents = jsonSlurper.parse(reader)
-//   }
-
-//   // Extract data from JSON
-//   def sample = contents.sample
-//   def present = contents.genes.present.join(",")
-//   def absent = contents.genes.absent.join(",")
-//   def susceptibility = contents.susceptibility.keySet().join(",")
-
-//   // Create the summary string
-//   def summary = "sample\tgenes_present\tgenes_absent\tsusceptibility\n"
-//   summary += "${sample}\t${present}\t${absent}\t${susceptibility}"
-
-//   // Return the summary string
-//   println summary
-// }
 
 workflow INFO {
   take:
@@ -256,7 +229,7 @@ workflow INFO {
       .collectFile(name: 'amrfinderplus.txt',
         keepHeader: true,
         sort: { file -> file.text },
-        storeDir: "${params.outdir}/ncbi-AMRFinderplus")
+        storeDir: "${params.outdir}/amrfinder")
       .set{ amrfinderplus_summary }
 
     ch_summary  = ch_summary.mix(amrfinderplus_summary)
@@ -264,15 +237,17 @@ workflow INFO {
 
     DRPRG(ch_myco)
 
-    // DRPRG.out.json
-    //   .map { it -> jsonConvert(it) }
-    //   .collectFile(name: 'drprg_summary.tsv',
-    //     keepHeader: true,
-    //     sort: { file -> file.text },
-    //     storeDir: "${params.outdir}/drprg")
-    //   .set{ drprg_summary }
+    JSON_CONVERT(DRPRG.out.json.combine(jsoncon_script))
 
-    //ch_summary  = ch_summary.mix(drprg_summary)
+    JSON_CONVERT.out.collect
+      .filter( ~/.*drprg.tsv/ )
+      .collectFile(name: 'drprg_summary.tsv',
+        keepHeader: true,
+        sort: { file -> file.text },
+        storeDir: "${params.outdir}/drprg")
+      .set{ drprg_summary }
+
+    ch_summary  = ch_summary.mix(drprg_summary)
     ch_versions = ch_versions.mix(DRPRG.out.versions.first())
 
     EMMTYPER(ch_gas.combine(summfle_script)) 
