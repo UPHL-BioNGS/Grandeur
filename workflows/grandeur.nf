@@ -27,11 +27,11 @@ workflow GRANDEUR {
     version_script
 
     main:
-    ch_for_multiqc  = Channel.empty()
-    ch_for_summary  = ch_genome_sizes
-    ch_for_flag     = Channel.empty()
-    ch_versions     = Channel.empty()
-
+    ch_for_multiqc   = Channel.empty()
+    ch_for_summary   = ch_genome_sizes
+    ch_for_flag      = Channel.empty()
+    ch_versions      = Channel.empty()
+    ch_reads_contigs = ch_fastas.map{it -> tuple(it[0], it[1], null)}
 
 
     if ( params.sample_sheet || params.reads || params.sra_accessions ) {
@@ -39,14 +39,13 @@ workflow GRANDEUR {
 
         ch_assembled     = DE_NOVO_ALIGNMENT.out.contigs
         ch_contigs       = ch_fastas.mix(DE_NOVO_ALIGNMENT.out.contigs)
-        ch_reads_contigs = ch_fastas.map{it -> tuple{it[0], it[1], null}}.mix(DE_NOVO_ALIGNMENT.out.reads_contigs)
+        ch_reads_contigs = ch_reads_contigs.mix(DE_NOVO_ALIGNMENT.out.reads_contigs)
         ch_clean_reads   = DE_NOVO_ALIGNMENT.out.clean_reads
         ch_for_multiqc   = ch_for_multiqc.mix(DE_NOVO_ALIGNMENT.out.for_multiqc)
         ch_versions      = ch_versions.mix(DE_NOVO_ALIGNMENT.out.versions)
 
     } else {
         ch_contigs       = ch_fastas
-        ch_reads_contigs = Channel.empty()
         ch_clean_reads   = Channel.empty()
         ch_assembled     = Channel.empty()
     }
