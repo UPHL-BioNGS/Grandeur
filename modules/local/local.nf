@@ -76,32 +76,6 @@ process JSON_CONVERT {
   """
 }
 
-process MASH_ERR {
-  tag           "${meta.id}"
-  label         "process_single"
-  container     'quay.io/biocontainers/pandas:1.5.2'
-  
-  input:
-  tuple val(meta), file(error_file)
-
-  output:
-  path "mash_estimates.csv", emit: summary
-
-  when:
-  task.ext.when == null || task.ext.when
-
-  script:
-  def prefix = task.ext.prefix ?: "${meta.id}"
-  """
-
-  genome_size=\$(grep "Estimated genome size:" ${error_file} | awk '{print \$NF}')
-  coverage=\$(grep "Estimated coverage:"  ${error_file} | awk '{print \$NF}')
-
-  echo "sample,mash_estimated_genome_size,mash_estimated_coverage" > mash_estimates.csv
-  echo "${prefix},\$genome_size,\$coverage" >> mash_estimates.csv
-  """
-}
-
 process MQC_PREP {
   tag           "prepping files"
   label         "process_single"
@@ -210,7 +184,7 @@ process SUMMARY {
   container     'quay.io/biocontainers/pandas:1.5.2'
   label         "process_single"
   time          '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   file(input)
