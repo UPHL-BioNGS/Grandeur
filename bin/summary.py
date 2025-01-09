@@ -33,6 +33,7 @@ kraken2        = 'kraken2_summary.csv'
 legsta         = 'legsta_summary.csv'
 mash           = 'mash_summary.csv'
 mash_err       = 'mash_err_summary.csv'
+meningotype    = 'meningotype_summary.tsv'
 mlst           = 'mlst_summary.tsv'
 mykrobe        = 'mykrobe_summary.csv'
 pbptyper       = 'pbptyper_summary.tsv'
@@ -112,8 +113,8 @@ if exists(amrfinderplus) :
     print("Adding results for " + file)
     analysis = "amrfinder"
     new_df = pd.read_table(file, dtype = str, index_col= False)
-    new_df = new_df.sort_values('Gene symbol')
-    new_df['genes (per cov/per ident)'] = new_df['Gene symbol'] + ' (' + new_df['% Coverage of reference sequence'] + '/' + new_df['% Identity to reference sequence'] + ')'
+    new_df = new_df.sort_values('Element symbol')
+    new_df['genes (per cov/per ident)'] = new_df['Element symbol'] + ' (' + new_df['% Coverage of reference'] + '/' + new_df['% Identity to reference'] + ')'
     new_df = new_df[['Name', 'genes (per cov/per ident)']]
     new_df = new_df.groupby('Name', as_index=False).agg({'genes (per cov/per ident)': lambda x: list(x)})
     new_df = new_df.add_prefix(analysis + '_')
@@ -276,6 +277,19 @@ if exists(mash) :
     new_df.columns = [x.lower() for x in new_df.columns]
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
+
+# meningotype : renaming column and reformatting for matching
+if exists(meningotype) :
+    file = meningotype
+    print("Adding results for " + file)
+    analysis = "meningotype"
+    new_df = pd.read_table(file, dtype = str, index_col= False)
+    new_df = new_df.add_prefix(analysis + "_")
+    new_df.columns = [x.lower() for x in new_df.columns]
+    new_df[analysis + "_sample"] = new_df[analysis + "_sample_id"].str.replace(r'\.(fasta|fna|fa)$', '', regex=True)
+    summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
+    summary_df.drop([analysis + "_sample_id", analysis + "_sample"], axis=1, inplace=True)
+
 
 # plasmidfinder : merging relevant rows into one
 if exists(plasmidfinder) :
@@ -634,6 +648,7 @@ final_columns = [
     'kaptive_best_match_locus_O',
     'kaptive_best_match_locus_K',
     'elgato_st',
+    'meningotype_serogroup',
     'mykrobe_phylo_group',
     'mykrobe_species',
     'mykrobe_lineage',
