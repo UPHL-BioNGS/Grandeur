@@ -26,9 +26,7 @@ process MENINGOTYPE {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        meningotype: \$(echo \$(meningotype --version)
+        meningotype: \$(echo \$(meningotype --version 2>&1 | grep meningotype | awk '{print \$NF}'))
     END_VERSIONS
-
-    exit 1
   """
 }
