@@ -8,14 +8,14 @@ process AMRFINDER {
 
   output:
   path "amrfinder/*_amrfinder.txt", emit: collect, optional: true
-  path "logs/${task.process}/*.log",              emit: log
-  path "versions.yml",                            emit: versions
+  path "logs/*/*.log", emit: log
+  path "versions.yml", emit: versions
 
   when:
   task.ext.when == null || task.ext.when
 
   script:
-  def args   = task.ext.args   ?: ''
+  def args   = task.ext.args   ?: '--plus'
   def prefix = task.ext.prefix ?: "${meta.id}"
   """
     mkdir -p amrfinder logs/${task.process}
@@ -40,9 +40,8 @@ process AMRFINDER {
       --nucleotide ${contigs} \
       --threads ${task.cpus} \
       --name ${prefix} \
-      --output amrfinder/${prefix}_amrfinder_plus.txt \
+      --output amrfinder/${prefix}_amrfinder.txt \
       \$organism_check \
-      --plus \
       | tee -a \$log_file
 
     cat <<-END_VERSIONS > versions.yml
