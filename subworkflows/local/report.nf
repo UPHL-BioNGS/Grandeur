@@ -31,7 +31,6 @@ workflow REPORT {
 
         NAMES.out.collect
             .collectFile(
-                storeDir: "${params.outdir}/summary/",
                 keepHeader: true,
                 sort: { file -> file.text },
                 name: "input_files.csv")
