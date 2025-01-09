@@ -5,9 +5,24 @@ lint:
   files_unchanged: False
   multiqc_config: False
   template_strings: False
+  version_consistencey: False
   nextflow_config:
     - "process.cpus"
     - "process.memory"
     - "process.time"
     - "manifest.name"
     - "manifest.homePage"
+nf_core_version: 3.0.2
+org_path: null
+repository_type: pipeline
+template:
+  author: Erin Young
+  description: reference free assembly and typing
+  force: true
+  is_nfcore: false
+  name: Grandeur
+  org: UPHL-BioNGS/Grandeur
+  outdir: .
+  skip_features: null
+  version: 1.0.0
+update: null
