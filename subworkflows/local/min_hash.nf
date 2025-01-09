@@ -1,7 +1,5 @@
 include { MASH_SKETCH as SKETCH }  from '../../modules/local/mash'
 include { MASH_DIST   as DIST   }  from '../../modules/local/mash'
-include { MASH_ERR    as ERR    }  from '../../modules/local/local'
-//include { mash_screen } from '../modules/local/mash' addParams(params)
 
 workflow MIN_HASH {
     take:
@@ -10,39 +8,24 @@ workflow MIN_HASH {
         ch_mash_db
 
     main:
-        ch_mash_sketches = Channel.empty()
         ch_versions      = Channel.empty()
 
-        if ( params.sample_sheet || params.reads || params.sra_accessions ) {
-            SKETCH(ch_reads)
+        SKETCH(ch_reads.mix(ch_fastas))
 
-            ERR(SKETCH.out.err)
+        SKETCH.out.summary
+            .collectFile(
+                storeDir: "${params.outdir}/mash/",
+                keepHeader: true,
+                sort: { file -> file.text },
+                name: "mash_err_summary.csv")
+            .set { mash_err_summary }
 
-            ch_mash_sketches = ch_mash_sketches.mix(SKETCH.out.msh.filter({it[1].size() > 0 }))
-
-            ERR.out.summary
-                .collectFile(
-                    storeDir: "${params.outdir}/mash/",
-                    keepHeader: true,
-                    sort: { file -> file.text },
-                    name: "mash_err_summary.csv")
-                .set { mash_err_summary }
-
-            ch_versions = ch_versions.mix(SKETCH.out.versions.first())
-        } else {
-            mash_err_summary = Channel.empty()
-        }
-
-        if ( params.fastas || params.fasta_list ) {
-            SKETCH(ch_fastas)
-            ch_mash_sketches = ch_mash_sketches.mix(SKETCH.out.msh.filter({it[1].size() > 0 }))
-            ch_versions      = ch_versions.mix(SKETCH.out.versions.first())
-        }
+        ch_versions = ch_versions.mix(SKETCH.out.versions.first())
 
         if (params.mash_db) {
-            DIST(ch_mash_sketches.combine(ch_mash_db))
+            DIST(SKETCH.out.msh.filter({it[1].size() > 0 }).combine(ch_mash_db))
         } else {
-            DIST(ch_mash_sketches.map{it -> tuple(it[0], it[1], null)})
+            DIST(SKETCH.out.msh.filter({it[1].size() > 0 }).map{it -> tuple(it[0], it[1], null)})
         }
 
         DIST.out.results
