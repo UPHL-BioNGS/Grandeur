@@ -11,6 +11,7 @@ process SHIGATYPER {
   path "shigatyper/*_shigatyper-hits.tsv", optional: true, emit: collect
   path "logs/${task.process}/*.log", emit: log
   path "versions.yml", emit: versions
+  val meta, emit: meta
 
   when:
   task.ext.when == null || task.ext.when

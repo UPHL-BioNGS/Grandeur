@@ -1,7 +1,7 @@
 process CORE_GENOME_EVALUATION {
   tag         "Evaluating core genome"
   label       "process_single"
-  container   'quay.io/biocontainers/pandas:1.5.2'
+  container   'staphb/pandas:2.2.3'
 
   input:
   tuple file(fasta), file(summary), file(script)
@@ -10,6 +10,9 @@ process CORE_GENOME_EVALUATION {
   tuple file(fasta), env("num_samples"), env("num_core_genes"), emit: evaluation
   path "core_genome_evaluation/core_genome_evaluation.csv", emit: for_multiqc
   path "logs/${task.process}/*.log"                       , emit: log_files
+
+  when:
+  task.ext.when == null || task.ext.when
 
   script:
   """
@@ -27,7 +30,7 @@ process CORE_GENOME_EVALUATION {
 process DOWNLOAD_SRA {
   tag           "${SRR}"
   label         "process_single"
-  container     'quay.io/biocontainers/pandas:1.5.2'
+  container     'staphb/pandas:2.2.3'
   
   input:
   val(SRR)
@@ -58,13 +61,16 @@ process DOWNLOAD_SRA {
 process JSON_CONVERT {
   tag       "${meta.id}"
   label     "process_single"
-  container 'quay.io/biocontainers/pandas:1.5.2'
+  container 'staphb/pandas:2.2.3'
 
   input:
   tuple val(meta), val(analysis), file(json), file(script)
 
   output:
   path "${analysis}/*_${analysis}*", emit: collect
+
+  when:
+  task.ext.when == null || task.ext.when
 
   script:
   """
@@ -79,7 +85,7 @@ process JSON_CONVERT {
 process MQC_PREP {
   tag           "prepping files"
   label         "process_single"
-  container     'quay.io/biocontainers/pandas:1.5.2'
+  container     'staphb/pandas:2.2.3'
   
   input:
   file(input)
@@ -100,7 +106,7 @@ process MQC_PREP {
 process NAMES {
   tag           "${meta.id}"
   label         "process_single"
-  container     'quay.io/biocontainers/pandas:1.5.2'
+  container     'staphb/pandas:2.2.3'
   
   input:
   tuple val(meta), file(input)
@@ -125,7 +131,7 @@ process NAMES {
 process REFERENCES {
   tag       "Preparing references"
   label     "process_single"
-  container 'quay.io/uphl/grandeur_ref:2024-06-26'
+  container 'staphb/grandeur_ref:4.5'
 
   output:
   path "ref/*", emit: fastas
@@ -144,7 +150,7 @@ process REFERENCES {
 process SPECIES {
   tag           "Creating list of species"
   label         "process_single"
-  container     'quay.io/biocontainers/pandas:1.5.2'
+  container     'staphb/pandas:2.2.3'
   
   input:
   file(results)
@@ -156,7 +162,6 @@ process SPECIES {
   task.ext.when == null || task.ext.when
 
   script:
-
   """
     mkdir -p datasets
 
@@ -181,19 +186,17 @@ process SPECIES {
 
 process SUMMARY {
   tag           "Creating summary files"
-  container     'quay.io/biocontainers/pandas:1.5.2'
+  container     'staphb/pandas:2.2.3'
   label         "process_single"
-  time          '10m'
-  //errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   file(input)
 
   output:
-  path "grandeur_summary.tsv"                 , emit: summary_tsv
-  path "grandeur_summary.txt"                 , emit: summary_txt
-  path "summary/grandeur_extended_summary.tsv", emit: extended_tsv
-  path "summary/grandeur_extended_summary.txt", emit: extended_txt
+  path "grandeur_summary.tsv"                 , emit: summary_tsv, optional: true
+  path "grandeur_summary.txt"                 , emit: summary_txt, optional: true
+  path "summary/grandeur_extended_summary.tsv", emit: extended_tsv, optional: true
+  path "summary/grandeur_extended_summary.txt", emit: extended_txt, optional: true
 
   when:
   task.ext.when == null || task.ext.when

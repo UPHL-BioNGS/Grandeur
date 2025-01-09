@@ -12,6 +12,7 @@ process SEROTYPEFINDER {
   path "serotypefinder/*_serotypefinder.tsv", emit: collect, optional: true
   path "logs/${task.process}/*.log"         , emit: log
   path "versions.yml"                       , emit: versions
+  val meta                                  , emit: meta
 
   when:
   task.ext.when == null || task.ext.when

@@ -8,10 +8,11 @@ process SEQSERO2 {
   tuple val(meta), file(file)
 
   output:
-  path "seqsero2/*/*"                                    , emit: files
-  path "seqsero2/*/SeqSero_result.tsv"                   , emit: collect
+  path "seqsero2/*/*", emit: files
+  path "seqsero2/*/SeqSero_result.tsv", emit: collect
   path "logs/${task.process}/*.log", emit: log
-  path  "versions.yml"                          , emit: versions
+  path  "versions.yml", emit: versions
+  val meta, emit: meta
 
   when:
   task.ext.when == null || task.ext.when

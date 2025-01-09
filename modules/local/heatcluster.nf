@@ -7,7 +7,7 @@ process HEATCLUSTER {
   file(matrix)
 
   output:
-  path "heatcluster/*", optional : true
+  path "heatcluster/*", optional : true, emit: files
   path "heatcluster/heatcluster.png", optional : true, emit: for_multiqc
   path "logs/${task.process}/*.log", emit: log_files
   path "versions.yml", emit: versions

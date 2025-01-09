@@ -9,6 +9,7 @@ process MENINGOTYPE {
   output:
   path "meningotype/*.tsv", emit: files
   path "versions.yml", emit: versions
+  val meta, emit: meta
 
   when:
   task.ext.when == null || task.ext.when

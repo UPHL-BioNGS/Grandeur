@@ -11,6 +11,7 @@ process BAKTA {
   path "bakta/*/*.txt"              , emit: for_multiqc
   path "gff/*.gff"                  , emit: gff, optional: true
   path "logs/${task.process}/*.log" , emit: log
+  tuple val(meta)                   , emit: meta
   path "versions.yml"               , emit: versions
 
   when:

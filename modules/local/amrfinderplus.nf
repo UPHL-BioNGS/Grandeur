@@ -8,6 +8,7 @@ process AMRFINDER {
 
   output:
   path "amrfinder/*_amrfinder.txt", emit: collect, optional: true
+  val meta, emit: meta
   path "logs/*/*.log", emit: log
   path "versions.yml", emit: versions
 

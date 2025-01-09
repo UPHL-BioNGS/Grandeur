@@ -10,6 +10,7 @@ process ELGATO {
   path "elgato/*/possible_mlsts.txt", emit: collect
   path "logs/${task.process}/*.log" , emit: log
   path "versions.yml"               , emit: versions
+  tuple val(meta)                   , emit: meta
 
   when:
   task.ext.when == null || task.ext.when

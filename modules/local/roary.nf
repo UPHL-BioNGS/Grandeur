@@ -13,6 +13,9 @@ process ROARY {
     path "logs/${task.process}/${task.process}.${workflow.sessionId}.log"                , emit: log_files
     path "versions.yml"                                                                  , emit: versions
 
+    when:
+    task.ext.when == null || task.ext.when
+
     script:
     def args       = task.ext.args   ?: ''
     def prefix     = task.ext.prefix ?: 'roary'

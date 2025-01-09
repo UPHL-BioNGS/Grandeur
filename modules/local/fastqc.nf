@@ -12,6 +12,7 @@ process FASTQC {
   path "fastqc/*_summary.csv"      , emit: collect
   path "logs/${task.process}/*.log", emit: log_files
   path "versions.yml"              , emit: versions
+  val meta                         , emit: meta
 
   when:
   task.ext.when == null || task.ext.when

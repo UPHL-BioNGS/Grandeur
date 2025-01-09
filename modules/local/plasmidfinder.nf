@@ -12,6 +12,7 @@ process PLASMIDFINDER {
   path "plasmidfinder/*_plasmidfinder.tsv", emit: collect, optional: true
   path "logs/${task.process}/*.log"       , emit: log
   path "versions.yml"                     , emit: versions
+  val meta                                , emit: meta
 
   when:
   task.ext.when == null || task.ext.when

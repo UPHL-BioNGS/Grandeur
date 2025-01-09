@@ -9,6 +9,7 @@ process MLST {
   output:
   path "mlst/*_mlst.tsv", emit: collect
   path "versions.yml"   , emit: versions
+  val meta              , emit: meta
 
   when:
   task.ext.when == null || task.ext.when
