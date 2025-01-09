@@ -54,7 +54,7 @@ process VERSIONS {
   script:
   """
     cat <<-END_VERSIONS >> versions.yml
-    "report:multiqc":
+    "REPORT:MULTIQC":
         multiqc: \$( multiqc --version | sed -e "s/multiqc, version //g" )
     END_VERSIONS
 
