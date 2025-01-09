@@ -62,6 +62,12 @@
           "default": [],
           "hidden": true,
           "description": "list of accessions to download from genomes"
+        },
+        "genome_sizes": {
+          "type": "string",
+          "default": null,
+          "hidden": true,
+          "description": "text of genome sizes"
         }
       }
     },
