@@ -7,7 +7,7 @@ process DRPRG {
   tuple val(meta), file(contigs)
 
   output:
-  tuple val(meta), file("drprg/*/*.drprg.json"), emit: json
+  tuple val(meta), val("drprg"), file("drprg/*/*.drprg.json"), emit: json
   path "drprg/*/*", emit: results
   path "logs/${task.process}/*.log", emit: log
   path "versions.yml", emit: versions
@@ -27,7 +27,7 @@ process DRPRG {
       -i ${contigs} \
       -o drprg/${prefix} \
       --sample ${prefix} \
-      | tee =a \$log_file
+      | tee -a \$log_file
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
