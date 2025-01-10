@@ -11,7 +11,7 @@ process EMMTYPER {
   path "emmtyper/*"                , emit: everything
   path "logs/${task.process}/*.log", emit: log
   path "versions.yml"              , emit: versions
-  tuple val(meta)                  , emit: meta
+  val meta                         , emit: meta
 
   when:
   task.ext.when == null || task.ext.when
