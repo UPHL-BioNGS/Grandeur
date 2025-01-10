@@ -32,6 +32,8 @@ process SPADES {
 
     if [ -f "spades/${prefix}/contigs.fasta" ] ; then cp spades/${prefix}/contigs.fasta contigs/${prefix}_contigs.fa ; fi
     
+    rm -rf spades/${prefix}/tmp
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         spades: \$(spades.py --version 2>&1 | sed 's/^.*SPAdes genome assembler v//; s/ .*\$//')
