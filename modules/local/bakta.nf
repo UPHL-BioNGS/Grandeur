@@ -7,18 +7,18 @@ process BAKTA {
   tuple val(meta), file(contigs), val(organism)
 
   output:
-  path "bakta/*/*"                  , emit: prokka_files
-  path "bakta/*/*.txt"              , emit: for_multiqc
-  path "gff/*.gff"                  , emit: gff, optional: true
-  path "logs/${task.process}/*.log" , emit: log
-  tuple val(meta)                   , emit: meta
-  path "versions.yml"               , emit: versions
+  path "bakta/*"      , emit: prokka_files
+  path "bakta/*.txt"  , emit: for_multiqc
+  path "gff/*.gff3"   , emit: gff, optional: true
+  path "logs/*/*.log" , emit: log
+  val meta            , emit: meta
+  path "versions.yml" , emit: versions
 
   when:
   task.ext.when == null || task.ext.when
 
   script:
-  def args   = task.ext.args   ?: '--mincontiglen 500 --compliant'
+  def args   = task.ext.args   ?: '--min-contig-length 500 --compliant'
   def prefix = task.ext.prefix ?: "${meta.id}"
   def gen_sp = organism ? "--genus ${organism[0]} --species ${organism[1]}" : ""
   """
@@ -33,7 +33,7 @@ process BAKTA {
       --force ${contigs} \
       | tee -a \$log_file
 
-    cp bakta/${prefix}/${prefix}.gff gff/${prefix}.gff
+    cp bakta/${prefix}.gff3 gff/${prefix}.gff3
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
