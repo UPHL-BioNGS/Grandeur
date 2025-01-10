@@ -34,26 +34,28 @@ workflow PHYLOGENETIC_ANALYSIS {
         .unique()
         .set { ch_representative }
 
-      for_prokka = ch_contigs.join( ch_organism, by: 0, remainder: true).mix(ch_representative)
+      ch_preannotation = ch_contigs.join( ch_organism, by: 0, remainder: true).mix(ch_representative)
     } else {
-      for_prokka = ch_contigs.join( ch_organism, by: 0, remainder: true)
+      ch_preannotation = ch_contigs.join( ch_organism, by: 0, remainder: true)
     }
   } else {
     // skipping ani and top hit
     ch_organism = Channel.empty() 
-    for_prokka  = ch_contigs.map{ it -> tuple(it[0], it[1], null)}
+    ch_preannotation  = ch_contigs.map{ it -> tuple(it[0], it[1], null)}
   }
 
   if (params.annotator == 'prokka' ) {
-    PROKKA(for_prokka.unique())
+    PROKKA(ch_preannotation.unique())
+    
     ch_versions = ch_versions.mix(PROKKA.out.versions.first())
     ch_multiqc  = ch_multiqc.mix(PROKKA.out.for_multiqc)
-    ch_gff = PROKKA.out.gff
+    ch_gff      = PROKKA.out.gff
   } else if (params.annotator == 'bakta') {
-    BAKTA(for_prokka.unique())
+    BAKTA(ch_preannotation.unique())
+    
     ch_versions = ch_versions.mix(BAKTA.out.versions.first())
     ch_multiqc  = ch_multiqc.mix(BAKTA.out.for_multiqc)
-    ch_gff = BAKTA.out.gff
+    ch_gff      = BAKTA.out.gff
 
   } else {
     ch_gff = Channel.empty()
@@ -64,13 +66,13 @@ workflow PHYLOGENETIC_ANALYSIS {
     PANAROO(ch_gff.unique().collect())
 
     ch_core     = PANAROO.out.core_gene_alignment
-    ch_versions = ch_versions.mix(PANAROO.out.versions.first())
+    ch_versions = ch_versions.mix(PANAROO.out.versions)
 
   } else if (params.aligner == 'roary') {
-    ROARY(PROKKA.out.gff.unique().collect())
+    ROARY(ch_gff.unique().collect())
 
     ch_core     = ROARY.out.core_gene_alignment
-    ch_versions = ch_versions.mix(ROARY.out.versions.first())
+    ch_versions = ch_versions.mix(ROARY.out.versions)
   } else {
     ch_core     = Channel.empty()
   }
@@ -88,11 +90,11 @@ workflow PHYLOGENETIC_ANALYSIS {
   // TODO : if channel doesn't go to to iqtree2, then send to mashtree
 
   // phylogenetic trees
-  MASHTREE(for_prokka.map{it -> if (it) { tuple( it[1]) }}.collect())
-  ch_versions = ch_versions.mix(MASHTREE.out.versions.first())
+  MASHTREE(ch_preannotation.map{it -> if (it) { tuple( it[1]) }}.collect())
+  ch_versions = ch_versions.mix(MASHTREE.out.versions)
     
   IQTREE2(ch_core_genome)
-  ch_versions = ch_versions.mix(IQTREE2.out.versions.first())
+  ch_versions = ch_versions.mix(IQTREE2.out.versions)
 
   PHYTREEVIZ(IQTREE2.out.newick.mix(MASHTREE.out.newick))
   ch_versions = ch_versions.mix(PHYTREEVIZ.out.versions.first())
@@ -100,11 +102,11 @@ workflow PHYLOGENETIC_ANALYSIS {
 
   // SNP matrix
   SNPDISTS(CORE_GENOME_EVALUATION.out.evaluation.map{ it -> it[0] })
-  ch_versions = ch_versions.mix(SNPDISTS.out.versions.first())
+  ch_versions = ch_versions.mix(SNPDISTS.out.versions)
   ch_multiqc  = ch_multiqc.mix(SNPDISTS.out.snp_matrix)
 
   HEATCLUSTER(SNPDISTS.out.snp_matrix)
-  ch_versions = ch_versions.mix(HEATCLUSTER.out.versions.first())
+  ch_versions = ch_versions.mix(HEATCLUSTER.out.versions)
   ch_multiqc  = ch_multiqc.mix(HEATCLUSTER.out.for_multiqc)
 
   emit:
