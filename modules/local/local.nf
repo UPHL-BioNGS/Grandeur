@@ -19,7 +19,7 @@ process CORE_GENOME_EVALUATION {
     mkdir -p core_genome_evaluation logs/${task.process}
     log_file=logs/${task.process}/${task.process}.${workflow.sessionId}.log
 
-    python ${script} | tee -a \$log_file
+    python3 ${script} | tee -a \$log_file
 
     num_samples=\$(wc -l core_genome_evaluation.csv | awk '{print \$1}' )
     num_core_genes=\$(cut -f 3 core_genome_evaluation.csv -d "," | tail -n 1 | cut -f 1 -d "." )
@@ -30,7 +30,7 @@ process CORE_GENOME_EVALUATION {
 process DOWNLOAD_SRA {
   tag           "${SRR}"
   label         "process_single"
-  container     'staphb/pandas:2.2.3'
+  container     'staphb/ncbi-datasets:16.35.0'
   
   input:
   val(SRR)
@@ -205,6 +205,6 @@ process SUMMARY {
   """
     mkdir -p summary
 
-    python summary.py
+    python3 summary.py
   """
 }
