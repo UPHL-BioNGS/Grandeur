@@ -89,7 +89,7 @@ workflow GRANDEUR {
 
         // determining organisms in sample
         AVERAGE_NUCLEOTIDE_IDENTITY(
-            ch_for_summary.mix(MIN_HASH.out.for_summary).collect(),
+            ch_for_summary.collect(),
             ch_contigs,
             ch_fastani_genomes.ifEmpty([]),
             dataset_script)
