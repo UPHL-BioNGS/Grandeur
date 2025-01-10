@@ -22,7 +22,7 @@ jobs:
           docker --version
           
           mkdir fastas 
-          for accession in GCA_022869645.1
+          for accession in GCA_022869645.1_ASM2286964v1
           do
             all=$(echo $accession | cut -f 2 -d "_")
             fir=$(echo $all | cut -c 1-3)
