@@ -8,7 +8,7 @@ process PANAROO {
 
   output:
   path "panaroo/*"                                                                         , emit: files
-  tuple path("panaroo/core_gene_alignment.aln"), path("panaroo/gene_presence_absence.Rtab"), emit: core_gene_alignment, optional: true
+  tuple path("panaroo/core_gene_alignment.aln"), path("panaroo/gene_presence_absence.Rtab"), emit: core_gene_alignment
   path "logs/${task.process}/*.log"                                                        , emit: log_files
   path "versions.yml"                                                                      , emit: versions
 
@@ -20,14 +20,20 @@ process PANAROO {
   def prefix     = task.ext.prefix ?: 'panaroo'
   def assemblies = gff.join(' ')
   """
-    mkdir -p logs/${task.process}
+    mkdir -p input logs/${task.process}
     log_file=logs/${task.process}/${task.process}.${workflow.sessionId}.log
+
+    for assembly in ${assemblies}
+    do
+      cp \$assembly input/.
+    done
+
+    ls input/* > input_genomes.txt
 
     panaroo ${args} \
       -t ${task.cpus} \
       -o ${prefix} \
-      -i ${assemblies} \
-      -a core \
+      -i input_genomes.txt \
       | tee -a \$log_file
 
     cat <<-END_VERSIONS > versions.yml
