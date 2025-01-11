@@ -34,7 +34,7 @@ jobs:
 
       - name: Check MSA files
         run: |
-          for file in grandeur/*/summary_statistics.txt grandeur/iqtree2/iqtree.treefile.nwk grandeur/snp-dists/snp_matrix.txt
+          for file in grandeur/*/summary_statistics.txt grandeur/iqtree2/iqtree.treefile.nwk grandeur/snp-dists/snp_matrix.txt grandeur/*/*gff*
           do
             head $file
             wc -l $file
