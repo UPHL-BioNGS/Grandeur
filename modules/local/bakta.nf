@@ -2,6 +2,7 @@ process BAKTA {
   tag           "${meta.id}"
   label         "process_high"
   container     'staphb/bakta:1.9.4-5.1-light'
+  time    '30m'
 
   input:
   tuple val(meta), file(contigs), val(organism)
@@ -9,7 +10,8 @@ process BAKTA {
   output:
   path "bakta/*"      , emit: prokka_files
   path "bakta/*.txt"  , emit: for_multiqc
-  path "gff/*.gff3"   , emit: gff, optional: true
+  path "bakta/*.gff3" , emit: gff, optional: true
+  path "bakta/*.gbff3", emit: gbff, optional: true
   path "logs/*/*.log" , emit: log
   val meta            , emit: meta
   path "versions.yml" , emit: versions
@@ -32,8 +34,6 @@ process BAKTA {
       ${gen_sp} \
       --force ${contigs} \
       | tee -a \$log_file
-
-    cp bakta/${prefix}.gff3 gff/${prefix}.gff3
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
