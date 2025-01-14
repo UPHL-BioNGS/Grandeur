@@ -49,30 +49,27 @@ workflow PHYLOGENETIC_ANALYSIS {
     
     ch_versions = ch_versions.mix(PROKKA.out.versions.first())
     ch_multiqc  = ch_multiqc.mix(PROKKA.out.for_multiqc)
-    ch_inroary  = PROKKA.out.gff
-    ch_inpanaro = PROKKA.out.gff
+    ch_gff      = PROKKA.out.gff
   } else if (params.annotator == 'bakta') {
     BAKTA(ch_preannotation.unique())
     
     ch_versions = ch_versions.mix(BAKTA.out.versions.first())
     ch_multiqc  = ch_multiqc.mix(BAKTA.out.for_multiqc)
-    ch_inroary  = BAKTA.out.gff
-    ch_inpanaro = BAKTA.out.gbff
+    ch_gff      = BAKTA.out.gff
 
   } else {
-    ch_inroary  = Channel.empty()
-    ch_inpanaro = Channel.empty()
+    ch_gff = Channel.empty()
 
   }
 
   if (params.aligner == 'panaroo') {
-    PANAROO(ch_inpanaro.unique().collect())
+    PANAROO(ch_gff.unique().collect())
 
     ch_core     = PANAROO.out.core_gene_alignment
     ch_versions = ch_versions.mix(PANAROO.out.versions)
 
   } else if (params.aligner == 'roary') {
-    ROARY(ch_inroary.unique().collect())
+    ROARY(ch_gff.unique().collect())
 
     ch_core     = ROARY.out.core_gene_alignment
     ch_versions = ch_versions.mix(ROARY.out.versions)
