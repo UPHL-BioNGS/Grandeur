@@ -8,10 +8,9 @@ process BAKTA {
   tuple val(meta), file(contigs), val(organism)
 
   output:
-  path "bakta/*"      , emit: prokka_files
+  path "bakta/*"      , emit: bakta_files
   path "bakta/*.txt"  , emit: for_multiqc
-  path "bakta/*.gff3" , emit: gff, optional: true
-  path "bakta/*.gbff3", emit: gbff, optional: true
+  path "gff/*gff"     , emit: gff, optional: true
   path "logs/*/*.log" , emit: log
   val meta            , emit: meta
   path "versions.yml" , emit: versions
@@ -34,6 +33,13 @@ process BAKTA {
       ${gen_sp} \
       --force ${contigs} \
       | tee -a \$log_file
+
+    if [ -f bakta/${prefix}.gff3 ]
+    then
+      cp bakta/${prefix}.gff3 gff/${prefix}.gff
+      echo "##FASTA" >> gff/${prefix}.gff
+      cat bakta/${prefix}.fna >> gff/${prefix}.fna
+    fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
