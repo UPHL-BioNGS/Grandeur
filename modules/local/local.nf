@@ -27,37 +27,6 @@ process CORE_GENOME_EVALUATION {
   """
 }
 
-process DOWNLOAD_SRA {
-  tag           "${SRR}"
-  label         "process_single"
-  container     'staphb/ncbi-datasets:16.35.0'
-  
-  input:
-  val(SRR)
-
-  output:
-  tuple val(SRR), file("reads/${SRR}_{1,2}.fastq.gz"), emit: fastq
-  path "logs/${task.process}/*.log", emit: log
-
-  when:
-  task.ext.when == null || task.ext.when
-
-  script:
-  """
-    mkdir -p reads logs/${task.process}
-    log_file=logs/${task.process}/${SRR}.${workflow.sessionId}.log
-
-    echo "fasterq-dump failed. Attempting download from ENA" | tee -a \$log_file
-      
-    sra=${SRR}
-
-    wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/\${sra:0:6}/0\${sra: -2}/${SRR}/${SRR}_1.fastq.gz
-    wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/\${sra:0:6}/0\${sra: -2 }/${SRR}/${SRR}_2.fastq.gz
-
-    mv *fastq.gz reads/.
-  """
-}
-
 process JSON_CONVERT {
   tag       "${meta.id}"
   label     "process_single"
