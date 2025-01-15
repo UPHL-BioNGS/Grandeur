@@ -9,7 +9,7 @@ process BAKTA {
 
   output:
   path "bakta/*"      , emit: bakta_files
-  path "bakta/*.txt"  , emit: for_multiqc
+  path "bakta/*.txt"  , emit: for_multiqc, optional: true
   path "gff/*gff"     , emit: gff, optional: true
   path "logs/*/*.log" , emit: log
   val meta            , emit: meta
@@ -38,7 +38,7 @@ process BAKTA {
     then
       cp bakta/${prefix}.gff3 gff/${prefix}.gff
       echo "##FASTA" >> gff/${prefix}.gff
-      cat bakta/${prefix}.fna >> gff/${prefix}.fna
+      cat bakta/${prefix}.fna >> gff/${prefix}.gff
     fi
 
     cat <<-END_VERSIONS > versions.yml
