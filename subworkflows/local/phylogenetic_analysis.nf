@@ -40,7 +40,6 @@ workflow PHYLOGENETIC_ANALYSIS {
     }
   } else {
     // skipping ani and top hit
-    ch_organism = Channel.empty() 
     ch_preannotation  = ch_contigs.map{ it -> tuple(it[0], it[1], null)}
   }
 
