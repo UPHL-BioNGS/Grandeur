@@ -8,7 +8,6 @@ process ROARY {
 
     output:
     path "roary/*"                                                                       , emit: files
-    path "roary/fixed_input_files/*"                                                     , emit: roary_input_files
     tuple path("roary/core_gene_alignment.aln"), path("roary/gene_presence_absence.Rtab"), emit: core_gene_alignment, optional: true
     path "logs/${task.process}/${task.process}.${workflow.sessionId}.log"                , emit: log_files
     path "versions.yml"                                                                  , emit: versions
