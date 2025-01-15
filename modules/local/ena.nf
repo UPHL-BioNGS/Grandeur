@@ -9,6 +9,7 @@ process ENA_DOWNLOAD {
     output:
     tuple val(SRR), file("reads/${SRR}_{1,2}.fastq.gz"), emit: fastq
     path "logs/${task.process}/*.log", emit: log
+    path "versions.yml", emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -21,5 +22,10 @@ process ENA_DOWNLOAD {
     enaDataGet -f fastq ${SRR}
 
     mv */*fastq.gz reads/.
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        enaDataGet: \$( enaDataGet -v | awk '{print \$NF}' )
+    END_VERSIONS
     """
 }
