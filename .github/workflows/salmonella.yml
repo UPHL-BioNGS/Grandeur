@@ -35,7 +35,7 @@ jobs:
 
           ls fastas/* > fastas.txt
 
-          nextflow run . -profile docker -c .github/workflows/github_actions.config --fasta_list fastas.txt
+          nextflow run . -profile docker -c .github/workflows/github_actions.config --fasta_list fastas.txt --publish_dir_mode link
 
           cat grandeur/grandeur_summary.tsv
           cat grandeur/summary/software_versions.yml

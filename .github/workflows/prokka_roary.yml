@@ -30,7 +30,7 @@ jobs:
           mkdir fastas
           mv *fna fastas/.
 
-          nextflow run . -profile docker,just_msa -c .github/workflows/github_actions.config --fastas fastas --annotator prokka --aligner roary
+          nextflow run . -profile docker,just_msa -c .github/workflows/github_actions.config --fastas fastas --annotator prokka --aligner roary --publish_dir_mode link
 
       - name: Check MSA files
         run: |

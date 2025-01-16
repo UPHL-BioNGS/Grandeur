@@ -30,11 +30,11 @@ jobs:
           mkdir fastas
           mv *fna fastas/.
 
-          nextflow run . -profile docker,just_msa -c .github/workflows/github_actions.config --fastas fastas --aligner roary
+          nextflow run . -profile docker,just_msa -c .github/workflows/github_actions.config --fastas fastas --aligner roary --publish_dir_mode link
 
       - name: Check MSA files
         run: |
-          for file in grandeur/*/summary_statistics.txt grandeur/iqtree2/iqtree.treefile.nwk grandeur/snp-dists/snp_matrix.txt grandeur/*/*gff*
+          for file in grandeur/*/summary_statistics.txt grandeur/iqtree2/iqtree.treefile.nwk grandeur/snp-dists/snp_matrix.txt grandeur/gff/*gff
           do
             head $file
             wc -l $file
