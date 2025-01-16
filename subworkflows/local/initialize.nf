@@ -286,8 +286,9 @@ workflow INITIALIZE {
       ch_sra_accessions.ifEmpty([]), 
       ch_genome_accessions.ifEmpty([])
     )
-    ch_reads  = ch_reads.mix(TEST.out.fastq)
-    ch_fastas = ch_fastas.mix(TEST.out.fasta)
+    ch_reads    = ch_reads.mix(TEST.out.fastq)
+    ch_fastas   = ch_fastas.mix(TEST.out.fasta)
+    ch_versions = TEST.out.versions
   }
 
   emit:
