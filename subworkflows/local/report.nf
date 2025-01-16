@@ -39,5 +39,6 @@ workflow REPORT {
         SUMMARY(for_summary.mix(ch_names).mix(MULTIQC.out.data_folder).collect())
 
     emit:
-        SUMMARY.out.extended_tsv
+        summary  = SUMMARY.out.extended_tsv
+        versions = ch_versions
 }
