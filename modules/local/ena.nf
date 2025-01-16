@@ -8,7 +8,7 @@ process ENA_DOWNLOAD {
 
     output:
     tuple val(SRR), file("reads/${SRR}_{1,2}.fastq.gz"), emit: fastq
-    path "logs/${task.process}/*.log", emit: log
+    path "logs/*/*.log", emit: log
     path "versions.yml", emit: versions
 
     when:
@@ -19,7 +19,10 @@ process ENA_DOWNLOAD {
     mkdir -p reads logs/${task.process}
     log_file=logs/${task.process}/${SRR}.${workflow.sessionId}.log
         
-    enaDataGet -f fastq ${SRR}
+    enaDataGet \
+        -f fastq \
+        ${SRR} \
+        | tee -a \$log_file
 
     mv */*fastq.gz reads/.
 
