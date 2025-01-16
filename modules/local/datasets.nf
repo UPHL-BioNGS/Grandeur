@@ -78,7 +78,6 @@ process DATASETS_DOWNLOAD {
       accession=\$(echo \$fasta | cut -f 4 -d / | cut -f 1,2 -d _ )
       organism=\$(head -n 1 \$fasta | awk '{print \$2 "_" \$3 }' | sed 's/,//g' | sed 's/\\]//g' | sed 's/\\[//g' )
       cat \$fasta | sed 's/ /_/g' | sed 's/,//g' > genomes/\${organism}_\${accession}_ds.fna
-      gzip genomes/\${organism}_\${accession}_ds.fna
     done  
 
     # removing MAGS
