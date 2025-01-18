@@ -23,7 +23,7 @@ jobs:
           
       - name: Check contig files
         run: |
-          for file in grandeur/contigs/*_contigs.fa
+          for file in grandeur/grandeur_summary.tsv
           do
             head $file
             wc -l $file
