@@ -19,7 +19,7 @@ process BAKTA {
   task.ext.when == null || task.ext.when
 
   script:
-  def args   = task.ext.args   ?: '--min-contig-length 500 --compliant'
+  def args   = task.ext.args   ?: '--min-contig-length 500 --compliant --skip-plot'
   def prefix = task.ext.prefix ?: "${meta.id}"
   def gen_sp = organism ? "--genus ${organism[0]} --species ${organism[1]}" : ""
   """
