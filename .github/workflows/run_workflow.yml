@@ -10,6 +10,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
             
+      - name: Clean up Disk space
+        uses: jlumbroso/free-disk-space@main
+            
       - name: Install Nextflow
         run: |
           wget -qO- get.nextflow.io | bash
@@ -27,7 +30,7 @@ jobs:
           wget -q ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR283/002/SRR2838702/SRR2838702_2.fastq.gz
           mv *fastq.gz reads/.
           
-          nextflow run . -profile docker -c .github/workflows/github_actions.config --reads reads
+          nextflow run . -profile docker -c .github/workflows/github_actions.config --reads reads --publish_dir_mode link
           cat grandeur/grandeur_summary.tsv
           cat grandeur/summary/software_versions.yml
           ls  grandeur/multiqc/multiqc_report.html
@@ -39,3 +42,6 @@ jobs:
             head $file
             wc -l $file
           done
+
+      - name: tree
+        run: tree grandeur*

@@ -1,11 +1,7 @@
-process mashtree {
+process MASHTREE {
   tag           "Phylogenetic analysis"
   label         "process_medium"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/mashtree:1.4.6'
-  stageInMode 'copy'
-  time      '4h'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   file(assemblies)
@@ -19,7 +15,7 @@ process mashtree {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def prefix = task.ext.prefix ?: "mashtree"
   def args   = task.ext.args   ?: "--outmatrix mashtree/${prefix}.txt"
   def input  = assemblies.join(" ")

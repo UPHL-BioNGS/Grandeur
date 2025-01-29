@@ -1,10 +1,8 @@
-process plasmidfinder {
+process PLASMIDFINDER {
   tag           "${meta.id}"
   label         "process_medium"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/plasmidfinder:2.1.6_2024-03-07'
-  time          '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+
 
   input:
   tuple val(meta), file(file), file(script)
@@ -14,11 +12,12 @@ process plasmidfinder {
   path "plasmidfinder/*_plasmidfinder.tsv", emit: collect, optional: true
   path "logs/${task.process}/*.log"       , emit: log
   path "versions.yml"                     , emit: versions
+  val meta                                , emit: meta
 
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args   = task.ext.args   ?: ''
   def prefix = task.ext.prefix ?: "${meta.id}"
   """
@@ -32,6 +31,8 @@ process plasmidfinder {
       | tee -a \$log_file
 
     python3 ${script} plasmidfinder/${prefix}/results_tab.tsv plasmidfinder/${prefix}_plasmidfinder.tsv plasmidfinder ${prefix}
+
+    rm -rf plasmidfinder/${prefix}/tmp
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -1,10 +1,7 @@
-process blobtools_create {
+process BLOBTOOLS_CREATE {
   tag           "${meta.id}"
   label         "process_medium"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'chrishah/blobtools:v1.1.1'
-  time          '45m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   tuple val(meta), file(contig), file(bam), file(blastn)
@@ -18,7 +15,7 @@ process blobtools_create {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args   = task.ext.args   ?: ''
   def prefix = task.ext.prefix ?: "${meta.id}"
   """
@@ -39,12 +36,10 @@ process blobtools_create {
   """
 }
 
-process blobtools_view {
+process BLOBTOOLS_VIEW {
   tag           "${meta.id}"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
+  label         "process_medium"
   container     'chrishah/blobtools:v1.1.1'
-  time          '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   tuple val(meta), file(json)
@@ -57,7 +52,7 @@ process blobtools_view {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args   = task.ext.args   ?: ''
   def prefix = task.ext.prefix ?: "${meta.id}"
   """
@@ -76,12 +71,10 @@ process blobtools_view {
   """
 }
 
-process blobtools_plot {
+process BLOBTOOLS_PLOT {
   tag           "${meta.id}"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
+  label         "process_medium"
   container     'chrishah/blobtools:v1.1.1'
-  time          '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   tuple val(meta), file(json)
@@ -96,7 +89,7 @@ process blobtools_plot {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args   = task.ext.args   ?: '--format png -r species'
   def prefix = task.ext.prefix ?: "${meta.id}"
   """

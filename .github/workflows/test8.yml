@@ -1,0 +1,36 @@
+name: Test Grandeur workflow profile test8
+
+on: [pull_request, workflow_dispatch]
+
+jobs:
+
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+            
+      - name: Clean up Disk space
+        uses: jlumbroso/free-disk-space@main
+            
+      - name: Install Nextflow
+        run: |
+          wget -qO- get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+
+          nextflow -version
+          
+      - name: Run Grandeur
+        run: |
+          nextflow run . -profile docker,test8 -c .github/workflows/github_actions.config --publish_dir_mode link
+          
+      - name: Check contig files
+        run: |
+          for file in grandeur/grandeur_summary.tsv
+          do
+            head $file
+            wc -l $file
+          done      
+
+      - name: tree
+        run: tree grandeur*

@@ -1,12 +1,8 @@
-process shigatyper {
+process SHIGATYPER {
   tag           "${meta.id}"
   label         "process_medium"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/shigatyper:2.0.5'
-  stageInMode   'copy'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  time          '10m'
-  
+
   input:
   tuple val(meta), file(input), file(script)
 
@@ -15,11 +11,12 @@ process shigatyper {
   path "shigatyper/*_shigatyper-hits.tsv", optional: true, emit: collect
   path "logs/${task.process}/*.log", emit: log
   path "versions.yml", emit: versions
+  val meta, emit: meta
 
   when:
-  (task.ext.when == null || task.ext.when)
+  task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args = task.ext.args ?: ''
   def prefix = task.ext.prefix ?: "${meta.id}"
   """
@@ -34,7 +31,7 @@ process shigatyper {
     python3 ${script} ${prefix}-hits.tsv shigatyper/${prefix}_shigatyper-hits.tsv shigatyper ${prefix}
 
     if [ -f "${prefix}.tsv" ] ; then cp ${prefix}.tsv shigatyper/${prefix}_shigatyper.tsv ; fi
-    
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
       shigatyper: \$(echo \$(shigatyper --version 2>&1) | sed 's/^.*ShigaTyper //' )

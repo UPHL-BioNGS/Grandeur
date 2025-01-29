@@ -1,27 +1,25 @@
-process amrfinderplus {
+process AMRFINDER {
   tag           "${meta.id}"
   label         "process_high"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
-  container     'staphb/ncbi-amrfinderplus:3.12.8-2024-07-22.1'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  time          '30m'
+  container     'staphb/ncbi-amrfinderplus:4.0.3-2024-10-22.1'
 
   input:
   tuple val(meta), file(contigs), val(genus), val(species)
 
   output:
-  path "ncbi-AMRFinderplus/*_amrfinder_plus.txt", emit: collect, optional: true
-  path "logs/${task.process}/*.log",              emit: log
-  path "versions.yml",                            emit: versions
+  path "amrfinder/*_amrfinder.txt", emit: collect, optional: true
+  val meta, emit: meta
+  path "logs/*/*.log", emit: log
+  path "versions.yml", emit: versions
 
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
-  def args   = task.ext.args   ?: ''
+  script:
+  def args   = task.ext.args   ?: '--plus'
   def prefix = task.ext.prefix ?: "${meta.id}"
   """
-    mkdir -p ncbi-AMRFinderplus logs/${task.process}
+    mkdir -p amrfinder logs/${task.process}
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
     organism=\$(amrfinder -l | tr " " "\\n" | grep -i ${genus} | grep -i ${species} | sed 's/,//g' | head -n 1 )
@@ -43,9 +41,8 @@ process amrfinderplus {
       --nucleotide ${contigs} \
       --threads ${task.cpus} \
       --name ${prefix} \
-      --output ncbi-AMRFinderplus/${prefix}_amrfinder_plus.txt \
+      --output amrfinder/${prefix}_amrfinder.txt \
       \$organism_check \
-      --plus \
       | tee -a \$log_file
 
     cat <<-END_VERSIONS > versions.yml

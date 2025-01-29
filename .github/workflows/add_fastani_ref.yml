@@ -61,7 +61,7 @@ jobs:
 
         - name: Run Grandeur with ref list
           run: |
-            nextflow run . -profile docker -c .github/workflows/github_actions.config --fastas fastas --fastani_ref_list fastani_ref_list.txt
+            nextflow run . -profile docker -c .github/workflows/github_actions.config --fastas fastas --fastani_ref_list fastani_ref_list.txt --publish_dir_mode link
 
             cat grandeur/grandeur_summary.tsv
             cat grandeur/summary/software_versions.yml
@@ -69,18 +69,22 @@ jobs:
 
         - name: Run Grandeur with refs
           run: |
-            nextflow run . -profile docker -c .github/workflows/github_actions.config --fastas fastas -resume --fastani_ref GCA_009665515.2_ASM966551v2_genomic.fna.gz,GCA_009763645.1_ASM976364v1_genomic.fna.gz --outdir grandeur2
+            nextflow run . -profile docker -c .github/workflows/github_actions.config --fastas fastas -resume --fastani_ref GCA_009665515.2_ASM966551v2_genomic.fna.gz,GCA_009763645.1_ASM976364v1_genomic.fna.gz --outdir grandeur2 --publish_dir_mode link
   
             cat grandeur2/grandeur_summary.tsv
             cat grandeur2/summary/software_versions.yml
             ls  grandeur2/multiqc/multiqc_report.html
 
+        - name: Clean up Disk space
+          uses: jlumbroso/free-disk-space@main
+
         - name: Run Grandeur with refs and ref list
           run: |
-            nextflow run . -profile docker -c .github/workflows/github_actions.config --fastas fastas -resume --fastani_ref_list fastani_ref_list.txt --fastani_ref GCA_009665515.2_ASM966551v2_genomic.fna.gz,GCA_009763645.1_ASM976364v1_genomic.fna.gz --outdir grandeur3
+            nextflow run . -profile docker -c .github/workflows/github_actions.config --fastas fastas -resume --fastani_ref_list fastani_ref_list.txt --fastani_ref GCA_009665515.2_ASM966551v2_genomic.fna.gz,GCA_009763645.1_ASM976364v1_genomic.fna.gz --outdir grandeur3 --publish_dir_mode link
     
             cat grandeur3/grandeur_summary.tsv
             cat grandeur3/summary/software_versions.yml
             ls  grandeur3/multiqc/multiqc_report.html
 
-    
+        - name: tree
+          run: tree grandeur*

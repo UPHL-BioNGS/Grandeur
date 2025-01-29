@@ -1,0 +1,54 @@
+name: Test Grandeur workflow with Neisseria meningitidis
+
+on: [pull_request, workflow_dispatch]
+
+jobs:
+
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+            
+      - name: Clean up Disk space
+        uses: jlumbroso/free-disk-space@main
+            
+      - name: Install Nextflow
+        run: |
+          wget -qO- get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+
+          nextflow -version
+          
+      - name: Run Grandeur
+        run: |
+          docker --version
+          
+          mkdir fastas 
+          for accession in GCA_022869645.1_ASM2286964v1
+          do
+            all=$(echo $accession | cut -f 2 -d "_")
+            fir=$(echo $all | cut -c 1-3)
+            mid=$(echo $all | cut -c 4-6)
+            end=$(echo $all | cut -c 7-9)
+            wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/${fir}/${mid}/${end}/${accession}/${accession}_genomic.fna.gz
+            gzip -d ${accession}_genomic.fna.gz
+            mv ${accession}_genomic.fna fastas/.
+          done
+
+          nextflow run . -profile docker -c .github/workflows/github_actions.config --fastas fastas --publish_dir_mode link
+          cat grandeur/grandeur_summary.tsv
+          cat grandeur/summary/software_versions.yml
+          ls  grandeur/multiqc/multiqc_report.html
+
+      - name: Check Neisseria file
+        run: |
+          for file in grandeur/meningotype/meningotype_summary.tsv
+          do
+            head $file
+            wc -l $file
+          done
+
+          
+      - name: tree
+        run: tree grandeur*

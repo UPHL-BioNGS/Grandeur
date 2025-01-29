@@ -10,6 +10,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
             
+      - name: Clean up Disk space
+        uses: jlumbroso/free-disk-space@main
+            
       - name: Install Nextflow
         run: |
           wget -qO- get.nextflow.io | bash
@@ -30,7 +33,7 @@ jobs:
           echo "sample,fastq_1,fastq_2" > sample_sheet.csv
           echo "SRR2838702,reads/SRR2838702_1.fastq.gz,reads/SRR2838702_2.fastq.gz" >> sample_sheet.csv
 
-          nextflow run . -profile docker -c .github/workflows/github_actions.config --sample_sheet sample_sheet.csv --skip_extras
+          nextflow run . -profile docker -c .github/workflows/github_actions.config --sample_sheet sample_sheet.csv --skip_extras --publish_dir_mode link
       
       - name: Check summary files
         run: |
@@ -39,3 +42,6 @@ jobs:
             head $file
             wc -l $file
           done
+
+      - name: tree
+        run: tree grandeur*

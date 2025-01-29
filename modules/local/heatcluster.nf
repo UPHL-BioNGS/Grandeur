@@ -1,16 +1,13 @@
-process heatcluster {
+process HEATCLUSTER {
   tag           "HeatCluster"
   label         "process_single"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/heatcluster:1.0.2c'
-  time          '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   file(matrix)
 
   output:
-  path "heatcluster/*", optional : true
+  path "heatcluster/*", optional : true, emit: files
   path "heatcluster/heatcluster.png", optional : true, emit: for_multiqc
   path "logs/${task.process}/*.log", emit: log_files
   path "versions.yml", emit: versions
@@ -18,7 +15,7 @@ process heatcluster {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args   = task.ext.args   ?: '-t png'
   """
     mkdir -p heatcluster logs/${task.process}

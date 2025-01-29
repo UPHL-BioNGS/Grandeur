@@ -1,14 +1,14 @@
-include { kraken2 }  from '../modules/local/kraken2' addParams(params)
+include { KRAKEN2 }  from '../../modules/local/kraken2'
 
-workflow kmer_taxonomic_classification {
+workflow KMER_TAXONOMIC_CLASSIFICATION {
     take:
         ch_reads
         ch_kraken2_db
-  
-    main:
-    kraken2(ch_reads.combine(ch_kraken2_db))
 
-    kraken2.out.results
+    main:
+    KRAKEN2(ch_reads.combine(ch_kraken2_db))
+
+    KRAKEN2.out.results
         .map { it -> it [1] }
         .collectFile(
             storeDir: "${params.outdir}/kraken2/",
@@ -17,9 +17,11 @@ workflow kmer_taxonomic_classification {
             name: "kraken2_summary.csv")
         .set { summary }
 
+    ch_versions = KRAKEN2.out.versions.first()
+
     emit:
-        for_flag    = kraken2.out.results
+        for_flag    = KRAKEN2.out.results
         for_summary = summary
-        for_multiqc = kraken2.out.for_multiqc
-        versions    = kraken2.out.versions.first()
+        for_multiqc = KRAKEN2.out.for_multiqc
+        versions    = ch_versions
 }

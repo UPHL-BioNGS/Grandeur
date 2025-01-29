@@ -1,10 +1,7 @@
-process prokka {
+process PROKKA {
   tag           "${meta.id}"
   label         "process_high"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/prokka:1.14.6'
-  time          '2h'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   tuple val(meta), file(contigs), val(organism)
@@ -15,11 +12,12 @@ process prokka {
   path "gff/*.gff"                  , emit: gff, optional: true
   path "logs/${task.process}/*.log" , emit: log
   path "versions.yml"               , emit: versions
+  val meta                          , emit: meta
 
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args   = task.ext.args   ?: '--mincontiglen 500 --compliant --locustag locus_tag --centre STAPHB'
   def prefix = task.ext.prefix ?: "${meta.id}"
   def gen_sp = organism ? "--genus ${organism[0]} --species ${organism[1]}" : ""

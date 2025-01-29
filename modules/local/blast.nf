@@ -1,23 +1,20 @@
-process blastn {
+process BLASTN {
   tag           "${meta.id}"
   label         "process_medium"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/blast:2.16.0'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
-  time          '2h'
 
   input:
   tuple val(meta), file(contig), path(blastdb)
 
   output:
-  tuple val(meta), file("blastn/*.tsv"),                 emit: blastn
+  tuple val(meta), file("blastn/*.tsv"), emit: blastn
   path "logs/${task.process}/*.${workflow.sessionId}.log", emit: log
-  path "versions.yml",                                     emit: versions
+  path "versions.yml", emit: versions
 
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args   = task.ext.args   ?: '-max_target_seqs 10 -max_hsps 1 -evalue 1e-25'
   def prefix = task.ext.prefix ?: "${meta.id}"
   """

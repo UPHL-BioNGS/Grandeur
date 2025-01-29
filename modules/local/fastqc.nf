@@ -1,10 +1,7 @@
-process fastqc {
+process FASTQC {
   tag           "${meta.id}"
   label         "process_single"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/fastqc:0.12.1'
-  time          '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
     
   input:
   tuple val(meta), file(fastq)
@@ -15,11 +12,12 @@ process fastqc {
   path "fastqc/*_summary.csv"      , emit: collect
   path "logs/${task.process}/*.log", emit: log_files
   path "versions.yml"              , emit: versions
+  val meta                         , emit: meta
 
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args   = task.ext.args   ?: ''
   def prefix = task.ext.prefix ?: "${meta.id}"
   def reads  = fastq.join(" ")

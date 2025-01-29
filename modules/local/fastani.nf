@@ -1,19 +1,14 @@
-process fastani {
+process FASTANI {
   tag           "${meta.id}"
   label         "process_medium"
-  stageInMode   "copy"
-  publishDir    path: params.outdir, mode: 'copy', pattern: 'logs/*/*log'
-  publishDir    path: params.outdir, mode: 'copy', pattern: 'fastani/*' 
   container     'staphb/fastani:1.34'
-  time          '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
   
   input:
   tuple val(meta), file(contigs), file(genomes)
 
   output:
   tuple val(meta), file("fastani/*_fastani.csv"), emit: results, optional: true
-  tuple val(meta), env(top_hit), path("top_hit/*"), emit: top_hit, optional: true
+  tuple val(meta), env("top_hit"), path("top_hit/*"), emit: top_hit, optional: true
   path "fastani/*_fastani_len.csv", emit: top_len, optional: true
   path "fastani/*", emit: everything
   path "logs/${task.process}/*.log", emit: log
@@ -22,7 +17,7 @@ process fastani {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args   = task.ext.args ?: ''
   def prefix = task.ext.prefix ?: "${meta.id}"
   def ends   = genomes.collect { it.Name[-6..-1] }.flatten().unique().join(' *')

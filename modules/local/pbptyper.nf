@@ -1,11 +1,8 @@
-process pbptyper {
+process PBPTYPER {
   tag           "${meta.id}"
   label         "process_medium"
-  stageInMode   "copy"
-  publishDir    path: params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/pbptyper:2.0.0'
-  time          '1h'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+
 
   input:
   tuple val(meta), file(contigs)
@@ -17,9 +14,9 @@ process pbptyper {
   path "versions.yml"              , emit: versions
 
   when:
-  (task.ext.when == null || task.ext.when)
+  task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args   = task.ext.args   ?: ''
   def prefix = task.ext.prefix ?: "${meta.id}"
   """

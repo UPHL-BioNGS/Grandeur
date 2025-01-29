@@ -10,6 +10,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
             
+      - name: Clean up Disk space
+        uses: jlumbroso/free-disk-space@main
+            
       - name: Install Nextflow
         run: |
           wget -qO- get.nextflow.io | bash
@@ -30,12 +33,15 @@ jobs:
           mkdir fastas
           mv *fna fastas/.
 
-          nextflow run . -profile docker,just_msa -c .github/workflows/github_actions.config --fastas fastas --aligner roary
+          nextflow run . -profile docker,just_msa -c .github/workflows/github_actions.config --fastas fastas --aligner roary --publish_dir_mode link
 
       - name: Check MSA files
         run: |
-          for file in grandeur/*/summary_statistics.txt grandeur/iqtree2/iqtree.treefile.nwk grandeur/snp-dists/snp_matrix.txt
+          for file in grandeur/*/summary_statistics.txt grandeur/iqtree2/iqtree.treefile.nwk grandeur/snp-dists/snp_matrix.txt grandeur/gff/*gff
           do
             head $file
             wc -l $file
           done
+
+      - name: tree
+        run: tree grandeur*

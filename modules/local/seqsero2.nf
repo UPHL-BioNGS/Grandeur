@@ -1,24 +1,23 @@
-process seqsero2 {
+process SEQSERO2 {
   tag           "${meta.id}"
   label         "process_medium"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/seqsero2:1.3.1'
-  time          '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+
 
   input:
   tuple val(meta), file(file)
 
   output:
-  path "seqsero2/*/*"                                    , emit: files
-  path "seqsero2/*/SeqSero_result.tsv"                   , emit: collect
+  path "seqsero2/*/*", emit: files
+  path "seqsero2/*/SeqSero_result.tsv", emit: collect
   path "logs/${task.process}/*.log", emit: log
-  path  "versions.yml"                          , emit: versions
+  path  "versions.yml", emit: versions
+  val meta, emit: meta
 
   when:
-  (task.ext.when == null || task.ext.when)
+  task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args = task.ext.args     ?: '-m a -b mem'
   def prefix = task.ext.prefix ?: "${meta.id}"
   """

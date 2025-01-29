@@ -1,11 +1,7 @@
-process drprg {
+process DRPRG {
   tag           "${meta.id}"
   label         "process_medium"
-  stageInMode   "copy"
-  publishDir    path: params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
   container     'staphb/drprg:0.1.1'
-  time          '10m'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
 
   input:
   tuple val(meta), file(contigs)
@@ -17,9 +13,9 @@ process drprg {
   path "versions.yml", emit: versions
 
   when:
-  (task.ext.when == null || task.ext.when)
+  task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args   = task.ext.args   ?: ''
   def prefix = task.ext.prefix ?: "${meta.id}"
   """
@@ -31,7 +27,7 @@ process drprg {
       -i ${contigs} \
       -o drprg/${prefix} \
       --sample ${prefix} \
-      | tee =a \$log_file
+      | tee -a \$log_file
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

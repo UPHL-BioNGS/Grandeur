@@ -1,10 +1,7 @@
-process datasets_summary {
+process DATASETS_SUMMARY {
   tag           "${taxon}"
   label         "process_single"
-  publishDir    params.outdir, mode: 'copy', saveAs: { filename -> filename.equals('versions.yml') ? null : filename }
-  container     'staphb/ncbi-datasets:16.30.0'
-  time          '1h'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore' }
+  container     'staphb/ncbi-datasets:16.35.0'
 
   input:
   tuple val(taxon), file(script)
@@ -16,7 +13,7 @@ process datasets_summary {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   def args     = task.ext.args  ?: '--reference --mag exclude'
   def args2    = task.ext.args2 ?: '--annotated --assembly-level complete,scaffold --mag exclude'
   def fields   = task.ext.fields ?: 'accession,assminfo-refseq-category,assminfo-level,organism-name,assmstats-total-ungapped-len'
@@ -47,14 +44,10 @@ process datasets_summary {
 
 // It is faster if datasets can download the entire list at a time, but there is a 20 minute timeout for downloading.
 // The '||' is to allow each genome to be downloaded on its own, which is longer overall but each genome should be less than 20 minutes.
-process datasets_download {
+process DATASETS_DOWNLOAD {
   tag           "Downloading Genomes"
-  // because there's no way to specify threads
   label         "process_medium"
-  publishDir    path: "${params.outdir}", mode: 'copy', pattern: "logs/*/*log"
-  container     'staphb/ncbi-datasets:16.30.0'
-  time          '5h'
-  errorStrategy { task.attempt < 2 ? 'retry' : 'ignore'}
+  container     'staphb/ncbi-datasets:16.35.0'
   
   input:
   file(ids)
@@ -66,7 +59,7 @@ process datasets_download {
   when:
   task.ext.when == null || task.ext.when
 
-  shell:
+  script:
   """
     mkdir -p datasets genomes
 
@@ -85,7 +78,6 @@ process datasets_download {
       accession=\$(echo \$fasta | cut -f 4 -d / | cut -f 1,2 -d _ )
       organism=\$(head -n 1 \$fasta | awk '{print \$2 "_" \$3 }' | sed 's/,//g' | sed 's/\\]//g' | sed 's/\\[//g' )
       cat \$fasta | sed 's/ /_/g' | sed 's/,//g' > genomes/\${organism}_\${accession}_ds.fna
-      gzip genomes/\${organism}_\${accession}_ds.fna
     done  
 
     # removing MAGS

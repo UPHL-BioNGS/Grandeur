@@ -10,6 +10,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
             
+      - name: Clean up Disk space
+        uses: jlumbroso/free-disk-space@main
+            
       - name: Install Nextflow
         run: |
           wget -qO- get.nextflow.io | bash
@@ -33,7 +36,7 @@ jobs:
             mv ${accession}_genomic.fna fastas/.
           done
 
-          nextflow run . -profile docker -c .github/workflows/github_actions.config --fastas fastas
+          nextflow run . -profile docker -c .github/workflows/github_actions.config --fastas fastas --publish_dir_mode link
           
           cat grandeur/grandeur_summary.tsv
           cat grandeur/summary/software_versions.yml
@@ -46,4 +49,6 @@ jobs:
             head $file
             wc -l $file
           done
-  
+
+      - name: tree
+        run: tree grandeur*
