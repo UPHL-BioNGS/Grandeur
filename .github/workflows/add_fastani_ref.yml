@@ -75,6 +75,9 @@ jobs:
             cat grandeur2/summary/software_versions.yml
             ls  grandeur2/multiqc/multiqc_report.html
 
+        - name: Clean up Disk space
+          uses: jlumbroso/free-disk-space
+
         - name: Run Grandeur with refs and ref list
           run: |
             nextflow run . -profile docker -c .github/workflows/github_actions.config --fastas fastas -resume --fastani_ref_list fastani_ref_list.txt --fastani_ref GCA_009665515.2_ASM966551v2_genomic.fna.gz,GCA_009763645.1_ASM976364v1_genomic.fna.gz --outdir grandeur3 --publish_dir_mode link

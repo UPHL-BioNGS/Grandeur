@@ -10,17 +10,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
             
+      - name: Clean up Disk space
+        uses: jlumbroso/free-disk-space
+
       - name: Install Nextflow
         run: |
           wget -qO- get.nextflow.io | bash
           sudo mv nextflow /usr/local/bin/
 
           nextflow -version
-          
-      - name: Run Grandeur
-        run: |
-          docker --version
 
+      - name: Test docker
+        run: docker --version
+
+      - name: Get files
+        run: |
           wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/904/864/595/GCA_904864595.1_INF333/GCA_904864595.1_INF333_genomic.fna.gz             && gzip -d GCA_904864595.1_INF333_genomic.fna.gz
           wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/013/783/245/GCA_013783245.1_ASM1378324v1/GCA_013783245.1_ASM1378324v1_genomic.fna.gz && gzip -d GCA_013783245.1_ASM1378324v1_genomic.fna.gz
           wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/026/626/185/GCA_026626185.1_ASM2662618v1/GCA_026626185.1_ASM2662618v1_genomic.fna.gz && gzip -d GCA_026626185.1_ASM2662618v1_genomic.fna.gz 
@@ -30,8 +34,12 @@ jobs:
           mkdir fastas
           mv *fna fastas/.
 
+      - name: Run Grandeur
+        run: |
           nextflow run . -profile docker --current_datasets -c .github/workflows/github_actions.config --fastas fastas --publish_dir_mode link
 
+      - name: Check files
+        run: |
           cat grandeur/grandeur_summary.tsv
           cat grandeur/summary/software_versions.yml
           ls  grandeur/multiqc/multiqc_report.html

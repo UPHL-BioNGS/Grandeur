@@ -9,6 +9,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+            
+      - name: Clean up Disk space
+        uses: jlumbroso/free-disk-space
 
       - name: Install Nextflow
         run: |

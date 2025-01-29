@@ -10,6 +10,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
             
+      - name: Clean up Disk space
+        uses: jlumbroso/free-disk-space
+            
       - name: Install Nextflow
         run: |
           wget -qO- get.nextflow.io | bash
@@ -19,7 +22,7 @@ jobs:
           
       - name: Run Grandeur
         run: |
-          nextflow run . -profile docker,test4 -c .github/workflows/github_actions.config
+          nextflow run . -profile docker,test4 -c .github/workflows/github_actions.config --publish_dir_mode link
           
       - name: Check contig files
         run: |
