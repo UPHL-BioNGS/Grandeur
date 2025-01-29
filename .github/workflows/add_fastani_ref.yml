@@ -76,7 +76,7 @@ jobs:
             ls  grandeur2/multiqc/multiqc_report.html
 
         - name: Clean up Disk space
-          uses: jlumbroso/free-disk-space
+          uses: jlumbroso/free-disk-space@main
 
         - name: Run Grandeur with refs and ref list
           run: |
