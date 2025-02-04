@@ -1,7 +1,7 @@
 process DATASETS_SUMMARY {
   tag           "${taxon}"
   label         "process_single"
-  container     'staphb/ncbi-datasets:16.35.0'
+  container     'staphb/ncbi-datasets:16.38.1'
 
   input:
   tuple val(taxon), file(script)
