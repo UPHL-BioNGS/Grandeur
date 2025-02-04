@@ -1,7 +1,7 @@
 process PANAROO {
   tag           "Core Genome Alignment"
   label         "process_high"
-  container     'staphb/panaroo:1.5.0'
+  container     'staphb/panaroo:1.5.1'
   
   input:
   file(gff)
