@@ -1,7 +1,7 @@
 process KLEBORATE {
   tag           "${meta.id}"
   label         "process_medium"
-  container     'staphb/kleborate:3.1.2'
+  container     'staphb/kleborate:3.1.3'
 
   input:
   tuple val(meta), file(contig), file(script)
