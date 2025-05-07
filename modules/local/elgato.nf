@@ -1,7 +1,7 @@
 process ELGATO {
   tag           "${meta.id}"
   label         "process_medium"
-  container     'staphb/elgato:1.21.0'
+  container     'staphb/elgato:1.21.2'
 
   input:
   tuple val(meta), file(contigs)
