@@ -14,7 +14,6 @@ lint:
     - "manifest.homePage"
 nf_core_version: 3.0.2
 org_path: null
-repository_type: pipeline
 template:
   author: Erin Young
   description: reference free assembly and typing

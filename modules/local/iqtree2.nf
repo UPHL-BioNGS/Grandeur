@@ -1,7 +1,7 @@
 process IQTREE2 {
   tag           "Phylogenetic analysis"
   label         "process_high"
-  container     'staphb/iqtree2:2.3.6'
+  container     'staphb/iqtree2:2.4.0'
   
   input:
   file(msa)

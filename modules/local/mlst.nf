@@ -1,7 +1,7 @@
 process MLST {
   tag           "${meta.id}"
   label         "process_medium"
-  container     'staphb/mlst:2.23.0-2025-02-01'
+  container     'staphb/mlst:2.23.0-2024-12-31'
 
   input:
   tuple val(meta), file(contig), file(script)
