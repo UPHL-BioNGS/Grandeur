@@ -22,3 +22,14 @@ Initial release of nf-core/grandeur, created with the [nf-core](https://nf-co.re
 ### `Deprecated`
 
 Moved old pipeline structure to temporary location.
+
+## 2025-06-18
+
+Updated project config files.
+
+### `Added`
+
+- updated nextflow.config with the legacy nextflow.config configurations
+- updated modules.config with legacy process configs
+- added legacy configs to configs
+- added legacy assets to assets
