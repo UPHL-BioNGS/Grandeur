@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/nf-core/grandeur/master/nextflow_schema.json",
   "title": "nf-core/grandeur pipeline parameters",
-  "description": "UPHL's Reference Free Pipeline.",
+  "description": "Grandeur is short-read de novo assembly pipeline with serotyping.",
   "type": "object",
   "$defs": {
     "input_output_options": {
@@ -10,7 +10,6 @@
       "type": "object",
       "fa_icon": "fas fa-terminal",
       "description": "Define where the pipeline should find input data and save output data.",
-      "required": ["input", "outdir"],
       "properties": {
         "input": {
           "type": "string",
@@ -22,6 +21,13 @@
           "description": "Path to comma-separated file containing information about the samples in the experiment.",
           "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row. See [usage docs](https://nf-co.re/grandeur/usage#samplesheet-input).",
           "fa_icon": "fas fa-file-csv"
+        },
+        "reads_directory": {
+          "type": "string",
+          "description": "fastq files from a directory",
+          "format": "file-path",
+          "fa_icon": "fas fa-folder",
+          "pattern": "\\.(fastq|fq)(\\.gz)?$"
         },
         "outdir": {
           "type": "string",
@@ -40,8 +46,156 @@
           "type": "string",
           "description": "MultiQC report title. Printed as page header, used for filename if not otherwise specified.",
           "fa_icon": "fas fa-file-signature"
+        },
+        "fastas": {
+          "type": "string",
+          "fa_icon": "fas fa-dna",
+          "description": "Path to FASTA genome file.",
+          "pattern": "\\.(fa|fasta|fna)$",
+          "format": "file-path",
+          "mimetype": "text/plain"
         }
       }
+    },
+    "external_databases": {
+      "title": "External Databases",
+      "type": "object",
+      "description": "Databases and External Files",
+      "default": "",
+      "properties": {
+        "kraken2_db": {
+          "type": "string",
+          "fa_icon": "fas fa-database",
+          "description": "Directory with kraken2 database",
+          "format": "directory-path"
+        },
+        "blast_db": {
+          "type": "string",
+          "fa_icon": "fas fa-database",
+          "description": "Directory with blast database",
+          "format": "directory-path"
+        },
+        "blast_db_type": {
+          "type": "string",
+          "fa_icon": "fas fa-filter"
+        },
+        "mash_db": {
+          "type": "string",
+          "fa_icon": "fas fa-database",
+          "description": "file of pre-sketched mash reference",
+          "format": "file-path",
+          "mimetype": "text/plain"
+        },
+        "fastani_ref": {
+          "type": "string",
+          "fa_icon": "fas fa-file-alt",
+          "description": "User supplied fastani reference genomes",
+          "pattern": "^\\S+\\.csv$",
+          "format": "file-path",
+          "mimetype": "text/csv"
+        },
+        "fastani_ref_list": {
+          "type": "string",
+          "fa_icon": "fas fa-clipboard-list",
+          "description": "Additional fastani reference genome from file",
+          "format": "file-path"
+        },
+        "sra_accessions": {
+          "type": "string",
+          "default": "[]",
+          "fa_icon": "far fa-list-alt"
+        },
+        "genome_accessions": {
+          "type": "string",
+          "default": "[]",
+          "fa_icon": "far fa-list-alt"
+        },
+        "genome_sizes": {
+          "type": "string",
+          "default": "/assets/genome_sizes.json",
+          "fa_icon": "fas fa-file-alt",
+          "pattern": "\\.json$",
+          "format": "file-path"
+        }
+      },
+      "fa_icon": "fas fa-server"
+    },
+    "software_threshold_options": {
+      "title": "Software threshold options",
+      "type": "object",
+      "description": "Threshold options for software tools used in the pipeline.",
+      "default": "",
+      "properties": {
+        "minimum_reads": {
+          "type": "integer",
+          "default": 10000,
+          "fa_icon": "fas fa-cog"
+        },
+        "datasets_max_genomes": {
+          "type": "integer",
+          "default": 5,
+          "fa_icon": "fas fa-cog"
+        },
+        "mash_max_hits": {
+          "type": "integer",
+          "default": 25,
+          "fa_icon": "fas fa-cog"
+        },
+        "min_core_genes": {
+          "type": "integer",
+          "default": 1500,
+          "fa_icon": "fas fa-cog"
+        },
+        "iqtree2_outgroup": {
+          "type": "string",
+          "fa_icon": "fas fa-cog"
+        }
+      },
+      "fa_icon": "fas fa-wrench"
+    },
+    "core_workflows": {
+      "title": "Core Workflows",
+      "type": "object",
+      "description": "",
+      "default": "",
+      "fa_icon": "fas fa-route",
+      "properties": {
+        "aligner": {
+          "type": "string",
+          "default": "panaroo",
+          "fa_icon": "fas fa-align-center"
+        },
+        "annotator": {
+          "type": "string",
+          "default": "bakta",
+          "fa_icon": "fas fa-asterisk"
+        }
+      }
+    },
+    "subworkflow_flags": {
+      "title": "Subworkflow Flags",
+      "type": "object",
+      "description": "Flags for the Subworkflows",
+      "default": "",
+      "properties": {
+        "current_datasets": {
+          "type": "boolean",
+          "fa_icon": "fas fa-copy"
+        },
+        "skip_extras": {
+          "type": "boolean",
+          "fa_icon": "fas fa-forward"
+        },
+        "exclude_top_hit": {
+          "type": "boolean",
+          "fa_icon": "far fa-times-circle"
+        },
+        "msa": {
+          "type": "boolean",
+          "fa_icon": "fas fa-toolbox"
+        }
+      },
+      "fa_icon": "fas fa-flag"
     },
     "reference_genome_options": {
       "title": "Reference genome options",
@@ -240,6 +394,18 @@
       "$ref": "#/$defs/input_output_options"
     },
     {
+      "$ref": "#/$defs/external_databases"
+    },
+    {
+      "$ref": "#/$defs/software_threshold_options"
+    },
+    {
+      "$ref": "#/$defs/core_workflows"
+    },
+    {
+      "$ref": "#/$defs/subworkflow_flags"
+    },
+    {
       "$ref": "#/$defs/reference_genome_options"
     },
     {
@@ -248,5 +414,16 @@
     {
       "$ref": "#/$defs/generic_options"
     }
-  ]
+  ],
+  "properties": {
+    "validationFailUnrecognisedParams": {
+      "type": "boolean"
+    },
+    "validationLenientMode": {
+      "type": "boolean"
+    },
+    "validationShowHiddenParams": {
+      "type": "boolean"
+    }
+  }
 }
