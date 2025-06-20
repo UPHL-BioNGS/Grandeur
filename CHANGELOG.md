@@ -33,3 +33,11 @@ Updated project config files.
 - updated modules.config with legacy process configs
 - added legacy configs to configs
 - added legacy assets to assets
+
+## 2025-06-20
+
+Updated pipleine schema.
+
+### `Added`
+
+- Added Grandeur params to schema. Organized parameters in schema.
