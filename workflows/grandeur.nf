@@ -10,6 +10,11 @@ include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pi
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_grandeur_pipeline'
 
+// GRANDEUR PIPELINE SUBWORKFLOWS
+include { PREPROCESSING          } from '../subworkflows/local/preprocessing'
+
+// GRANDEUR PIPELINE MODULES
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -20,6 +25,22 @@ workflow GRANDEUR {
 
     take:
     ch_samplesheet // channel: samplesheet read in from --input
+    ch_raw_reads
+    ch_fastas
+    ch_fastani_genomes
+    ch_versions
+    ch_genome_sizes
+    ch_mash_db
+    ch_kraken2_db
+    ch_blast_db
+    dataset_script
+    evaluat_script
+    jsoncon_script
+    multiqc_script
+    summary_script
+    summfle_script
+    version_script
+
     main:
 
     ch_versions = Channel.empty()
@@ -32,6 +53,22 @@ workflow GRANDEUR {
     )
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]})
     ch_versions = ch_versions.mix(FASTQC.out.versions.first())
+
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        GRANDEUR PIPELINE LOGIC
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
+
+    PREPROCESSING_FASTP (
+
+    )
+
+
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
+    
 
     //
     // Collate and save software versions
@@ -85,7 +122,8 @@ workflow GRANDEUR {
         []
     )
 
-    emit:multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
+    emit:
+    multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
     versions       = ch_versions                 // channel: [ path(versions.yml) ]
 
 }

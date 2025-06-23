@@ -41,3 +41,10 @@ Updated pipleine schema.
 ### `Added`
 
 - Added Grandeur params to schema. Organized parameters in schema.
+
+## 2025-06-23
+
+### `Added`
+
+- Added pipeline scripts to bin directory. 
+- Added pipeline-specific input validation to the nf-core initialization tasks.

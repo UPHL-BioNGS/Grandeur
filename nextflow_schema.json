@@ -101,9 +101,9 @@
           "format": "file-path"
         },
         "sra_accessions": {
-          "type": "string",
-          "default": "[]",
-          "fa_icon": "far fa-list-alt"
+          "type": "array",
+          "fa_icon": "far fa-list-alt",
+          "default": null
         },
         "genome_accessions": {
           "type": "string",
