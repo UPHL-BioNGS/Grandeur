@@ -68,33 +68,190 @@ workflow PIPELINE_INITIALISATION {
     //
     validateInputParameters()
 
-    //
-    // Create channel from input file provided through params.input
-    //
+    // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+    // Create Channels for Scripts
+    // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
+    dataset_script = Channel.fromPath(workflow.projectDir + "/bin/datasets_download.py", type: "file")
+    evaluat_script = Channel.fromPath(workflow.projectDir + "/bin/evaluate.py",          type: "file")
+    jsoncon_script = Channel.fromPath(workflow.projectDir + "/bin/json_convert.py",      type: "file")
+    multiqc_script = Channel.fromPath(workflow.projectDir + "/bin/for_multiqc.py",       type: "file")
+    summary_script = Channel.fromPath(workflow.projectDir + "/bin/summary.py",           type: "file")
+    summfle_script = Channel.fromPath(workflow.projectDir + "/bin/summary_file.py",      type: "file")
+    version_script = Channel.fromPath(workflow.projectDir + "/bin/versions.py",          type: "file")
+
+
+    // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+    // Create Channels for User Inputs
+    // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
+    if (params.input){
+        // using a sample sheet with the column header of 'sample,fastq_1,fastq_2'
+        Channel
+            .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
+            .map {
+                meta, fastq_1, fastq_2 ->
+                    if (!fastq_2) {
+                        return [ meta.id, meta + [ single_end:true ], [ fastq_1 ] ]
+                    } else {
+                        return [ meta.id, meta + [ single_end:false ], [ fastq_1, fastq_2 ] ]
+                    }
+            }
+            .groupTuple()
+            .map { samplesheet ->
+                validateInputSamplesheet(samplesheet)
+            }
+            .map {
+                meta, fastqs ->
+                    return [ meta, fastqs.flatten() ]
+            }
+            .set { ch_samplesheet }
+    } else {
+        // Getting the fastq files from a directory
+        ch_reads = params.reads
+        ? Channel
+            .fromFilePairs(["${params.reads}/*_R{1,2}*.{fastq,fastq.gz,fq,fq.gz}",
+                          "${params.reads}/*_{1,2}*.{fastq,fastq.gz,fq,fq.gz}"], size: 2 )
+            .map { it ->
+                def meta = [id:it[0].replaceAll(~/_S[0-9]+_L[0-9]+/,"")]
+                tuple( meta, [
+                file(it[1][0], checkIfExists: true),
+                file(it[1][1], checkIfExists: true)])
+            }
+            .unique()
+            .view { "Paired-end fastq files found : ${it[0].id}" }
+        : Channel.empty()
+    }
+
+    if (params.fastas) {
+        // getting fasta from a file
+        Channel
+        .fromPath("${params.fasta_list}", type: "file")
+        .view { "Fasta list found : ${it}" }
+        .splitText()
+        .map{ it -> it.trim()}
+        .map{ it -> file(it) }
+        .map { it ->
+            def meta = [id:it.baseName]
+            tuple( meta, it)
+        }
+        .set{ ch_fastas }
+    }
+
+    // Getting accession for downloading
+
+    // from SRA
+    ch_sra_accessions   = Channel.from( params.sra_accessions )
+
+    // from genomes
+    ch_genome_accessions = Channel.from( params.genome_accessions)
+
+    // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+    // Create Channels for Database Files
+    // TODO: use error() instead of println()
+    // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
+    // Getting the file with genome sizes of common organisms for fastqcscan. The End User can use their own file and set with a param
     Channel
-        .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
-        .map {
-            meta, fastq_1, fastq_2 ->
-                if (!fastq_2) {
-                    return [ meta.id, meta + [ single_end:true ], [ fastq_1 ] ]
-                } else {
-                    return [ meta.id, meta + [ single_end:false ], [ fastq_1, fastq_2 ] ]
-                }
+    .fromPath(params.genome_sizes, type: "file")
+    .ifEmpty{
+      println("The genome sizes file for this workflow are missing!")
+      exit 1}
+    .set { ch_genome_sizes }
+
+    // Getting the database for blast/blobtools
+    ch_blast_db = params.blast_db
+    ? Channel
+      .fromPath(params.blast_db, type: "dir")
+      .ifEmpty{
+        println("No blast database was found at ${params.blast_db}")
+        println("Set 'params.blast_db' to directory with blast database")
+        exit 1
         }
-        .groupTuple()
-        .map { samplesheet ->
-            validateInputSamplesheet(samplesheet)
+        .view { "Local Blast Database for Blobtools : $it" }
+    : Channel.empty()
+
+    // Getting the kraken2 database
+    ch_kraken2_db = params.kraken2_db
+    ? Channel
+      .fromPath(params.kraken2_db, type: "dir")
+      .ifEmpty{
+        println("No kraken2 database was found at ${params.kraken2_db}")
+        println("Set 'params.kraken2_db' to directory with kraken2 database")
+        exit 1
         }
-        .map {
-            meta, fastqs ->
-                return [ meta, fastqs.flatten() ]
+        .view { "Local kraken2 database : $it" }
+    : Channel.empty()
+
+    // Getting the mash reference
+    ch_mash_db = params.mash_db
+    ? Channel
+      .fromPath(params.mash_db, type: "file")
+      .ifEmpty{
+        println("No mash database was found at ${params.mash_db}")
+        println("Set 'params.mash_db' to file of pre-sketched mash reference")
+        exit 1
         }
-        .set { ch_samplesheet }
+      .view { "Mash reference : $it" }
+    : Channel.empty()
+
+    // User Supplied Fastani Reference Genomes
+    ch_fastani_genomes = Channel.empty()
+
+    if ( params.fastani_ref ) {
+        Channel
+        .of( params.fastani_ref )
+        .splitCsv()
+        .flatten()
+        // no meta id
+        .map { it -> file(it) }
+        .view{ "Additional fastani reference genomes : $it" }
+        .set { ch_fastani_genomes_input }
+
+        ch_fastani_genomes = ch_fastani_genomes.mix(ch_fastani_genomes_input)
+    }
+
+    if ( params.fastani_ref_list ) {
+        Channel.fromPath(params.fastani_ref_list, type: "file")
+        .splitText()
+        .map{ it -> it.trim()}
+        .map{ it -> file(it) }
+        .view{ "Additional fastani reference genome from file : $it" }
+        .set{ ch_fastani_ref_list }
+
+        ch_fastani_genomes = ch_fastani_genomes.mix(ch_fastani_ref_list)
+    }
+
+    println("The files and directory for results is " + params.outdir )
+
+    // getting test files
+    if ( ! params.sra_accessions.isEmpty()  || ! params.genome_accessions.isEmpty() ) {
+        TEST(
+        ch_sra_accessions.ifEmpty([]),
+        ch_genome_accessions.ifEmpty([])
+        )
+        ch_reads    = ch_reads.mix(TEST.out.fastq)
+        ch_fastas   = ch_fastas.mix(TEST.out.fasta)
+        ch_versions = TEST.out.versions
+    }
+
 
     emit:
-    samplesheet = ch_samplesheet
-    versions    = ch_versions
+    samplesheet     = ch_samplesheet
+    fastas          = ch_fastas
+    fastani_genomes = ch_fastani_genomes
+    versions        = ch_versions
+    genome_sizes    = ch_genome_sizes
+    mash_db         = ch_mash_db
+    kraken2_db      = ch_kraken2_db
+    blast_db        = ch_blast_db
+    dataset_script  = dataset_script
+    evaluat_script  = evaluat_script
+    jsoncon_script  = jsoncon_script
+    multiqc_script  = multiqc_script
+    summary_script  = summary_script
+    summfle_script  = summfle_script
+    version_script  = version_script
 }
 
 /*
