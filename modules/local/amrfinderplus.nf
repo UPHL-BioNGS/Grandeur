@@ -1,7 +1,7 @@
 process AMRFINDER {
   tag           "${meta.id}"
   label         "process_high"
-  container     'staphb/ncbi-amrfinderplus:4.0.22-2025-03-25.1'
+  container     'staphb/ncbi-amrfinderplus:4.0.23-2025-06-03.1'
 
   input:
   tuple val(meta), file(contigs), val(genus), val(species)
