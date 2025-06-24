@@ -1,7 +1,7 @@
 process DATASETS_SUMMARY {
   tag           "${taxon}"
   label         "process_single"
-  container     'staphb/ncbi-datasets:16.41.0'
+  container     'staphb/ncbi-datasets:18.0.2'
 
   input:
   tuple val(taxon), file(script)
@@ -47,7 +47,7 @@ process DATASETS_SUMMARY {
 process DATASETS_DOWNLOAD {
   tag           "Downloading Genomes"
   label         "process_medium"
-  container     'staphb/ncbi-datasets:16.41.0'
+  container     'staphb/ncbi-datasets:18.0.2'
   
   input:
   file(ids)
