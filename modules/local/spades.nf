@@ -1,7 +1,7 @@
 process SPADES {
   tag           "${meta.id}"
   label         "process_high"
-  container     'staphb/spades:4.1.0'
+  container     'staphb/spades:4.2.0'
   
   input:
   tuple val(meta), file(reads)
