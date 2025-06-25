@@ -28,7 +28,6 @@ workflow PREPROCESSING {
 
     emit:
     // TO-DO: FASTP.out.fastp is a subset of FASTP.out.fastp_results
-    // 
     reads_check
     ch_cleaned_reads
     versions          = ch_versions
