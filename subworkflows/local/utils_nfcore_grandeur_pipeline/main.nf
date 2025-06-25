@@ -23,6 +23,8 @@ include { UTILS_NEXTFLOW_PIPELINE   } from '../../nf-core/utils_nextflow_pipelin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
+include { TEST } from "../../../subworkflows/local/test"
+
 workflow PIPELINE_INITIALISATION {
 
     take:
@@ -35,7 +37,8 @@ workflow PIPELINE_INITIALISATION {
 
     main:
 
-    ch_versions = Channel.empty()
+    ch_fastas    = Channel.empty()
+    ch_versions  = Channel.empty()
 
     //
     // Print version and exit if required and dump pipeline parameters to JSON file
@@ -152,10 +155,8 @@ workflow PIPELINE_INITIALISATION {
     // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
     // Getting the file with genome sizes of common organisms for fastqcscan. The End User can use their own file and set with a param
-    Channel
-    .fromPath(params.genome_sizes, type: "file")
-    .ifEmpty{
-      println("The genome sizes file for this workflow are missing!")
+    Channel.fromPath(params.genome_sizes, type: "file").ifEmpty{
+      println("The genome sizes file for this workflow are missing!! ${params.genome_sizes}")
       exit 1}
     .set { ch_genome_sizes }
 
@@ -235,9 +236,9 @@ workflow PIPELINE_INITIALISATION {
         ch_versions = TEST.out.versions
     }
 
-
+    // TODO: set ch_reads to reads obtained from ch_samplesheet, ch_sra_accessions, and ch_genome_accessions
     emit:
-    samplesheet     = ch_samplesheet
+    reads           = ch_reads
     fastas          = ch_fastas
     fastani_genomes = ch_fastani_genomes
     versions        = ch_versions

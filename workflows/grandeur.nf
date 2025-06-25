@@ -12,6 +12,7 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_gran
 
 // GRANDEUR PIPELINE SUBWORKFLOWS
 include { PREPROCESSING          } from '../subworkflows/local/preprocessing'
+include { DE_NOVO_ALIGNMENT      } from '../subworkflows/local/de_novo_alignment'
 
 // GRANDEUR PIPELINE MODULES
 
@@ -24,7 +25,7 @@ include { PREPROCESSING          } from '../subworkflows/local/preprocessing'
 workflow GRANDEUR {
 
     take:
-    ch_samplesheet // channel: samplesheet read in from --input
+    // ch_samplesheet // channel: samplesheet read in from --input
     ch_raw_reads
     ch_fastas
     ch_fastani_genomes
@@ -43,37 +44,55 @@ workflow GRANDEUR {
 
     main:
 
-    ch_versions = Channel.empty()
-    ch_multiqc_files = Channel.empty()
-    //
-    // MODULE: Run FastQC
-    //
-    FASTQC (
-        ch_samplesheet
-    )
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]})
-    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
+    ch_for_multiqc   = Channel.empty()
+    ch_for_summary   = ch_genome_sizes
+    ch_versions      = Channel.empty()
+    // ch_multiqc_files = Channel.empty()
+    ch_for_flag      = Channel.empty()
+    ch_reads_contigs = ch_fastas.map{it -> tuple(it[0], it[1], null)}
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         GRANDEUR PIPELINE LOGIC
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
+    if ( params.sample_sheet || params.reads || params.sra_accessions ) {
+        PREPROCESSING (
+            ch_raw_reads
+        )
 
-    PREPROCESSING_FASTP (
+        reads_check        = PREPROCESSING.out.reads_check
+        ch_cleaned_reads   = PREPROCESSING.out.ch_cleaned_reads.map { it -> tuple (it[1], it[2]) }
+        ch_versions        = ch_versions.mix(PREPROCESSING.out.versions)
 
-    )
+        ch_for_multiqc     = ch_for_multiqc.mix(PREPROCESSING.out.for_multiqc)
 
+        DE_NOVO_ALIGNMENT (
+            reads_check,
+            ch_versions
+        )
+
+        // TODO: ch_contigs is a subset of ch_reads_contigs
+        ch_contigs         = ch_fastas.mix(DE_NOVO_ALIGNMENT.out.contigs.filter{it[1] != null})
+        ch_reads_contigs   = ch_reads_contigs.mix(DE_NOVO_ALIGNMENT.out.contigs)
+        ch_versions        = ch_versions.mix(DE_NOVO_ALIGNMENT.out.versions)
+
+    } else {
+        ch_contigs         = ch_fastas
+        ch_cleaned_reads   = Channel.empty()
+    }
+
+
+}
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
-    
 
     //
     // Collate and save software versions
     //
-    softwareVersionsToYAML(ch_versions)
+    /*softwareVersionsToYAML(ch_versions)
         .collectFile(
             storeDir: "${params.outdir}/pipeline_info",
             name: 'nf_core_'  +  'grandeur_software_'  + 'mqc_'  + 'versions.yml',
@@ -127,6 +146,8 @@ workflow GRANDEUR {
     versions       = ch_versions                 // channel: [ path(versions.yml) ]
 
 }
+
+*/
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

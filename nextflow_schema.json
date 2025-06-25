@@ -22,6 +22,9 @@
           "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row. See [usage docs](https://nf-co.re/grandeur/usage#samplesheet-input).",
           "fa_icon": "fas fa-file-csv"
         },
+        "reads": {
+          "type": "string"
+        },
         "reads_directory": {
           "type": "string",
           "description": "fastq files from a directory",
@@ -102,8 +105,7 @@
         },
         "sra_accessions": {
           "type": "array",
-          "fa_icon": "far fa-list-alt",
-          "default": null
+          "fa_icon": "far fa-list-alt"
         },
         "genome_accessions": {
           "type": "string",
@@ -112,7 +114,7 @@
         },
         "genome_sizes": {
           "type": "string",
-          "default": "/assets/genome_sizes.json",
+          "default": null,
           "fa_icon": "fas fa-file-alt",
           "pattern": "\\.json$",
           "format": "file-path"

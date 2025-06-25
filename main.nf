@@ -77,7 +77,7 @@ workflow {
     )
 
     GRANDEUR (
-        PIPELINE_INITIALISATION.out.samplesheet,
+        PIPELINE_INITIALISATION.out.reads,
         PIPELINE_INITIALISATION.out.fastas,
         PIPELINE_INITIALISATION.out.fastani_genomes,
         PIPELINE_INITIALISATION.out.versions,
@@ -94,15 +94,15 @@ workflow {
         PIPELINE_INITIALISATION.out.version_script
     )
 
-    PIPELINE_COMPLETION (
-        params.email,
-        params.email_on_fail,
-        params.plaintext_email,
-        params.outdir,
-        params.monochrome_logs,
-        params.hook_url,
-        NFCORE_GRANDEUR.out.multiqc_report
-    )
+    // PIPELINE_COMPLETION (
+    //     params.email,
+    //     params.email_on_fail,
+    //     params.plaintext_email,
+    //     params.outdir,
+    //     params.monochrome_logs,
+    //     params.hook_url,
+    //     GRANDEUR.out.multiqc_report
+    // )
 }
 
 /*

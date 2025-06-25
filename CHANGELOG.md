@@ -48,3 +48,16 @@ Updated pipleine schema.
 
 - Added pipeline scripts to bin directory. 
 - Added pipeline-specific input validation to the nf-core initialization tasks.
+
+## 2025-06-25
+
+### `Added`
+
+- Added preprocessing subworkflow.
+- Added de novo assembly subworkflow.
+- Added revelant modules for subworkflows.
+- Updated grandeur workflow with the new subworkflows.
+
+### `Fixed`
+
+- Fixed a couple files for end-to-end integration testing.
