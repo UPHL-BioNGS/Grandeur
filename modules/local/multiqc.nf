@@ -38,7 +38,7 @@ process MULTIQC {
 process VERSIONS {
   tag           "extracting versions"
   label         "process_single"
-  container     'staphb/multiqc:1.27.1'
+  container     'staphb/multiqc:1.28'
 
   input:
   file(input)

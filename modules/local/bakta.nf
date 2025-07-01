@@ -1,7 +1,7 @@
 process BAKTA {
   tag           "${meta.id}"
   label         "process_high"
-  container     'staphb/bakta:1.10.4-5.1-light'
+  container     'staphb/bakta:1.11.0-6.0-light'
   time    '30m'
 
   input:
