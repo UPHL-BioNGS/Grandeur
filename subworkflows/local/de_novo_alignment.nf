@@ -15,12 +15,14 @@ workflow DE_NOVO_ALIGNMENT {
     
     SPADES(reads_check)
 
-    ch_contigs  = SPADES.out.reads_contigs
+    reads_contigs = SPADES.out.reads_contigs
+    ch_contigs  = SPADES.out.contigs.filter{it[1] != null}
     ch_versions = ch_versions.mix(SPADES.out.versions.first())
 
     emit:
 
-    contigs  = ch_contigs
-    versions = ch_versions
+    reads_contigs = reads_contigs
+    contigs       = ch_contigs
+    versions      = ch_versions
 
 }

@@ -55,9 +55,17 @@ Updated pipleine schema.
 
 - Added preprocessing subworkflow.
 - Added de novo assembly subworkflow.
-- Added revelant modules for subworkflows.
+- Added relevant modules for subworkflows.
 - Updated grandeur workflow with the new subworkflows.
 
 ### `Fixed`
 
 - Fixed a couple files for end-to-end integration testing.
+
+## 2025-06-30
+
+### `Added`
+
+- Added quality assessment subworkflow
+- Added relevant modules for running the quality assessment subworkflow.
+- Updated grandeur workflow with the new subworkflow.
