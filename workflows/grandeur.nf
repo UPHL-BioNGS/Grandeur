@@ -13,6 +13,7 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_gran
 // GRANDEUR PIPELINE SUBWORKFLOWS
 include { PREPROCESSING          } from '../subworkflows/local/preprocessing'
 include { DE_NOVO_ALIGNMENT      } from '../subworkflows/local/de_novo_alignment'
+include { QUALITY_ASSESSMENT     } from '../subworkflows/local/quality_assessment'
 
 // GRANDEUR PIPELINE MODULES
 
@@ -73,8 +74,8 @@ workflow GRANDEUR {
         )
 
         // TODO: ch_contigs is a subset of ch_reads_contigs
-        ch_contigs         = ch_fastas.mix(DE_NOVO_ALIGNMENT.out.contigs.filter{it[1] != null})
-        ch_reads_contigs   = ch_reads_contigs.mix(DE_NOVO_ALIGNMENT.out.contigs)
+        ch_contigs         = ch_fastas.mix(DE_NOVO_ALIGNMENT.out.contigs)
+        ch_reads_contigs   = ch_reads_contigs.mix(DE_NOVO_ALIGNMENT.out.reads_contigs)
         ch_versions        = ch_versions.mix(DE_NOVO_ALIGNMENT.out.versions)
 
     } else {
@@ -82,6 +83,20 @@ workflow GRANDEUR {
         ch_cleaned_reads   = Channel.empty()
     }
 
+    // getting a summary of everything
+    if ( ! params.skip_extras ) {
+        QUALITY_ASSESSMENT(
+            ch_raw_reads,
+            ch_contigs,
+            ch_reads_contigs,
+            summfle_script
+        )
+
+        ch_for_multiqc = ch_for_multiqc.mix(QUALITY_ASSESSMENT.out.for_multiqc)
+        ch_for_summary = ch_for_summary.mix(QUALITY_ASSESSMENT.out.for_summary)
+        ch_versions    = ch_versions.mix(QUALITY_ASSESSMENT.out.versions)
+
+    }
 
 }
 
