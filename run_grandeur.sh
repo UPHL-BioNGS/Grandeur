@@ -15,5 +15,5 @@ module load nextflow
 module load singularity
 
 nextflow run /scicomp/home-pure/xre6/Projects/grandeur/main.nf \
--profile my_test,singularity \
---outdir /scicomp/home-pure/xre6/Projects/grandeur/grandeur_testing/integration_test2
+-profile my_test2,singularity \
+--outdir /scicomp/home-pure/xre6/Projects/grandeur/grandeur_testing/integration_test_refactor_250706

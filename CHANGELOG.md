@@ -69,3 +69,15 @@ Updated pipleine schema.
 - Added quality assessment subworkflow
 - Added relevant modules for running the quality assessment subworkflow.
 - Updated grandeur workflow with the new subworkflow.
+
+## 2025-07-06
+
+### `Added`
+
+- Added the species identification subworkflow
+- Added relevant modules for the new subworkflow.
+- Updated grandeur.sh with the new subworkflow.
+
+### `Fixed`
+
+- fixed the MASH_DIST process in mash.nf to work with nf-core

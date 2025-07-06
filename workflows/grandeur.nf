@@ -14,6 +14,7 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_gran
 include { PREPROCESSING          } from '../subworkflows/local/preprocessing'
 include { DE_NOVO_ALIGNMENT      } from '../subworkflows/local/de_novo_alignment'
 include { QUALITY_ASSESSMENT     } from '../subworkflows/local/quality_assessment'
+include { MIN_HASH               } from "../subworkflows/local/min_hash"
 
 // GRANDEUR PIPELINE MODULES
 
@@ -63,7 +64,7 @@ workflow GRANDEUR {
         )
 
         reads_check        = PREPROCESSING.out.reads_check
-        ch_cleaned_reads   = PREPROCESSING.out.ch_cleaned_reads.map { it -> tuple (it[1], it[2]) }
+        ch_clean_reads     = PREPROCESSING.out.ch_cleaned_reads
         ch_versions        = ch_versions.mix(PREPROCESSING.out.versions)
 
         ch_for_multiqc     = ch_for_multiqc.mix(PREPROCESSING.out.for_multiqc)
@@ -96,6 +97,10 @@ workflow GRANDEUR {
         ch_for_summary = ch_for_summary.mix(QUALITY_ASSESSMENT.out.for_summary)
         ch_versions    = ch_versions.mix(QUALITY_ASSESSMENT.out.versions)
 
+        // subworkflow mash for species determination
+        MIN_HASH(ch_clean_reads, ch_fastas, ch_mash_db)
+        ch_versions = ch_versions.mix(MIN_HASH.out.versions)
+        ch_for_summary = ch_for_summary.mix(MIN_HASH.out.for_summary)
     }
 
 }

@@ -22,7 +22,7 @@ workflow PREPROCESSING {
       }
       .set{ reads_check }
 
-    ch_cleaned_reads = FASTP.out.fastp_results
+    ch_cleaned_reads = FASTP.out.fastq
     ch_versions      = ch_versions.mix(FASTP.out.versions.first())
     ch_multiqc       = FASTP.out.fastp_files
 
