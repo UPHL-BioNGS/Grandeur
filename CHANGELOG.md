@@ -81,3 +81,10 @@ Updated pipleine schema.
 ### `Fixed`
 
 - fixed the MASH_DIST process in mash.nf to work with nf-core
+
+## 2025-07-07
+
+- Added the read identification subworkflow.
+- Added relevant modules for the new subworkflow.
+- Updated grandeur.sh with the new subworkflow
+- Added blobtools.sif file to the project directory
