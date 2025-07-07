@@ -15,6 +15,7 @@ include { PREPROCESSING          } from '../subworkflows/local/preprocessing'
 include { DE_NOVO_ALIGNMENT      } from '../subworkflows/local/de_novo_alignment'
 include { QUALITY_ASSESSMENT     } from '../subworkflows/local/quality_assessment'
 include { MIN_HASH               } from "../subworkflows/local/min_hash"
+include { BLOBTOOLS              } from "../subworkflows/local/blobtools"
 
 // GRANDEUR PIPELINE MODULES
 
@@ -96,6 +97,15 @@ workflow GRANDEUR {
         ch_for_multiqc = ch_for_multiqc.mix(QUALITY_ASSESSMENT.out.for_multiqc)
         ch_for_summary = ch_for_summary.mix(QUALITY_ASSESSMENT.out.for_summary)
         ch_versions    = ch_versions.mix(QUALITY_ASSESSMENT.out.versions)
+
+        // optional subworkflow blobtools (useful for interspecies contamination)
+        if ( params.blast_db && ( params.sample_sheet || params.reads || params.sra_accessions )) {
+            BLOBTOOLS(QUALITY_ASSESSMENT.out.bams, ch_blast_db )
+
+            ch_for_summary = ch_for_summary.mix(BLOBTOOLS.out.for_summary)
+            ch_for_flag    = ch_for_flag.mix(BLOBTOOLS.out.for_flag)
+            ch_versions = ch_versions.mix(BLOBTOOLS.out.versions)
+        }
 
         // subworkflow mash for species determination
         MIN_HASH(ch_clean_reads, ch_fastas, ch_mash_db)

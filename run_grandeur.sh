@@ -16,4 +16,6 @@ module load singularity
 
 nextflow run /scicomp/home-pure/xre6/Projects/grandeur/main.nf \
 -profile my_test2,singularity \
---outdir /scicomp/home-pure/xre6/Projects/grandeur/grandeur_testing/integration_test_refactor_250706
+--outdir /scicomp/home-pure/xre6/Projects/grandeur/grandeur_testing/read_identification_refactor \
+--blast_db /scicomp/reference-pure/ncbi-blast-databases/ \
+--blast_db_type core_nt
