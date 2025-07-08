@@ -16,6 +16,7 @@ include { DE_NOVO_ALIGNMENT      } from '../subworkflows/local/de_novo_alignment
 include { QUALITY_ASSESSMENT     } from '../subworkflows/local/quality_assessment'
 include { MIN_HASH               } from "../subworkflows/local/min_hash"
 include { BLOBTOOLS              } from "../subworkflows/local/blobtools"
+include { KMER_TAXONOMIC_CLASSIFICATION } from "../subworkflows/local/kmer_taxonomic_classification"
 
 // GRANDEUR PIPELINE MODULES
 
@@ -105,6 +106,16 @@ workflow GRANDEUR {
             ch_for_summary = ch_for_summary.mix(BLOBTOOLS.out.for_summary)
             ch_for_flag    = ch_for_flag.mix(BLOBTOOLS.out.for_flag)
             ch_versions = ch_versions.mix(BLOBTOOLS.out.versions)
+        }
+
+        // optional subworkflow kraken2 (useful for interspecies contamination)
+        if ( params.kraken2_db && ( params.sample_sheet || params.reads || params.sra_accessions )) {
+            KMER_TAXONOMIC_CLASSIFICATION(ch_clean_reads, ch_kraken2_db )
+
+            ch_for_multiqc = ch_for_multiqc.mix(KMER_TAXONOMIC_CLASSIFICATION.out.for_multiqc)
+            ch_for_summary = ch_for_summary.mix(KMER_TAXONOMIC_CLASSIFICATION.out.for_summary)
+            ch_for_flag    = ch_for_flag.mix(KMER_TAXONOMIC_CLASSIFICATION.out.for_flag)
+            ch_versions    = ch_versions.mix(KMER_TAXONOMIC_CLASSIFICATION.out.versions)
         }
 
         // subworkflow mash for species determination

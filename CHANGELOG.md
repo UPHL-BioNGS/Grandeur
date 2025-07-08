@@ -84,7 +84,17 @@ Updated pipleine schema.
 
 ## 2025-07-07
 
+### `Added`
+
 - Added the read identification subworkflow.
 - Added relevant modules for the new subworkflow.
 - Updated grandeur.sh with the new subworkflow
 - Added blobtools.sif file to the project directory
+
+## 2025-07-08
+
+### `Added`
+
+- Added the taxonomic classification subworkflow
+- Added relevant modules for the new subworkflow
+- Updated grandeur.sh with the new subworkflow
