@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -cwd # Run job from current directory
-#$ -N grandeur_refactor # Job name
+#$ -N integration_test3 # Job name
 #$ -l h_vmem=128G # Memory requirement
 #$ -l h_rt=04:00:00 # Max runtime (4 hours)
 #$ -pe smp 8 # Request 8 CPUs
@@ -15,6 +15,8 @@ module load nextflow
 module load singularity
 
 nextflow run /scicomp/home-pure/xre6/Projects/grandeur/main.nf \
--profile my_test2,singularity \
---outdir /scicomp/home-pure/xre6/Projects/grandeur/grandeur_testing/kraken2_refactor_pipeline \
---kraken2_db /scicomp/home-pure/xre6/kraken2_database/
+-profile my_test,singularity \
+--outdir /scicomp/home-pure/xre6/Projects/grandeur/grandeur_testing/integration_test3_refactor_pipeline \
+--kraken2_db /scicomp/home-pure/xre6/kraken2_database/ \
+--blast_db /scicomp/reference-pure/ncbi-blast-databases \
+--blast_db_type core_nt

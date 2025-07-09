@@ -98,3 +98,11 @@ Updated pipleine schema.
 - Added the taxonomic classification subworkflow
 - Added relevant modules for the new subworkflow
 - Updated grandeur.sh with the new subworkflow
+
+## 2025-07-08
+
+### `Added`
+
+- Added the average nucleotide identity subworkflow
+- Added relevant modules for the new subworkflow
+- Updated grandeur.sh with the new subworkflow
