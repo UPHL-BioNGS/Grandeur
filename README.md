@@ -106,7 +106,7 @@ The expected tools are split into multiple processes. Each [process has its own 
 
 ## SHARE IT Act Compliance
 Organization: NCEZID-OAMD \
-contact email: ncezid_shareit@cdc.gov
+contact email: ncezid_shareit@cdc.gov \
 exemption status: \
 exemption justification (if applicable): \
 description fields: <include short description>
