@@ -103,3 +103,10 @@ Grandeur wouldn't be possible without the following tools:
 - [spades](https://cab.spbu.ru/software/spades/) - _de novo_ alignment
 
 The expected tools are split into multiple processes. Each [process has its own wiki page](https://github.com/UPHL-BioNGS/Grandeur/wiki/Processes) that we encourage users to view.
+
+## SHARE IT Act Compliance
+Organization: NCEZID-OAMD \
+contact email: ncezid_shareit@cdc.gov
+exemption status: \
+exemption justification (if applicable): \
+description fields: <include short description>
