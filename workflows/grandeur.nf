@@ -17,6 +17,7 @@ include { QUALITY_ASSESSMENT     } from '../subworkflows/local/quality_assessmen
 include { MIN_HASH               } from "../subworkflows/local/min_hash"
 include { BLOBTOOLS              } from "../subworkflows/local/blobtools"
 include { KMER_TAXONOMIC_CLASSIFICATION } from "../subworkflows/local/kmer_taxonomic_classification"
+include { AVERAGE_NUCLEOTIDE_IDENTITY }   from "../subworkflows/local/average_nucleotide_identity"
 
 // GRANDEUR PIPELINE MODULES
 
@@ -122,6 +123,18 @@ workflow GRANDEUR {
         MIN_HASH(ch_clean_reads, ch_fastas, ch_mash_db)
         ch_versions = ch_versions.mix(MIN_HASH.out.versions)
         ch_for_summary = ch_for_summary.mix(MIN_HASH.out.for_summary)
+
+        // determining organisms in sample
+        AVERAGE_NUCLEOTIDE_IDENTITY(
+            ch_for_summary.collect(),
+            ch_contigs,
+            ch_fastani_genomes.ifEmpty([]),
+            dataset_script)
+
+        ch_versions = ch_versions.mix(AVERAGE_NUCLEOTIDE_IDENTITY.out.versions)
+        ch_for_flag = ch_for_flag.mix(AVERAGE_NUCLEOTIDE_IDENTITY.out.for_flag).mix(MIN_HASH.out.for_flag)
+        ch_top_hit  = AVERAGE_NUCLEOTIDE_IDENTITY.out.top_hit
+        ch_for_summary = ch_for_summary.mix(AVERAGE_NUCLEOTIDE_IDENTITY.out.for_summary)
     }
 
 }

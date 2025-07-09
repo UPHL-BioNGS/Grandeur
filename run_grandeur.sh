@@ -15,6 +15,5 @@ module load nextflow
 module load singularity
 
 nextflow run /scicomp/home-pure/xre6/Projects/grandeur/main.nf \
--profile my_test2,singularity \
---outdir /scicomp/home-pure/xre6/Projects/grandeur/grandeur_testing/kraken2_refactor_pipeline \
---kraken2_db /scicomp/home-pure/xre6/kraken2_database/
+-profile my_test,singularity \
+--outdir /scicomp/home-pure/xre6/Projects/grandeur/grandeur_testing/nuclu_identity_refactor_pipeline
