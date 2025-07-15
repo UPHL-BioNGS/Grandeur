@@ -106,3 +106,15 @@ Updated pipleine schema.
 - Added the average nucleotide identity subworkflow
 - Added relevant modules for the new subworkflow
 - Updated grandeur.sh with the new subworkflow
+
+## 2025-07-15
+
+### `Added`
+
+- Added the information subworkflow
+- Added relevant modules for the new subworkflow
+- Updated grandeur.sh with the new subworkflow
+
+### `Fixed`
+
+- Refactored amrfinderplus.nf to make it compatible with nf-core
