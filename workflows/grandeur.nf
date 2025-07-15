@@ -18,6 +18,7 @@ include { MIN_HASH               } from "../subworkflows/local/min_hash"
 include { BLOBTOOLS              } from "../subworkflows/local/blobtools"
 include { KMER_TAXONOMIC_CLASSIFICATION } from "../subworkflows/local/kmer_taxonomic_classification"
 include { AVERAGE_NUCLEOTIDE_IDENTITY }   from "../subworkflows/local/average_nucleotide_identity"
+include { INFO }                          from "../subworkflows/local/info"
 
 // GRANDEUR PIPELINE MODULES
 
@@ -135,6 +136,18 @@ workflow GRANDEUR {
         ch_for_flag = ch_for_flag.mix(AVERAGE_NUCLEOTIDE_IDENTITY.out.for_flag).mix(MIN_HASH.out.for_flag)
         ch_top_hit  = AVERAGE_NUCLEOTIDE_IDENTITY.out.top_hit
         ch_for_summary = ch_for_summary.mix(AVERAGE_NUCLEOTIDE_IDENTITY.out.for_summary)
+
+        // getting all the other information
+        INFO(
+            ch_contigs,
+            ch_for_flag,
+            summfle_script,
+            jsoncon_script)
+
+        ch_for_summary = ch_for_summary.mix(INFO.out.for_summary)
+        ch_versions    = ch_versions.mix(INFO.out.versions)
+    } else {
+        ch_top_hit = Channel.empty()
     }
 
 }
