@@ -21,11 +21,11 @@ Initial release of nf-core/grandeur, created with the [nf-core](https://nf-co.re
 
 ### `Deprecated`
 
-Moved old pipeline structure to temporary location.
+- Moved old pipeline structure to temporary location.
 
 ## 2025-06-18
 
-Updated project config files.
+- Updated project config files.
 
 ### `Added`
 
@@ -36,7 +36,7 @@ Updated project config files.
 
 ## 2025-06-20
 
-Updated pipleine schema.
+- Updated pipleine schema.
 
 ### `Added`
 
@@ -99,7 +99,7 @@ Updated pipleine schema.
 - Added relevant modules for the new subworkflow
 - Updated grandeur.sh with the new subworkflow
 
-## 2025-07-08
+## 2025-07-09
 
 ### `Added`
 
@@ -118,3 +118,12 @@ Updated pipleine schema.
 ### `Fixed`
 
 - Refactored amrfinderplus.nf to make it compatible with nf-core
+
+## 2025-07-16
+
+### `Added`
+
+- Added the information subworkflow
+- Added relevant modules for the new subworkflow
+- Updated grandeur.sh with the new subworkflow
+- Added bakta_v1.10.4-5.1-light.sif to the assets/container directory
