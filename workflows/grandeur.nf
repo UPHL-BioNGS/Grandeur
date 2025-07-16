@@ -19,6 +19,7 @@ include { BLOBTOOLS              } from "../subworkflows/local/blobtools"
 include { KMER_TAXONOMIC_CLASSIFICATION } from "../subworkflows/local/kmer_taxonomic_classification"
 include { AVERAGE_NUCLEOTIDE_IDENTITY }   from "../subworkflows/local/average_nucleotide_identity"
 include { INFO }                          from "../subworkflows/local/info"
+include { PHYLOGENETIC_ANALYSIS }         from "../subworkflows/local/phylogenetic_analysis"
 
 // GRANDEUR PIPELINE MODULES
 
@@ -148,6 +149,17 @@ workflow GRANDEUR {
         ch_versions    = ch_versions.mix(INFO.out.versions)
     } else {
         ch_top_hit = Channel.empty()
+    }
+
+    // optional subworkflow for comparing shared genes
+    if ( params.msa ) {
+        PHYLOGENETIC_ANALYSIS(
+            evaluat_script,
+            ch_contigs.ifEmpty([]),
+            ch_top_hit.ifEmpty([]))
+
+        ch_for_multiqc = ch_for_multiqc.mix(PHYLOGENETIC_ANALYSIS.out.for_multiqc)
+        ch_versions    = ch_versions.mix(PHYLOGENETIC_ANALYSIS.out.versions)
     }
 
 }
