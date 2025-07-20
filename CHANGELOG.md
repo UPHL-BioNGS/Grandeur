@@ -123,7 +123,15 @@ Initial release of nf-core/grandeur, created with the [nf-core](https://nf-co.re
 
 ### `Added`
 
-- Added the information subworkflow
+- Added the phylogenetic subworkflow
 - Added relevant modules for the new subworkflow
 - Updated grandeur.sh with the new subworkflow
 - Added bakta_v1.10.4-5.1-light.sif to the assets/container directory
+
+## 2025-07-20
+
+### `Added`
+
+- Added the report subworkflow
+- Added relevant modules for the new subworkflow
+- Updated grandeur.sh with the new subworkflow

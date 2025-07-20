@@ -16,5 +16,4 @@ module load singularity
 
 nextflow run /scicomp/home-pure/xre6/Projects/grandeur/main.nf \
 -profile my_test,singularity \
---outdir /scicomp/home-pure/xre6/Projects/grandeur/grandeur_testing/phylogenetic_subworkflow_refactor_pipeline \
---msa True
+--outdir /scicomp/home-pure/xre6/Projects/grandeur/grandeur_testing/test_report_subworkflow_refactor_pipeline
