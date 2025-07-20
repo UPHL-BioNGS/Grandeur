@@ -20,6 +20,7 @@ include { KMER_TAXONOMIC_CLASSIFICATION } from "../subworkflows/local/kmer_taxon
 include { AVERAGE_NUCLEOTIDE_IDENTITY }   from "../subworkflows/local/average_nucleotide_identity"
 include { INFO }                          from "../subworkflows/local/info"
 include { PHYLOGENETIC_ANALYSIS }         from "../subworkflows/local/phylogenetic_analysis"
+include { REPORT }                        from "../subworkflows/local/report"
 
 // GRANDEUR PIPELINE MODULES
 
@@ -160,6 +161,19 @@ workflow GRANDEUR {
 
         ch_for_multiqc = ch_for_multiqc.mix(PHYLOGENETIC_ANALYSIS.out.for_multiqc)
         ch_versions    = ch_versions.mix(PHYLOGENETIC_ANALYSIS.out.versions)
+    }
+
+    // getting a summary of everything
+    if ( ! params.skip_extras ) {
+        REPORT(
+            ch_raw_reads,
+            ch_fastas,
+            ch_for_multiqc.collect(),
+            ch_for_summary.concat(summary_script).collect(),
+            ch_versions.collect(),
+            multiqc_script,
+            version_script
+        )
     }
 
 }
