@@ -24,6 +24,7 @@ def paramCheck(keys) {
     "datasets_max_genomes",
     "mash_max_hits",
     "min_core_genes",
+    "min_core_per",
     "current_datasets",
     "annotator",
     "skip_extras",

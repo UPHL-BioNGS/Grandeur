@@ -79,10 +79,25 @@ workflow PHYLOGENETIC_ANALYSIS {
   CORE_GENOME_EVALUATION(ch_core.combine(evaluat_script))
 
   CORE_GENOME_EVALUATION.out.evaluation
-    .filter({it[1] as int >= 4})
-    .filter({it[2] as int >= params.min_core_genes})
-    .map { it -> it[0] }
-    .set{ ch_core_genome }
+    .splitText()
+    .first()
+    .map{ it -> it.trim()}
+    .map { it ->
+      def (num_samples, num_core_genes, core_genome_per) = it.split(',')
+      return [num_samples, num_core_genes, core_genome_per]
+    }
+    .combine(ch_core)
+    .set { ch_core_genome }
+
+  if (params.min_core_genes) {
+    ch_core_genome = ch_core_genome.filter{it[1] as int >= params.min_core_genes}
+  }
+
+  if (params.min_core_per) {
+    ch_core_genome = ch_core_genome.filter{it[2] as float >= params.min_core_per}
+  }
+
+  ch_core_genome = ch_core_genome.map{ it -> it[-2]}
 
   ch_multiqc = ch_multiqc.mix(CORE_GENOME_EVALUATION.out.for_multiqc)
 
@@ -100,7 +115,7 @@ workflow PHYLOGENETIC_ANALYSIS {
   ch_multiqc  = ch_multiqc.mix(PHYTREEVIZ.out.for_multiqc)
 
   // SNP matrix
-  SNPDISTS(CORE_GENOME_EVALUATION.out.evaluation.map{ it -> it[0] })
+  SNPDISTS(ch_core_genome)
   ch_versions = ch_versions.mix(SNPDISTS.out.versions)
   ch_multiqc  = ch_multiqc.mix(SNPDISTS.out.snp_matrix)
 
