@@ -34,7 +34,7 @@ workflow PHYLOGENETIC_ANALYSIS {
         .unique()
         .set { ch_representative }
 
-      ch_preannotation = ch_contigs.join( ch_organism, by: 0, remainder: true).mix(ch_representative)
+      ch_preannotation = ch_contigs.join( ch_organism, by: 0, remainder: true).mix(ch_representative).filter{it}
     } else {
       ch_preannotation = ch_contigs.join( ch_organism, by: 0, remainder: true)
     }
