@@ -1,7 +1,7 @@
 process BLASTN {
   tag           "${meta.id}"
   label         "process_medium"
-  container     'staphb/blast:2.16.0'
+  container     'staphb/blast:2.17.0'
 
   input:
   tuple val(meta), file(contig), path(blastdb)
