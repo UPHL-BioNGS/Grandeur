@@ -71,6 +71,6 @@ workflow AVERAGE_NUCLEOTIDE_IDENTITY {
     emit:
         for_flag    = FASTANI.out.results
         for_summary = summary.mix(ch_datasets_summary).mix(fastani_len_summary)
-        top_hit     = FASTANI.out.top_hit
+        top_hit     = FASTANI.out.top_hit.map{ it -> tuple(it[0], it[1].baseName, it[1])}
         versions    = ch_versions
 }
