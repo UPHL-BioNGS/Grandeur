@@ -123,8 +123,13 @@
         },
         "min_core_genes": {
           "type": "integer",
-          "default": 1500,
-          "description": "minimum number of genes in core genome alignment for iqtree2"
+          "default": 500,
+          "description": "minimum number of genes in core genome alignment for iqtree2 (default is 500)"
+        },
+        "min_core_per": {
+          "type": "number",
+          "default": 0.5,
+          "description": "minimum percentage number of core genes in core genome alignment for iqtree2 (default is 0.5 or 50%)"
         },
         "iqtree2_outgroup": {
           "type": "string",
