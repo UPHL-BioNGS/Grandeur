@@ -36,7 +36,7 @@ process SPADES {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        spades: \$(spades.py --version 2>&1 | sed 's/^.*SPAdes genome assembler v//; s/ .*\$//')
+      spades: \$(spades.py --version 2>&1 | sed 's/^.*SPAdes genome assembler v//; s/ .*\$//')
     END_VERSIONS
   """
 }
