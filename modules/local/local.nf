@@ -1,13 +1,13 @@
 process CORE_GENOME_EVALUATION {
   tag         "Evaluating core genome"
   label       "process_single"
-  container   'staphb/pandas:2.2.3'
+  container   'staphb/pandas:2.3.0'
 
   input:
   tuple file(fasta), file(summary), file(script)
 
   output:
-  tuple file(fasta), env("num_samples"), env("num_core_genes"), emit: evaluation
+  path("core_genome_values.csv"), emit: evaluation
   path "core_genome_evaluation/core_genome_evaluation.csv", emit: for_multiqc
   path "logs/${task.process}/*.log"                       , emit: log_files
 
@@ -23,6 +23,8 @@ process CORE_GENOME_EVALUATION {
 
     num_samples=\$(wc -l core_genome_evaluation.csv | awk '{print \$1}' )
     num_core_genes=\$(cut -f 3 core_genome_evaluation.csv -d "," | tail -n 1 | cut -f 1 -d "." )
+    per_core_genes=\$(cut -f 7 core_genome_evaluation.csv -d "," | tail -n 1 )
+    echo "\$num_samples,\$num_core_genes,\$per_core_genes" > core_genome_values.csv
     cp core_genome_evaluation.csv core_genome_evaluation/core_genome_evaluation.csv
   """
 }
@@ -30,7 +32,7 @@ process CORE_GENOME_EVALUATION {
 process JSON_CONVERT {
   tag       "${meta.id}"
   label     "process_single"
-  container 'staphb/pandas:2.2.3'
+  container 'staphb/pandas:2.3.0'
 
   input:
   tuple val(meta), val(analysis), file(json), file(script)
@@ -54,7 +56,7 @@ process JSON_CONVERT {
 process MQC_PREP {
   tag           "prepping files"
   label         "process_single"
-  container     'staphb/pandas:2.2.3'
+  container     'staphb/pandas:2.3.0'
   
   input:
   file(input)
@@ -75,7 +77,7 @@ process MQC_PREP {
 process NAMES {
   tag           "${meta.id}"
   label         "process_single"
-  container     'staphb/pandas:2.2.3'
+  container     'staphb/pandas:2.3.0'
   
   input:
   tuple val(meta), file(input)
@@ -119,7 +121,7 @@ process REFERENCES {
 process SPECIES {
   tag           "Creating list of species"
   label         "process_single"
-  container     'staphb/pandas:2.2.3'
+  container     'staphb/pandas:2.3.0'
   
   input:
   file(results)
@@ -155,7 +157,7 @@ process SPECIES {
 
 process SUMMARY {
   tag           "Creating summary files"
-  container     'staphb/pandas:2.2.3'
+  container     'staphb/pandas:2.3.0'
   label         "process_single"
 
   input:

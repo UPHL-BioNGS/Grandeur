@@ -1,7 +1,7 @@
 process FASTP {
   tag           "${meta.id}"
   label         "process_low"
-  container     'staphb/fastp:0.24.1'
+  container     'staphb/fastp:1.0.1'
   
   input:
   tuple val(meta), file(reads)
@@ -11,7 +11,6 @@ process FASTP {
   path "fastp/*_fastp.html", emit: html, optional: true
   path "fastp/*_fastp.json", emit: fastp_files, optional: true
   path "logs/${task.process}/*.{log,err}", emit: log
-  tuple val(meta), file("fastp/*_fastp_R{1,2}.fastq.gz"), env("passed_reads"), emit: fastp_results
   path  "versions.yml", emit: versions
 
   when:
@@ -35,8 +34,13 @@ process FASTP {
       2>> \$err_file | tee -a \$log_file
 
     passed_reads=\$(grep "reads passed filter" \$err_file | tail -n 1 | cut -f 2 -d ":" | sed 's/ //g' )
-    
-    if [ -z "\$passed_reads" ] ; then passed_reads="0" ; fi
+
+    # removes reads from proceeding further if there aren't enough
+    if [ "\$passed_reads" -lt "${params.minimum_reads}" ]
+    then
+      mv fastp/${prefix}_fastp_R1.fastq.gz fastp/${prefix}_fastp_1.fastq.gz
+      mv fastp/${prefix}_fastp_R2.fastq.gz fastp/${prefix}_fastp_2.fastq.gz
+    fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

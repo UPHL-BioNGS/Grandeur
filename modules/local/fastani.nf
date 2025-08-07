@@ -8,7 +8,7 @@ process FASTANI {
 
   output:
   tuple val(meta), file("fastani/*_fastani.csv"), emit: results, optional: true
-  tuple val(meta), env("top_hit"), path("top_hit/*"), emit: top_hit, optional: true
+  tuple val(meta), path("top_hit/*"), emit: top_hit, optional: true
   path "fastani/*_fastani_len.csv", emit: top_len, optional: true
   path "fastani/*", emit: everything
   path "logs/${task.process}/*.log", emit: log

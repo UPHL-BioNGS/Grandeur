@@ -10,16 +10,9 @@ workflow DE_NOVO_ALIGNMENT {
 
     FASTP(reads)
 
-    FASTP.out.fastp_results
-      .filter ({ it[2] as int >= params.minimum_reads })
-      .map { it -> 
-        tuple (it[0], it[1])
-      }
-      .set{ read_check }
-
     ch_versions = ch_versions.mix(FASTP.out.versions.first())
 
-    SPADES(read_check)
+    SPADES(FASTP.out.fastq)
 
     ch_versions = ch_versions.mix(SPADES.out.versions.first())
 
