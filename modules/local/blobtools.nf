@@ -1,7 +1,7 @@
 process BLOBTOOLS_CREATE {
   tag           "${meta.id}"
   label         "process_medium"
-  container     'chrishah/blobtools:v1.1.1'
+  container     'assets/containers/blobtools_v1.1.1.sif'
   
   input:
   tuple val(meta), file(contig), file(bam), file(blastn)
@@ -39,7 +39,7 @@ process BLOBTOOLS_CREATE {
 process BLOBTOOLS_VIEW {
   tag           "${meta.id}"
   label         "process_medium"
-  container     'chrishah/blobtools:v1.1.1'
+  container     'assets/containers/blobtools_v1.1.1.sif'
   
   input:
   tuple val(meta), file(json)
@@ -74,7 +74,7 @@ process BLOBTOOLS_VIEW {
 process BLOBTOOLS_PLOT {
   tag           "${meta.id}"
   label         "process_medium"
-  container     'chrishah/blobtools:v1.1.1'
+  container     'assets/containers/blobtools_v1.1.1.sif'
   
   input:
   tuple val(meta), file(json)

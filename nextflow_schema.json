@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/UPHL-BioNGS/Grandeur/master/nextflow_schema.json",
-  "title": "UPHL-BioNGS/Grandeur pipeline parameters",
+  "$id": "https://raw.githubusercontent.com/nf-core/grandeur/master/nextflow_schema.json",
+  "title": "nf-core/grandeur pipeline parameters",
   "description": "Grandeur is short-read de novo assembly pipeline with serotyping.",
   "type": "object",
   "$defs": {
@@ -10,9 +10,6 @@
       "type": "object",
       "fa_icon": "fas fa-terminal",
       "description": "Define where the pipeline should find input data and save output data.",
-      "required": [
-        "outdir"
-      ],
       "properties": {
         "input": {
           "type": "string",
@@ -22,291 +19,413 @@
           "mimetype": "text/csv",
           "pattern": "^\\S+\\.csv$",
           "description": "Path to comma-separated file containing information about the samples in the experiment.",
-          "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row.",
-          "fa_icon": "fas fa-file-csv",
-          "hidden": true
-        },
-        "sample_sheet": {
-          "type": "string",
-          "description": "csv with sample,read1,read2"
-        },
-        "fastas": {
-          "type": "string",
-          "hidden": true,
-          "description": "directory with fasta files (not compatible with cloud resources)"
-        },
-        "fasta_list": {
-          "type": "string",
-          "description": "A sample sheet for fasta files"
+          "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row. See [usage docs](https://nf-co.re/grandeur/usage#samplesheet-input).",
+          "fa_icon": "fas fa-file-csv"
         },
         "reads": {
+          "type": "string"
+        },
+        "reads_directory": {
           "type": "string",
-          "hidden": true,
-          "description": "directory with paired-end illumina fastq files (not compatible with cloud resources)"
+          "description": "fastq files from a directory",
+          "format": "file-path",
+          "fa_icon": "fas fa-folder",
+          "pattern": "\\.(fastq|fq)(\\.gz)?$"
         },
         "outdir": {
           "type": "string",
           "format": "directory-path",
           "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
-          "fa_icon": "fas fa-folder-open",
-          "default": "grandeur"
+          "fa_icon": "fas fa-folder-open"
         },
-        "sra_accessions": {
+        "email": {
           "type": "string",
-          "default": [],
-          "hidden": true,
-          "description": "list of accessions to download from the SRA"
+          "description": "Email address for completion summary.",
+          "fa_icon": "fas fa-envelope",
+          "help_text": "Set this parameter to your e-mail address to get a summary e-mail with details of the run sent to you when the workflow exits. If set in your user config file (`~/.nextflow/config`) then you don't need to specify this on the command line for every run.",
+          "pattern": "^([a-zA-Z0-9_\\-\\.]+)@([a-zA-Z0-9_\\-\\.]+)\\.([a-zA-Z]{2,5})$"
         },
-        "genome_accessions": {
+        "multiqc_title": {
           "type": "string",
-          "default": [],
-          "hidden": true,
-          "description": "list of accessions to download from genomes"
+          "description": "MultiQC report title. Printed as page header, used for filename if not otherwise specified.",
+          "fa_icon": "fas fa-file-signature"
         },
-        "genome_sizes": {
+        "fastas": {
           "type": "string",
-          "default": null,
-          "hidden": true,
-          "description": "text of genome sizes"
+          "fa_icon": "fas fa-dna",
+          "description": "Path to FASTA genome file.",
+          "pattern": "\\.(fa|fasta|fna)$",
+          "format": "file-path",
+          "mimetype": "text/plain"
         }
       }
     },
-    "reference_files_paths": {
-      "title": "Reference files/paths",
+    "external_databases": {
+      "title": "External Databases",
       "type": "object",
-      "description": "",
+      "description": "Databases and External Files",
       "default": "",
       "properties": {
         "kraken2_db": {
           "type": "string",
-          "description": "directory of kraken2 database"
+          "fa_icon": "fas fa-database",
+          "description": "Directory with kraken2 database",
+          "format": "directory-path"
         },
         "blast_db": {
           "type": "string",
-          "description": "directory of blast database. Compressed directories can be found at https://ftp.ncbi.nlm.nih.gov/blast/db/v5/."
+          "fa_icon": "fas fa-database",
+          "description": "Directory with blast database",
+          "format": "directory-path"
         },
         "blast_db_type": {
           "type": "string",
-          "description": "type of blast database (ex: 'nt', 'nt_prok', or 'ref_prok_rep_genomes')"
+          "fa_icon": "fas fa-filter"
         },
         "mash_db": {
           "type": "string",
-          "description": "prepared mash reference msh file"
+          "fa_icon": "fas fa-database",
+          "description": "file of pre-sketched mash reference",
+          "format": "file-path",
+          "mimetype": "text/plain"
         },
         "fastani_ref": {
           "type": "string",
-          "description": "additional fasta files for fastani references"
+          "fa_icon": "fas fa-file-alt",
+          "description": "User supplied fastani reference genomes",
+          "pattern": "^\\S+\\.csv$",
+          "format": "file-path",
+          "mimetype": "text/csv"
         },
         "fastani_ref_list": {
           "type": "string",
-          "description": "list of genomes (in fasta format) for fastani references"
+          "fa_icon": "fas fa-clipboard-list",
+          "description": "Additional fastani reference genome from file",
+          "format": "file-path"
+        },
+        "sra_accessions": {
+          "type": "array",
+          "fa_icon": "far fa-list-alt"
+        },
+        "genome_accessions": {
+          "type": "string",
+          "default": "[]",
+          "fa_icon": "far fa-list-alt"
+        },
+        "genome_sizes": {
+          "type": "string",
+          "default": null,
+          "fa_icon": "fas fa-file-alt",
+          "pattern": "\\.json$",
+          "format": "file-path"
         }
-      }
+      },
+      "fa_icon": "fas fa-server"
     },
-    "workflow_values": {
-      "title": "workflow values",
+    "software_threshold_options": {
+      "title": "Software threshold options",
       "type": "object",
-      "description": "",
+      "description": "Threshold options for software tools used in the pipeline.",
       "default": "",
       "properties": {
+        "minimum_reads": {
+          "type": "integer",
+          "default": 10000,
+          "fa_icon": "fas fa-cog"
+        },
         "datasets_max_genomes": {
           "type": "integer",
           "default": 5,
-          "hidden": true,
-          "description": "the maxiumum number of genomes to download per organism"
+          "fa_icon": "fas fa-cog"
         },
         "mash_max_hits": {
           "type": "integer",
           "default": 25,
-          "hidden": true,
-          "description": "the number of mash hits allowed in result file"
+          "fa_icon": "fas fa-cog"
         },
         "min_core_genes": {
           "type": "integer",
           "default": 1500,
-          "description": "minimum number of genes in core genome alignment for iqtree2"
+          "fa_icon": "fas fa-cog"
         },
         "iqtree2_outgroup": {
           "type": "string",
-          "hidden": true,
-          "description": "to specify outgroup in iqtree2"
+          "fa_icon": "fas fa-cog"
+        }
+      },
+      "fa_icon": "fas fa-wrench"
+    },
+    "core_workflows": {
+      "title": "Core Workflows",
+      "type": "object",
+      "description": "",
+      "default": "",
+      "fa_icon": "fas fa-route",
+      "properties": {
+        "aligner": {
+          "type": "string",
+          "default": "panaroo",
+          "fa_icon": "fas fa-align-center"
         },
-        "minimum_reads": {
-          "type": "integer",
-          "default": 10000,
-          "hidden": true,
-          "description": "the minimum number of reads in a fastq file required to move to de novo alignment"
-          }
+        "annotator": {
+          "type": "string",
+          "default": "bakta",
+          "fa_icon": "fas fa-asterisk"
         }
-      },
-      "subworkflow_toggles": {
-        "title": "Subworkflow toggles",
-        "type": "object",
-        "description": "",
-        "default": "",
-        "properties": {
-          "exclude_top_hit": {
-            "type": "boolean",
-            "hidden": true,
-            "description": "removes fastani top hit from msa"
-          },
-          "msa": {
-            "type": "boolean",
-            "description": "toggles whether or not phylogenetic analysis will be run on samples"
-          },
-          "aligner": {
-            "type": "string",
-            "default": "panaroo",
-            "hidden": true,
-            "description": "chooses core genome aligner (params.msa must be set to true)",
-            "enum": [
-              "roary",
-              "panaroo"
-            ]
-          },
-          "annotator": {
-            "type": "string",
-            "default": "bakta",
-            "hidden": true,
-            "description": "chooses annotator (params.msa must be set to true)",
-            "enum": [
-              "bakta",
-              "prokka"
-            ]
-          },
-          "skip_extras": {
-            "type": "boolean",
-            "hidden": true,
-            "description": "turns off blobtools, kraken2, fastani, mash, and report generation subworkflows"
-          },
-          "current_datasets": {
-            "type": "boolean",
-            "hidden": true,
-            "description": "toggles whether or not genomes are downloaded from NCBI"
-          }
-        }
-      },
-      "generic_options": {
-          "title": "Generic options",
-          "type": "object",
-          "fa_icon": "fas fa-file-import",
-          "description": "Less common options for the pipeline, typically set in a config file.",
-          "help_text": "These options are common to all nf-core pipelines and allow you to customise some of the core preferences for how the pipeline runs.\n\nTypically these options would be set in a Nextflow config file loaded for all pipeline runs, such as `~/.nextflow/config`.",
-          "properties": {
-              "version": {
-                  "type": "boolean",
-                  "description": "Display version and exit.",
-                  "fa_icon": "fas fa-question-circle",
-                  "hidden": true
-              },
-              "publish_dir_mode": {
-                  "type": "string",
-                  "default": "copy",
-                  "description": "Stolen from example and might not do anything.",
-                  "hidden": true
-              },
-              "email_on_fail": {
-                  "type": "string",
-                  "description": "Stolen from example and might not do anything.",
-                  "hidden": true
-              },
-              "plaintext_email": {
-                  "type": "boolean",
-                  "description": "Stolen from example and might not do anything.",
-                  "hidden": true
-              },
-              "monochrome_logs": {
-                  "type": "boolean",
-                  "description": "Stolen from example and might not do anything.",
-                  "hidden": true
-              },
-              "email": {
-                  "type": "string",
-                  "description": "Stolen from example and might not do anything.",
-                  "hidden": true
-              },
-              "hook_url": {
-                  "type": "string",
-                  "description": "Stolen from example and might not do anything.",
-                  "hidden": true
-              },
-              "pipelines_testdata_base_path": {
-                  "type": "string",
-                  "default": "https://raw.githubusercontent.com/nf-core/test-datasets/",
-                  "description": "Stolen from example and might not do anything.",
-                  "hidden": true
-              },
-              "config_profile_description": {
-                  "type": "string",
-                  "description": "Stolen from example and might not do anything.",
-                  "hidden": true
-              },
-              "config_profile_name": {
-                  "type": "string",
-                  "description": "Stolen from example and might not do anything.",
-                  "hidden": true
-              },
-              "custom_config_version": {
-                  "type": "string",
-                  "default": "master",
-                  "description": "Stolen from example and might not do anything.",
-                  "hidden": true
-              },
-              "custom_config_base": {
-                  "type": "string",
-                  "default": "https://raw.githubusercontent.com/nf-core/configs/master",
-                  "description": "Stolen from example and might not do anything.",
-                  "hidden": true
-              },
-              "config_profile_url": {
-                  "type": "string",
-                  "description": "Stolen from example and might not do anything.",
-                  "hidden": true
-              },
-              "validationLenientMode": {
-                  "type": "boolean",
-                  "description": "Stolen from example and might not do anything.",
-                  "hidden": true
-              },
-              "validationShowHiddenParams": {
-                  "type": "boolean",
-                  "description": "Stolen from example and might not do anything.",
-                  "hidden": true
-              },
-              "validationFailUnrecognisedParams": {
-                  "type": "boolean",
-                  "description": "Stolen from example and might not do anything.",
-                  "hidden": true
-              },
-              "config_profile_contact": {
-                  "type": "string",
-                  "description": "Stolen from example and might not do anything.",
-                  "hidden": true
-              },
-              "validate_params": {
-                  "type": "boolean",
-                  "description": "Stolen from example and might not do anything.",
-                  "fa_icon": "fas fa-check-square",
-                  "hidden": true
-              }
-          }
       }
+    },
+    "subworkflow_flags": {
+      "title": "Subworkflow Flags",
+      "type": "object",
+      "description": "Flags for the Subworkflows",
+      "default": "",
+      "properties": {
+        "current_datasets": {
+          "type": "boolean",
+          "fa_icon": "fas fa-copy"
+        },
+        "skip_extras": {
+          "type": "boolean",
+          "fa_icon": "fas fa-forward"
+        },
+        "exclude_top_hit": {
+          "type": "boolean",
+          "fa_icon": "far fa-times-circle"
+        },
+        "msa": {
+          "type": "boolean",
+          "fa_icon": "fas fa-toolbox"
+        }
+      },
+      "fa_icon": "fas fa-flag"
+    },
+    "reference_genome_options": {
+      "title": "Reference genome options",
+      "type": "object",
+      "fa_icon": "fas fa-dna",
+      "description": "Reference genome related files and options required for the workflow.",
+      "properties": {
+        "genome": {
+          "type": "string",
+          "description": "Name of iGenomes reference.",
+          "fa_icon": "fas fa-book",
+          "help_text": "If using a reference genome configured in the pipeline using iGenomes, use this parameter to give the ID for the reference. This is then used to build the full paths for all required reference genome files e.g. `--genome GRCh38`. \n\nSee the [nf-core website docs](https://nf-co.re/usage/reference_genomes) for more details."
+        },
+        "fasta": {
+          "type": "string",
+          "format": "file-path",
+          "exists": true,
+          "mimetype": "text/plain",
+          "pattern": "^\\S+\\.fn?a(sta)?(\\.gz)?$",
+          "description": "Path to FASTA genome file.",
+          "help_text": "This parameter is *mandatory* if `--genome` is not specified. If you don't have a BWA index available this will be generated for you automatically. Combine with `--save_reference` to save BWA index for future runs.",
+          "fa_icon": "far fa-file-code"
+        },
+        "igenomes_ignore": {
+          "type": "boolean",
+          "description": "Do not load the iGenomes reference config.",
+          "fa_icon": "fas fa-ban",
+          "hidden": true,
+          "help_text": "Do not load `igenomes.config` when running the pipeline. You may choose this option if you observe clashes between custom parameters and those supplied in `igenomes.config`."
+        },
+        "igenomes_base": {
+          "type": "string",
+          "format": "directory-path",
+          "description": "The base path to the igenomes reference files",
+          "fa_icon": "fas fa-ban",
+          "hidden": true,
+          "default": "s3://ngi-igenomes/igenomes/"
+        }
+      }
+    },
+    "institutional_config_options": {
+      "title": "Institutional config options",
+      "type": "object",
+      "fa_icon": "fas fa-university",
+      "description": "Parameters used to describe centralised config profiles. These should not be edited.",
+      "help_text": "The centralised nf-core configuration profiles use a handful of pipeline parameters to describe themselves. This information is then printed to the Nextflow log when you run a pipeline. You should not need to change these values when you run a pipeline.",
+      "properties": {
+        "custom_config_version": {
+          "type": "string",
+          "description": "Git commit id for Institutional configs.",
+          "default": "master",
+          "hidden": true,
+          "fa_icon": "fas fa-users-cog"
+        },
+        "custom_config_base": {
+          "type": "string",
+          "description": "Base directory for Institutional configs.",
+          "default": "https://raw.githubusercontent.com/nf-core/configs/master",
+          "hidden": true,
+          "help_text": "If you're running offline, Nextflow will not be able to fetch the institutional config files from the internet. If you don't need them, then this is not a problem. If you do need them, you should download the files from the repo and tell Nextflow where to find them with this parameter.",
+          "fa_icon": "fas fa-users-cog"
+        },
+        "config_profile_name": {
+          "type": "string",
+          "description": "Institutional config name.",
+          "hidden": true,
+          "fa_icon": "fas fa-users-cog"
+        },
+        "config_profile_description": {
+          "type": "string",
+          "description": "Institutional config description.",
+          "hidden": true,
+          "fa_icon": "fas fa-users-cog"
+        },
+        "config_profile_contact": {
+          "type": "string",
+          "description": "Institutional config contact information.",
+          "hidden": true,
+          "fa_icon": "fas fa-users-cog"
+        },
+        "config_profile_url": {
+          "type": "string",
+          "description": "Institutional config URL link.",
+          "hidden": true,
+          "fa_icon": "fas fa-users-cog"
+        }
+      }
+    },
+    "generic_options": {
+      "title": "Generic options",
+      "type": "object",
+      "fa_icon": "fas fa-file-import",
+      "description": "Less common options for the pipeline, typically set in a config file.",
+      "help_text": "These options are common to all nf-core pipelines and allow you to customise some of the core preferences for how the pipeline runs.\n\nTypically these options would be set in a Nextflow config file loaded for all pipeline runs, such as `~/.nextflow/config`.",
+      "properties": {
+        "version": {
+          "type": "boolean",
+          "description": "Display version and exit.",
+          "fa_icon": "fas fa-question-circle",
+          "hidden": true
+        },
+        "publish_dir_mode": {
+          "type": "string",
+          "default": "copy",
+          "description": "Method used to save pipeline results to output directory.",
+          "help_text": "The Nextflow `publishDir` option specifies which intermediate files should be saved to the output directory. This option tells the pipeline what method should be used to move these files. See [Nextflow docs](https://www.nextflow.io/docs/latest/process.html#publishdir) for details.",
+          "fa_icon": "fas fa-copy",
+          "enum": [
+            "symlink",
+            "rellink",
+            "link",
+            "copy",
+            "copyNoFollow",
+            "move"
+          ],
+          "hidden": true
+        },
+        "email_on_fail": {
+          "type": "string",
+          "description": "Email address for completion summary, only when pipeline fails.",
+          "fa_icon": "fas fa-exclamation-triangle",
+          "pattern": "^([a-zA-Z0-9_\\-\\.]+)@([a-zA-Z0-9_\\-\\.]+)\\.([a-zA-Z]{2,5})$",
+          "help_text": "An email address to send a summary email to when the pipeline is completed - ONLY sent if the pipeline does not exit successfully.",
+          "hidden": true
+        },
+        "plaintext_email": {
+          "type": "boolean",
+          "description": "Send plain-text email instead of HTML.",
+          "fa_icon": "fas fa-remove-format",
+          "hidden": true
+        },
+        "max_multiqc_email_size": {
+          "type": "string",
+          "description": "File size limit when attaching MultiQC reports to summary emails.",
+          "pattern": "^\\d+(\\.\\d+)?\\.?\\s*(K|M|G|T)?B$",
+          "default": "25.MB",
+          "fa_icon": "fas fa-file-upload",
+          "hidden": true
+        },
+        "monochrome_logs": {
+          "type": "boolean",
+          "description": "Do not use coloured log outputs.",
+          "fa_icon": "fas fa-palette",
+          "hidden": true
+        },
+        "hook_url": {
+          "type": "string",
+          "description": "Incoming hook URL for messaging service",
+          "fa_icon": "fas fa-people-group",
+          "help_text": "Incoming hook URL for messaging service. Currently, MS Teams and Slack are supported.",
+          "hidden": true
+        },
+        "multiqc_config": {
+          "type": "string",
+          "format": "file-path",
+          "description": "Custom config file to supply to MultiQC.",
+          "fa_icon": "fas fa-cog",
+          "hidden": true
+        },
+        "multiqc_logo": {
+          "type": "string",
+          "description": "Custom logo file to supply to MultiQC. File name must also be set in the MultiQC config file",
+          "fa_icon": "fas fa-image",
+          "hidden": true
+        },
+        "multiqc_methods_description": {
+          "type": "string",
+          "description": "Custom MultiQC yaml file containing HTML including a methods description.",
+          "fa_icon": "fas fa-cog"
+        },
+        "validate_params": {
+          "type": "boolean",
+          "description": "Boolean whether to validate parameters against the schema at runtime",
+          "default": true,
+          "fa_icon": "fas fa-check-square",
+          "hidden": true
+        },
+        "pipelines_testdata_base_path": {
+          "type": "string",
+          "fa_icon": "far fa-check-circle",
+          "description": "Base URL or local path to location of pipeline test dataset files",
+          "default": "https://raw.githubusercontent.com/nf-core/test-datasets/",
+          "hidden": true
+        },
+        "trace_report_suffix": {
+          "type": "string",
+          "fa_icon": "far calendar",
+          "description": "Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss.",
+          "hidden": true
+        }
+      }
+    }
   },
   "allOf": [
     {
       "$ref": "#/$defs/input_output_options"
     },
     {
-      "$ref": "#/$defs/reference_files_paths"
+      "$ref": "#/$defs/external_databases"
     },
     {
-      "$ref": "#/$defs/workflow_values"
+      "$ref": "#/$defs/software_threshold_options"
     },
     {
-      "$ref": "#/$defs/subworkflow_toggles"
+      "$ref": "#/$defs/core_workflows"
+    },
+    {
+      "$ref": "#/$defs/subworkflow_flags"
+    },
+    {
+      "$ref": "#/$defs/reference_genome_options"
+    },
+    {
+      "$ref": "#/$defs/institutional_config_options"
     },
     {
       "$ref": "#/$defs/generic_options"
     }
-  ]
+  ],
+  "properties": {
+    "validationFailUnrecognisedParams": {
+      "type": "boolean"
+    },
+    "validationLenientMode": {
+      "type": "boolean"
+    },
+    "validationShowHiddenParams": {
+      "type": "boolean"
+    }
+  }
 }

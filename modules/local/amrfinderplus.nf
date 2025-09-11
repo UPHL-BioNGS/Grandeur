@@ -1,54 +1,76 @@
 process AMRFINDER {
-  tag           "${meta.id}"
-  label         "process_high"
-  container     'staphb/ncbi-amrfinderplus:4.0.22-2025-03-25.1'
 
-  input:
-  tuple val(meta), file(contigs), val(genus), val(species)
+    tag       "${meta.id}"
+    label     "process_high"
+    container 'staphb/ncbi-amrfinderplus:4.0.22-2025-03-25.1'
 
-  output:
-  path "amrfinder/*_amrfinder.txt", emit: collect, optional: true
-  val meta, emit: meta
-  path "logs/*/*.log", emit: log
-  path "versions.yml", emit: versions
+    input:
+    tuple val(meta), file(contigs), val(genus), val(species)
 
-  when:
-  task.ext.when == null || task.ext.when
+    output:
+    path "amrfinder/*_amrfinder.txt", emit: collect, optional: true
+    val meta, emit: meta
+    path "logs/*/*.log", emit: log
+    path "versions.yml", emit: versions
 
-  script:
-  def args   = task.ext.args   ?: '--plus'
-  def prefix = task.ext.prefix ?: "${meta.id}"
-  """
+    when:
+    task.ext.when == null || task.ext.when
+
+    script:
+    def args   = task.ext.args   ?: '--plus'
+    def prefix = task.ext.prefix ?: "${meta.id}"
+
+    """
+    set -euo pipefail
+
     mkdir -p amrfinder logs/${task.process}
-    log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
+    log_file="logs/${task.process}/${prefix}.${workflow.sessionId}.log"
 
-    organism=\$(amrfinder -l | tr " " "\\n" | grep -i ${genus} | grep -i ${species} | sed 's/,//g' | head -n 1 )
-    if [ -z "\$organism" ] ; then organism=\$(amrfinder -l | tr " " "\\n" | grep -i ${genus} | sed 's/,//g' | head -n 1 ) ; fi
-    if [ -n "\$organism" ]
-    then
-      organism_check="--organism \$organism"
-      echo "Top organism result of ${genus} ${species} matched with \$organism" >> \$log_file
-    elif [ "${genus}" == "Shigella" ]
-    then
-      organism_check="--organism Escherichia"
-      echo "--organism Escherichia with be used because of top organism result of ${genus}" >> \$log_file
-    else
-      organism_check=''
-      echo "Top organism result of ${genus} ${species} did not match any of the organisms" >> \$log_file
+    echo "Running AMRFinder on ${contigs} for ${genus} ${species}" >> "\${log_file}"
+
+    # Fetch list of supported organisms from AMRFinder
+    organism_list=\$(amrfinder -l | tr " " "\\n")
+
+    # Try to match genus and species
+    organism_match=\$( (echo "\$organism_list" | grep -i "${genus}" | grep -i "${species}" | sed 's/,//g' | head -n 1) || true )
+
+    # Fallback to just genus
+    if [ -z "\$organism_match" ]; then
+        organism_match=\$( (echo "\$organism_list" | grep -i "${genus}" | sed 's/,//g' | head -n 1) || true )
     fi
 
-    amrfinder ${args} \
-      --nucleotide ${contigs} \
-      --threads ${task.cpus} \
-      --name ${prefix} \
-      --output amrfinder/${prefix}_amrfinder.txt \
-      \$organism_check \
-      | tee -a \$log_file
+    # Special fallback for Shigella
+    if [ -z "\$organism_match" ] && [ "${genus}" = "Shigella" ]; then
+        organism_match="Escherichia"
+        echo "[WARN] No match found for ${genus} ${species}; using Escherichia as fallback" >> "\${log_file}"
+    fi
+    
+    # Build organism flag
+    if [ -n "\$organism_match" ]; then
+        organism_flag="--organism=\$organism_match"
+        echo "[INFO] Using organism match: \$organism_match" >> "\${log_file}"
+    else
+        organism_flag=""
+        echo "[WARN] No organism match found; running AMRFinder without --organism" >> "\${log_file}"
+    fi
 
+    # Log and run the command
+    echo "[INFO] Running AMRFinder..." >> "\${log_file}"
+
+    amrfinder ${args} \\
+        --nucleotide ${contigs} \\
+        --threads ${task.cpus} \\
+        --name ${prefix} \\
+        --output amrfinder/${prefix}_amrfinder.txt \\
+        \${organism_flag} | tee -a "\${log_file}"
+
+    echo "[INFO] AMRFinder finished." >> "\${log_file}"
+
+    # Capture version info
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         amrfinderplus: \$(amrfinder --version)
-        amrfinderplus-database: \$(echo \$(echo \$(amrfinder --database amrfinderdb --database_version 2> stdout) | rev | cut -f 1 -d ' ' | rev))
+        amrfinderplus-database: \$(amrfinder --version)
     END_VERSIONS
-  """
+    """
 }

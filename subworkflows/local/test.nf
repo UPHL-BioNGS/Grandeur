@@ -39,7 +39,7 @@ workflow TEST {
     }
 
     emit:
-    fastq   = ch_fastq
+    fastq    = ch_fastq
     fasta    = ch_fasta
     versions = ch_versions
 }

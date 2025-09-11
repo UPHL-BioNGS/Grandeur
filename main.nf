@@ -1,9 +1,11 @@
 #!/usr/bin/env nextflow
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    UPHL-BioNGS/Grandeur
+    nf-core/grandeur
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     Github : https://github.com/UPHL-BioNGS/Grandeur
+    Website: <insert link>
+    Slack  : <insert link>
 ----------------------------------------------------------------------------------------
 */
 
@@ -13,45 +15,94 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { INITIALIZE } from './subworkflows/local/initialize'
-include { GRANDEUR   } from './workflows/grandeur'
+include { GRANDEUR                } from './workflows/grandeur'
+include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_grandeur_pipeline'
+include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_grandeur_pipeline'
+include { getGenomeAttribute      } from './subworkflows/local/utils_nfcore_grandeur_pipeline'
 
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    GENOME PARAMETER VALUES
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
 
+// TODO nf-core: Remove this line if you don't need a FASTA file
+//   This is an example of how to use getGenomeAttribute() to fetch parameters
+//   from igenomes.config using `--genome`
+params.fasta = getGenomeAttribute('fasta')
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    NAMED WORKFLOWS FOR PIPELINE
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+//
+// WORKFLOW: Run main analysis pipeline depending on type of input
+//
+
+/*workflow NFCORE_GRANDEUR {
+
+    take:
+    samplesheet // channel: samplesheet read in from --input
+
+    main:
+
+    //
+    // WORKFLOW: Run pipeline
+    //
+    GRANDEUR (
+        samplesheet
+    )
+    emit:
+    multiqc_report = GRANDEUR.out.multiqc_report // channel: /path/to/multiqc_report.html
+}*/
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
+
 workflow {
 
-  main:
-  //
-  // SUBWORKFLOW: Initialize files and tasks
-  //
-  INITIALIZE ()
+    main:
 
-  //
-  // WORKFLOW: Run main workflow
-  //
-  GRANDEUR (
-    INITIALIZE.out.reads,
-    INITIALIZE.out.fastas,
-    INITIALIZE.out.fastani_genomes,
-    INITIALIZE.out.versions,
-    INITIALIZE.out.genome_sizes,
-    INITIALIZE.out.mash_db,
-    INITIALIZE.out.kraken2_db,
-    INITIALIZE.out.blast_db,
-    INITIALIZE.out.dataset_script,
-    INITIALIZE.out.evaluat_script,
-    INITIALIZE.out.jsoncon_script,
-    INITIALIZE.out.multiqc_script,
-    INITIALIZE.out.summary_script,
-    INITIALIZE.out.summfle_script,
-    INITIALIZE.out.version_script
-  )
+    PIPELINE_INITIALISATION (
+        params.version,
+        params.validate_params,
+        params.monochrome_logs,
+        args,
+        params.outdir,
+        params.input
+    )
 
+    GRANDEUR (
+        PIPELINE_INITIALISATION.out.reads,
+        PIPELINE_INITIALISATION.out.fastas,
+        PIPELINE_INITIALISATION.out.fastani_genomes,
+        PIPELINE_INITIALISATION.out.versions,
+        PIPELINE_INITIALISATION.out.genome_sizes,
+        PIPELINE_INITIALISATION.out.mash_db,
+        PIPELINE_INITIALISATION.out.kraken2_db,
+        PIPELINE_INITIALISATION.out.blast_db,
+        PIPELINE_INITIALISATION.out.dataset_script,
+        PIPELINE_INITIALISATION.out.evaluat_script,
+        PIPELINE_INITIALISATION.out.jsoncon_script,
+        PIPELINE_INITIALISATION.out.multiqc_script,
+        PIPELINE_INITIALISATION.out.summary_script,
+        PIPELINE_INITIALISATION.out.summfle_script,
+        PIPELINE_INITIALISATION.out.version_script
+    )
 
+    // PIPELINE_COMPLETION (
+    //     params.email,
+    //     params.email_on_fail,
+    //     params.plaintext_email,
+    //     params.outdir,
+    //     params.monochrome_logs,
+    //     params.hook_url,
+    //     GRANDEUR.out.multiqc_report
+    // )
 }
 
 /*
@@ -59,12 +110,3 @@ workflow {
     THE END
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-
-
-
-workflow.onComplete {
-  println("Pipeline completed at: $workflow.complete")
-  println("MultiQC report can be found at ${params.outdir}/multiqc/multiqc_report.html")
-  println("Summary can be found at ${params.outdir}/grandeur_summary.tsv")
-  println("Execution status: ${ workflow.success ? 'OK' : 'failed' }")
-}

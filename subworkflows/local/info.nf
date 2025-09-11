@@ -223,6 +223,8 @@ workflow INFO {
       }
       .set { ch_organism }
 
+    ch_organism.view()
+  
     AMRFINDER(ch_organism)
 
     AMRFINDER.out.collect

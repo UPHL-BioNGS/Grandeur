@@ -35,6 +35,12 @@ Steps to validate that the changes work as expected:
 
 If **yes**, describe what is affected and how to migrate.
 
+## **Submitter Checklist**
+- [ ] Each field of the MR template is filled out.
+- [ ] Tested pipeline and ensured that it runs end-to-end.
+- [ ] Checked that the relevant output files are present and are in the expected file structure.
+- [ ] Updated the CHANGE.md file with changes outlined above and a reference to the PR number.
+
 ## **Reviewer Checklist**
 - [ ] Code is well-structured and readable 
 - [ ] Changes are justified and necessary 

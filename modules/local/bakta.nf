@@ -1,8 +1,8 @@
 process BAKTA {
   tag           "${meta.id}"
   label         "process_high"
-  container     'staphb/bakta:1.10.4-5.1-light'
-  time    '30m'
+  container     'assets/containers/bakta_v1.10.4-5.1-light.sif'
+  time          '30m'
 
   input:
   tuple val(meta), file(contigs), val(organism)

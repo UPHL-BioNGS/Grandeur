@@ -1,35 +1,28 @@
-include { FASTP }   from '../../modules/local/fastp'
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
 include { SPADES }  from '../../modules/local/spades'
 
 workflow DE_NOVO_ALIGNMENT {
-  take: 
-    reads
-  
-  main:
-    ch_versions = Channel.empty()
+    take:
+    reads_check
+    ch_versions
 
-    FASTP(reads)
+    main:
+    
+    SPADES(reads_check)
 
-    FASTP.out.fastp_results
-      .filter ({ it[2] as int >= params.minimum_reads })
-      .map { it -> 
-        tuple (it[0], it[1])
-      }
-      .set{ read_check }
-
-    ch_versions = ch_versions.mix(FASTP.out.versions.first())
-
-    SPADES(read_check)
-
+    reads_contigs = SPADES.out.reads_contigs
+    ch_contigs  = SPADES.out.contigs.filter{it[1] != null}
     ch_versions = ch_versions.mix(SPADES.out.versions.first())
 
-  emit:
-    // for downstream analyses
-    reads_contigs = SPADES.out.reads_contigs
-    clean_reads   = FASTP.out.fastq
-    contigs       = SPADES.out.contigs.filter{it[1] != null}
+    emit:
 
-    // for multiqc
-    for_multiqc = FASTP.out.fastp_files
-    versions    = ch_versions
+    reads_contigs = reads_contigs
+    contigs       = ch_contigs
+    versions      = ch_versions
+
 }

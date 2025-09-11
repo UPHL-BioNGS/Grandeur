@@ -78,6 +78,9 @@ process MASH_DIST {
     if [ ! -s "mash/${prefix}.mashdist.txt.tmp" ]
     then
       echo "No mash dist results with args ${args}. Trying again without them."  | tee -a \$log_file
+
+      rm mash/${prefix}.mashdist.txt.tmp
+
       mash dist \
         -p ${task.cpus} \
         /db/RefSeqSketchesDefaults.msh \
@@ -85,7 +88,7 @@ process MASH_DIST {
         > mash/${prefix}.mashdist.txt.tmp
     fi
 
-    sort -gk3 mash/${prefix}.mashdist.txt.tmp | head -n ${params.mash_max_hits} > mash/${prefix}.mashdist.txt
+    head -n ${params.mash_max_hits} <(sort -gk3 mash/${prefix}.mashdist.txt.tmp) > mash/${prefix}.mashdist.txt
 
     echo "sample,reference,query,mash-distance,P-value,matching-hashes,organism" > mash/${prefix}.summary.mash.csv
 
@@ -116,6 +119,9 @@ process MASH_DIST {
     if [ ! -s "mash/${prefix}.mashdist.txt.tmp" ]
     then
       echo "No mash dist results with args ${args}. Trying again without them." | tee -a \$log_file
+
+      rm mash/${prefix}.mashdist.txt.tmp
+
       mash dist \
         -p ${task.cpus} \
         ${reference} \
@@ -123,7 +129,7 @@ process MASH_DIST {
         > mash/${prefix}.mashdist.txt.tmp
     fi
 
-    sort -gk3 mash/${prefix}.mashdist.txt.tmp | head -n ${params.mash_max_hits} > mash/${prefix}.mashdist.txt
+    head -n ${params.mash_max_hits} <(sort -gk3 mash/${prefix}.mashdist.txt.tmp) > mash/${prefix}.mashdist.txt
 
     echo "sample,reference,query,mash-distance,P-value,matching-hashes,organism" > mash/${prefix}.summary.mash.csv
 

@@ -21,10 +21,12 @@ process BLASTN {
     mkdir -p blastn logs/${task.process}
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
+    export BLASTDB=${blastdb}
+
     blastn -query ${contig} \
       -out blastn/${prefix}.tsv \
       -num_threads ${task.cpus} \
-      -db ${blastdb}/${params.blast_db_type} \
+      -db ${params.blast_db_type} \
       -outfmt '6 qseqid staxids bitscore std' \
       ${args} \
       | tee -a \$log_file
