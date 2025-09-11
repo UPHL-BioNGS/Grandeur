@@ -14,6 +14,10 @@ module purge
 module load nextflow
 module load singularity
 
-nextflow run /scicomp/home-pure/xre6/Projects/grandeur/main.nf \
+nextflow run main.nf \
 -profile my_test,singularity \
---outdir /scicomp/home-pure/xre6/Projects/grandeur/grandeur_testing/test_report_subworkflow_refactor_pipeline
+--outdir integration_test4_refactor_pipeline_scicomp \
+--kraken2_db /scicomp/home-pure/xre6/kraken2_database/ \
+--blast_db /scicomp/reference-pure/ncbi-blast-databases \
+--blast_db_type core_nt \
+--msa True
