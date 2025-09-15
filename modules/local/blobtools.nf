@@ -1,8 +1,8 @@
 process BLOBTOOLS_CREATE {
   tag           "${meta.id}"
   label         "process_medium"
-  container     'assets/containers/blobtools_v1.1.1.sif'
-  
+  container     'chrishah/blobtools:v1.1.1'
+
   input:
   tuple val(meta), file(contig), file(bam), file(blastn)
 

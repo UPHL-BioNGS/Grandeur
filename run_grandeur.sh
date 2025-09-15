@@ -16,7 +16,7 @@ module load singularity
 
 nextflow run main.nf \
 -profile my_test,singularity \
---outdir integration_test4_refactor_pipeline_scicomp \
+--outdir integration_test \
 --kraken2_db /scicomp/home-pure/xre6/kraken2_database/ \
 --blast_db /scicomp/reference-pure/ncbi-blast-databases \
 --blast_db_type core_nt \
