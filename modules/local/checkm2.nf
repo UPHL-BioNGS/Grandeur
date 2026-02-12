@@ -1,0 +1,37 @@
+process CHECKM2 {
+    tag           "${meta.id}"
+    label         "process_high"
+    container     'staphb/checkm2:latest'
+
+    input:
+    tuple val(meta), file(contigs)
+    path(db)
+
+    output:
+    path "checkm2/quality_report.tsv", emit: report
+    path "checkm2/*",                  emit: files
+    path "logs/${task.process}/*.log", emit: log
+    path "versions.yml",               emit: versions
+
+    when:
+    task.ext.when == null || task.ext.when
+
+    script:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    mkdir -p logs/${task.process}
+    log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
+
+    checkm2 predict \
+      --threads ${task.cpus} \
+      --input ${contigs} \
+      --output-directory checkm2 \
+      --database_path ${db} \
+      | tee -a \$log_file
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        checkm2: \$(checkm2 --version)
+    END_VERSIONS
+    """
+}

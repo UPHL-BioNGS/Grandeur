@@ -1,12 +1,14 @@
 include { CORE_GENOME_EVALUATION } from '../../modules/local/local'
 include { BAKTA }                  from '../../modules/local/bakta'
+include { GOTREE }                 from '../../modules/local/gotree'
 include { HEATCLUSTER }            from '../../modules/local/heatcluster'
-include { IQTREE2 }                from '../../modules/local/iqtree2'
+include { IQTREE }                 from '../../modules/local/iqtree'
+include { KSNP4 }                  from '../../modules/local/ksnp4'
 include { MASHTREE }               from '../../modules/local/mashtree'
 include { PANAROO }                from '../../modules/local/panaroo'
-include { PHYTREEVIZ }             from '../../modules/local/phytreeviz'
 include { PROKKA }                 from '../../modules/local/prokka'
 include { ROARY }                  from '../../modules/local/roary'
+include { SKA2 }                   from '../../modules/local/ska2'
 include { SNPDISTS }               from '../../modules/local/snp-dists'
 
 workflow PHYLOGENETIC_ANALYSIS {
@@ -18,6 +20,7 @@ workflow PHYLOGENETIC_ANALYSIS {
   main:
   ch_versions = Channel.empty()
   ch_multiqc  = Channel.empty()
+  ch_nwk      = Channel.empty()
 
   // adding in organism and top ani hit
   if ( ! params.skip_extras ) {
@@ -98,24 +101,29 @@ workflow PHYLOGENETIC_ANALYSIS {
   }
 
   ch_core_genome = ch_core_genome.map{ it -> it[-2]}
-
   ch_multiqc = ch_multiqc.mix(CORE_GENOME_EVALUATION.out.for_multiqc)
 
-  // TODO : if channel doesn't go to to iqtree2, then send to mashtree
+  KSNP4(ch_contigs.combine(ch_top_hit))
+  ch_nwk = ch_nwk.mix(KSNP4.out.newick)
+  ch_versions = ch_versions.mix(KSNP4.out.versions.first())
 
-  // phylogenetic trees
   MASHTREE(ch_preannotation.map{it -> if (it) { tuple( it[1]) }}.collect())
+  ch_nwk = ch_nwk.mix(MASHTREE.out.newick)
   ch_versions = ch_versions.mix(MASHTREE.out.versions)
-    
-  IQTREE2(ch_core_genome)
-  ch_versions = ch_versions.mix(IQTREE2.out.versions)
 
-  PHYTREEVIZ(IQTREE2.out.newick.mix(MASHTREE.out.newick))
-  ch_versions = ch_versions.mix(PHYTREEVIZ.out.versions.first())
-  ch_multiqc  = ch_multiqc.mix(PHYTREEVIZ.out.for_multiqc)
+  SKA2(ch_contigs.combine(ch_top_hit))
+  ch_versions = ch_versions.mix(SKA2.out.versions.first())
+    
+  IQTREE(ch_core_genome.mix(SKA2.out.aln))
+  ch_nwk = ch_nwk.mix(IQTREE.out.newick)
+  ch_versions = ch_versions.mix(IQTREE.out.versions.first())
+
+  GOTREE(ch_nwk)
+  ch_versions = ch_versions.mix(GOTREE.out.versions.first())
+  ch_multiqc  = ch_multiqc.mix(GOTREE.out.for_multiqc)
 
   // SNP matrix
-  SNPDISTS(ch_core_genome)
+  SNPDISTS(ch_core_genome.mix(ska2.out.aln))
   ch_versions = ch_versions.mix(SNPDISTS.out.versions)
   ch_multiqc  = ch_multiqc.mix(SNPDISTS.out.snp_matrix)
 

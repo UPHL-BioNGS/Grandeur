@@ -1,3 +1,4 @@
+include { CHECKM2 }  from '../../modules/local/checkm2'
 include { NAMES }    from '../../modules/local/local'
 include { MQC_PREP } from '../../modules/local/local'
 include { MULTIQC }  from '../../modules/local/multiqc'

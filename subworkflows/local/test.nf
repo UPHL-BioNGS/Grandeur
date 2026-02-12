@@ -9,7 +9,7 @@ workflow TEST {
     main:
     ch_versions = Channel.empty()
 
-    if ( ! params.sra_accessions.isEmpty()  || ! params.genome_accessions.isEmpty() ) {
+    if ( ! params.sra_accessions.isEmpty() ) {
         DOWNLOAD_FASTQ(ch_sra_accessions.filter({it[0]}))
         ch_versions = ch_versions.mix(DOWNLOAD_FASTQ.out.versions.first())
 
@@ -39,7 +39,7 @@ workflow TEST {
     }
 
     emit:
-    fastq   = ch_fastq
+    fastq    = ch_fastq
     fasta    = ch_fasta
     versions = ch_versions
 }

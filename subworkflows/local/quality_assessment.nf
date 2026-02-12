@@ -1,4 +1,4 @@
-include { CIRCULOCOV }     from '../../modules/local/circulocov'
+include { AMRFINDER }      from '../../modules/local/amrfinderplus'
 include { FASTQC }         from '../../modules/local/fastqc'
 include { MLST }           from '../../modules/local/mlst'
 include { PLASMIDFINDER }  from '../../modules/local/plasmidfinder'
@@ -33,19 +33,20 @@ workflow QUALITY_ASSESSMENT {
 
         ch_summary = ch_summary.mix(fastqc_summary)
 
-        CIRCULOCOV(ch_reads_contigs.filter{it[1]}.filter{it[2]})
-        ch_versions = ch_versions.mix(CIRCULOCOV.out.versions.first())
-
-        CIRCULOCOV.out.collect
-            .collectFile(name: "circulocov_summary.tsv",
-                keepHeader: true,
-                sort: { file -> file.text },
-                storeDir: "${params.outdir}/circulocov")
-            .set{ circulocov_summary }
-
-        ch_summary  = ch_summary.mix(circulocov_summary)
-        ch_bams     = ch_bams.mix(CIRCULOCOV.out.contig_bam)
     }
+
+    AMRFINDER(ch_organism)
+
+    AMRFINDER.out.collect
+      .collectFile(name: 'amrfinderplus.txt',
+        keepHeader: true,
+        sort: { file -> file.text },
+        storeDir: "${params.outdir}/amrfinder")
+      .set{ amrfinderplus_summary }
+
+    ch_summary  = ch_summary.mix(amrfinderplus_summary)
+    ch_versions = ch_versions.mix(AMRFINDER.out.versions.first())
+
 
     // contigs
     QUAST(ch_reads_contigs)
