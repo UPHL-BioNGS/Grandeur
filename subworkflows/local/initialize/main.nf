@@ -1,4 +1,4 @@
-include { TEST } from "../../subworkflows/local/test"
+include { TEST } from "../../../subworkflows/local/test"
 
 def paramCheck(keys) {
   def set_keys = [
@@ -14,9 +14,7 @@ def paramCheck(keys) {
     "fasta_list",
     "blast_db",
     "blast_db_type",
-    "fastani_ref",
-    "fastani_ref_list",
-    "iqtree2_outgroup",
+    "ref_list",
     "genome_sizes",
     "sra_accessions",
     "genome_accessions",
@@ -148,6 +146,7 @@ workflow INITIALIZE {
           file("${row.fastq_1}", checkIfExists: true), 
           file("${row.fastq_2}", checkIfExists: true)])
       }
+      .unique()
       .set {ch_reads}
 
   } else {
@@ -179,6 +178,7 @@ workflow INITIALIZE {
         def meta = [id:it.baseName]
         tuple( meta, it)
       }
+      .unique()
       .set{ ch_fastas }
   } else {
     // getting fastas from a directory
@@ -216,18 +216,6 @@ workflow INITIALIZE {
       exit 1}
     .set { ch_genome_sizes }
 
-  // Getting the database for blobtools
-  ch_blast_db = params.blast_db
-    ? Channel
-      .fromPath(params.blast_db, type: "dir")
-      .ifEmpty{
-        println("No blast database was found at ${params.blast_db}")
-        println("Set 'params.blast_db' to directory with blast database")
-        exit 1
-        }
-        .view { "Local Blast Database for Blobtools : $it" }
-    : Channel.empty()
-
   // Getting the kraken2 database
   ch_kraken2_db = params.kraken2_db
     ? Channel
@@ -252,31 +240,29 @@ workflow INITIALIZE {
       .view { "Mash reference : $it" }
     : Channel.empty()
 
-  //# user supplied fastani reference genomes
-  ch_fastani_genomes = Channel.empty()
+  // Getting the kraken2 database
+  ch_checkm2_db = params.checkm2_db
+    ? Channel
+      .fromPath(params.checkm2_db, type: "dir")
+      .ifEmpty{
+        println("No checkm2 database was found at ${params.checkm2_db}")
+        println("Set 'params.checkm2_db' to directory with checkm2 database")
+        exit 1
+        }
+        .view { "Local checkm2 database : $it" }
+    : Channel.empty()
 
-  if ( params.fastani_ref ) {
-    Channel
-      .of( params.fastani_ref )
-      .splitCsv()
-      .flatten()
-      // no meta id
-      .map { it -> file(it) }
-      .view{ "Additional fastani reference genomes : $it" }
-      .set { ch_fastani_genomes_input }
-
-    ch_fastani_genomes = ch_fastani_genomes.mix(ch_fastani_genomes_input)
-  }
-
-  if ( params.fastani_ref_list ) {
-    Channel.fromPath(params.fastani_ref_list, type: "file")
+  // if using additional fasta files for ska2
+  if (  params.reference_genomes ) {
+    Channel.fromPath(params.reference_genomes, type: "file")
       .splitText()
       .map{ it -> it.trim()}
       .map{ it -> file(it) }
-      .view{ "Additional fastani reference genome from file : $it" }
-      .set{ ch_fastani_ref_list }
-
-    ch_fastani_genomes = ch_fastani_genomes.mix(ch_fastani_ref_list)
+      .unique()
+      .view{ "Additional reference genome from file : $it" }
+      .set{ ch_reference_genomes }
+  } else {
+    ch_reference_genomes = Channel.empty()
   }
 
   println("The files and directory for results is " + params.outdir )
@@ -292,20 +278,25 @@ workflow INITIALIZE {
     ch_versions = TEST.out.versions
   }
 
+  workflow.onComplete {
+    println("Inititalization completed at: $workflow.complete")
+    println("Execution status: ${ workflow.success ? 'OK' : 'failed' }")
+  }
+
   emit:
-  reads           = ch_reads
-  fastas          = ch_fastas
-  fastani_genomes = ch_fastani_genomes
-  versions        = ch_versions
-  genome_sizes    = ch_genome_sizes
-  mash_db         = ch_mash_db
-  kraken2_db      = ch_kraken2_db
-  blast_db        = ch_blast_db
-  dataset_script  = dataset_script
-  evaluat_script  = evaluat_script
-  jsoncon_script  = jsoncon_script
-  multiqc_script  = multiqc_script
-  summary_script  = summary_script
-  summfle_script  = summfle_script
-  version_script  = version_script
+  reads             = ch_reads
+  fastas            = ch_fastas
+  reference_genomes = ch_reference_genomes
+  versions          = ch_versions
+  genome_sizes      = ch_genome_sizes
+  mash_db           = ch_mash_db
+  kraken2_db        = ch_kraken2_db
+  checkm2_db        = ch_checkm2_db
+  dataset_script    = dataset_script
+  evaluat_script    = evaluat_script
+  jsoncon_script    = jsoncon_script
+  multiqc_script    = multiqc_script
+  summary_script    = summary_script
+  summfle_script    = summfle_script
+  version_script    = version_script
 }

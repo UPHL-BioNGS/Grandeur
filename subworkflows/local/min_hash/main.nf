@@ -1,5 +1,5 @@
-include { MASH_SKETCH as SKETCH }  from '../../modules/local/mash'
-include { MASH_DIST   as DIST   }  from '../../modules/local/mash'
+include { MASH_SKETCH as SKETCH }  from '../../../modules/local/mash'
+include { MASH_DIST   as DIST   }  from '../../../modules/local/mash'
 
 workflow MIN_HASH {
     take:

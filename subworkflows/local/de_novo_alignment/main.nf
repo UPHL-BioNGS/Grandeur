@@ -1,5 +1,5 @@
-include { FASTP }   from '../../modules/local/fastp'
-include { SPADES }  from '../../modules/local/spades'
+include { FASTP }   from '../../../modules/local/fastp'
+include { SPADES }  from '../../../modules/local/spades'
 
 workflow DE_NOVO_ALIGNMENT {
   take: 
@@ -15,6 +15,11 @@ workflow DE_NOVO_ALIGNMENT {
     SPADES(FASTP.out.fastq)
 
     ch_versions = ch_versions.mix(SPADES.out.versions.first())
+
+    workflow.onComplete {
+      println("De novo alignment completed at: $workflow.complete")
+      println("Execution status: ${ workflow.success ? 'OK' : 'failed' }")
+    }
 
   emit:
     // for downstream analyses

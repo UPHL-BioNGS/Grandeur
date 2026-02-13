@@ -1,4 +1,4 @@
-include { KRAKEN2 }  from '../../modules/local/kraken2'
+include { KRAKEN2 }  from '../../../modules/local/kraken2'
 
 workflow KMER_TAXONOMIC_CLASSIFICATION {
     take:

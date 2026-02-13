@@ -1,8 +1,8 @@
-include { AMRFINDER }      from '../../modules/local/amrfinderplus'
-include { FASTQC }         from '../../modules/local/fastqc'
-include { MLST }           from '../../modules/local/mlst'
-include { PLASMIDFINDER }  from '../../modules/local/plasmidfinder'
-include { QUAST }          from '../../modules/local/quast'
+include { AMRFINDER }      from '../../../modules/local/amrfinderplus'
+include { FASTQC }         from '../../../modules/local/fastqc'
+include { MLST }           from '../../../modules/local/mlst'
+include { PLASMIDFINDER }  from '../../../modules/local/plasmidfinder'
+include { QUAST }          from '../../../modules/local/quast'
 
 workflow QUALITY_ASSESSMENT {
     take:

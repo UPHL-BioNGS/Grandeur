@@ -1,9 +1,8 @@
-include { DATASETS_SUMMARY }  from '../../modules/local/datasets'
-include { DATASETS_DOWNLOAD } from '../../modules/local/datasets'
-include { FASTANI }           from '../../modules/local/fastani'
-include { REFERENCES }        from '../../modules/local/local'
-include { SPECIES }           from '../../modules/local/local'
-include { SPESIMATOR }        from '../../modules/local/spestimator'
+include { DATASETS_SUMMARY }  from '../../../modules/local/datasets'
+include { DATASETS_DOWNLOAD } from '../../../modules/local/datasets'
+include { REFERENCES }        from '../../../modules/local/local'
+include { SPECIES }           from '../../../modules/local/local'
+include { SPESIMATOR }        from '../../../modules/local/spestimator'
 
 workflow AVERAGE_NUCLEOTIDE_IDENTITY {
     take:

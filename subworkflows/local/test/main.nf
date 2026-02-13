@@ -1,5 +1,5 @@
-include { ENA_DOWNLOAD as DOWNLOAD_FASTQ       } from '../../modules/local/ena'
-include { DATASETS_DOWNLOAD as DOWNLOAD_GENOME } from '../../modules/local/datasets'
+include { ENA_DOWNLOAD as DOWNLOAD_FASTQ       } from '../../../modules/local/ena'
+include { DATASETS_DOWNLOAD as DOWNLOAD_GENOME } from '../../../modules/local/datasets'
 
 workflow TEST {
     take:
