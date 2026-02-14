@@ -1,4 +1,4 @@
-include { CORE_GENOME_EVALUATION } from '../../../modules/local/local'
+include { CORE_GENOME_EVALUATION } from '../../../modules/local/core_genome_evaluation'
 include { BAKTA }                  from '../../../modules/local/bakta'
 include { GOTREE }                 from '../../../modules/local/gotree'
 include { HEATCLUSTER }            from '../../../modules/local/heatcluster'
@@ -9,7 +9,7 @@ include { PANAROO }                from '../../../modules/local/panaroo'
 include { PROKKA }                 from '../../../modules/local/prokka'
 include { ROARY }                  from '../../../modules/local/roary'
 include { SKA2 }                   from '../../../modules/local/ska2'
-include { SNPDISTS }               from '../../../modules/local/snp-dists'
+include { SNPDISTS }               from '../../../modules/local/snpdists'
 
 workflow PHYLOGENETIC_ANALYSIS {
   take:

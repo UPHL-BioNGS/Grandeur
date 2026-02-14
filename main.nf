@@ -41,7 +41,8 @@ workflow {
         INITIALIZE.out.genome_sizes,
         INITIALIZE.out.mash_db,
         INITIALIZE.out.kraken2_db,
-        INITIALIZE.out.blast_db,
+        INITIALIZE.out.checkm2_db,
+        INITIALIZE.out.sylph_db,
         INITIALIZE.out.dataset_script,
         INITIALIZE.out.evaluat_script,
         INITIALIZE.out.jsoncon_script,
@@ -51,12 +52,12 @@ workflow {
         INITIALIZE.out.version_script
     )
 
-    workflow.onComplete {
-        println("Pipeline completed at: $workflow.complete")
-        println("MultiQC report can be found at ${params.outdir}/multiqc/multiqc_report.html")
-        println("Summary can be found at ${params.outdir}/grandeur_summary.tsv")
-        println("Execution status: ${ workflow.success ? 'OK' : 'failed' }")
-    }
+    // workflow.onComplete {
+    //     println("Pipeline completed at: $workflow.complete")
+    //     println("MultiQC report can be found at ${params.outdir}/multiqc/multiqc_report.html")
+    //     println("Summary can be found at ${params.outdir}/grandeur_summary.tsv")
+    //     println("Execution status: ${ workflow.success ? 'OK' : 'failed' }")
+    // }
 
 }
 

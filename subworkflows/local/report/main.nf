@@ -1,9 +1,9 @@
 include { CHECKM2 }  from '../../../modules/local/checkm2'
-include { NAMES }    from '../../../modules/local/local'
-include { MQC_PREP } from '../../../modules/local/local'
+include { NAMES }    from '../../../modules/local/names'
+include { MQC_PREP } from '../../../modules/local/mqc_prep'
 include { MULTIQC }  from '../../../modules/local/multiqc'
-include { SUMMARY }  from '../../../modules/local/local'
-include { VERSIONS } from '../../../modules/local/multiqc'
+include { SUMMARY }  from '../../../modules/local/summary'
+include { VERSIONS } from '../../../modules/local/versions'
 
 workflow REPORT {
     take:

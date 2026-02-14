@@ -2,7 +2,7 @@
 include { DRPRG }          from '../../../modules/local/drprg'
 include { ELGATO }         from '../../../modules/local/elgato'
 include { EMMTYPER }       from '../../../modules/local/emmtyper'
-include { JSON_CONVERT }   from '../../../modules/local/local'
+include { JSON_CONVERT }   from '../../../modules/local/json_convert'
 include { KAPTIVE }        from '../../../modules/local/kaptive'
 include { KLEBORATE }      from '../../../modules/local/kleborate'
 include { MENINGOTYPE }    from '../../../modules/local/meningotype'

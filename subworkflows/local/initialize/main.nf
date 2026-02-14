@@ -12,9 +12,9 @@ def paramCheck(keys) {
     "reads",
     "sample_sheet",
     "fasta_list",
-    "blast_db",
-    "blast_db_type",
-    "ref_list",
+    "checkm2_db",
+    "sylph_db",
+    "reference_genomes",
     "genome_sizes",
     "sra_accessions",
     "genome_accessions",
@@ -62,8 +62,8 @@ def paramCheck(keys) {
 
 workflow INITIALIZE {
   main:
-  ch_fastas    = Channel.empty()
-  ch_versions  = Channel.empty()
+  ch_fastas    = channel.empty()
+  ch_versions  = channel.empty()
   
   //# For aesthetics - and, yes, we are aware that there are better ways to write this than a bunch of 'println' statements
   println('') 
@@ -116,27 +116,27 @@ workflow INITIALIZE {
 
   // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
-  // Channels for scripts
+  // channels for scripts
 
   // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
-  dataset_script = Channel.fromPath(workflow.projectDir + "/bin/datasets_download.py", type: "file")
-  evaluat_script = Channel.fromPath(workflow.projectDir + "/bin/evaluate.py",          type: "file")
-  jsoncon_script = Channel.fromPath(workflow.projectDir + "/bin/json_convert.py",      type: "file")
-  multiqc_script = Channel.fromPath(workflow.projectDir + "/bin/for_multiqc.py",       type: "file")
-  summary_script = Channel.fromPath(workflow.projectDir + "/bin/summary.py",           type: "file")
-  summfle_script = Channel.fromPath(workflow.projectDir + "/bin/summary_file.py",      type: "file")
-  version_script = Channel.fromPath(workflow.projectDir + "/bin/versions.py",          type: "file")
+  dataset_script = channel.fromPath(workflow.projectDir + "/bin/datasets_download.py", type: "file")
+  evaluat_script = channel.fromPath(workflow.projectDir + "/bin/evaluate.py",          type: "file")
+  jsoncon_script = channel.fromPath(workflow.projectDir + "/bin/json_convert.py",      type: "file")
+  multiqc_script = channel.fromPath(workflow.projectDir + "/bin/for_multiqc.py",       type: "file")
+  summary_script = channel.fromPath(workflow.projectDir + "/bin/summary.py",           type: "file")
+  summfle_script = channel.fromPath(workflow.projectDir + "/bin/summary_file.py",      type: "file")
+  version_script = channel.fromPath(workflow.projectDir + "/bin/versions.py",          type: "file")
 
   // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
-  // Channels for input files
+  // channels for input files
 
   // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
   if (params.sample_sheet) {
     // using a sample sheet with the column header of 'sample,fastq_1,fastq_2'
-    Channel
+    channel
       .fromPath("${params.sample_sheet}", type: "file")
       .view { "Sample sheet found : ${it}" }
       .splitCsv( header: true, sep: ',' )
@@ -152,7 +152,7 @@ workflow INITIALIZE {
   } else {
     // Getting the fastq files from a directory
     ch_reads = params.reads
-      ? Channel
+      ? channel
           .fromFilePairs(["${params.reads}/*_R{1,2}*.{fastq,fastq.gz,fq,fq.gz}",
                           "${params.reads}/*_{1,2}*.{fastq,fastq.gz,fq,fq.gz}"], size: 2 )
           .map { it ->
@@ -163,13 +163,13 @@ workflow INITIALIZE {
           }
           .unique()
           .view { "Paired-end fastq files found : ${it[0].id}" }
-      : Channel.empty()
+      : channel.empty()
   }
 
   if (params.fasta_list) {
     // getting fastas from a file
-    Channel
-      .fromPath("${params.fasta_list}", type: "file")
+    channel
+      .fromPath("${params.fasta_list}", type: "file", checkIfExists : true)
       .view { "Fasta list found : ${it}" }
       .splitText()
       .map{ it -> it.trim()}
@@ -183,7 +183,7 @@ workflow INITIALIZE {
   } else {
     // getting fastas from a directory
     ch_fastas = params.fastas
-      ? Channel
+      ? channel
         .fromPath("${params.fastas}/*{.fa,.fasta,.fna}")
         .view { "Fasta file found : ${it.baseName}" }
         .map { it ->
@@ -191,34 +191,44 @@ workflow INITIALIZE {
           tuple( meta, file(it, checkIfExists: true))
         }
         .unique()
-      : Channel.empty()
+      : channel.empty()
   }
 
   // Getting accession for downloading
 
   // from SRA
-  ch_sra_accessions   = Channel.from( params.sra_accessions )
+  ch_sra_accessions   = channel.from( params.sra_accessions )
 
   // from genomes
-  ch_genome_accessions = Channel.from( params.genome_accessions)
+  ch_genome_accessions = channel.from( params.genome_accessions)
 
   // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
-  // Channels for database files
+  // channels for database files
 
   // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
   // Getting the file with genome sizes of common organisms for fastqcscan. The End User can use their own file and set with a param
-  Channel
-    .fromPath(params.genome_sizes, type: "file")
-    .ifEmpty{
-      println("The genome sizes file for this workflow are missing!")
-      exit 1}
-    .set { ch_genome_sizes }
+  if ( params.genome_sizes ) {
+    println("Using genome sizes file at ${params.genome_sizes}")
+    channel
+      .fromPath(params.genome_sizes, type: "file", checkIfExists: true)
+      .ifEmpty{
+        println("The custom genome sizes file for this workflow are missing!")
+        exit 1}
+      .set { ch_genome_sizes }
+  } else {
+    channel
+      .fromPath("${projectDir}/assets/genome_sizes.json", type: "file", checkIfExists: true)
+      .ifEmpty{
+        println("The genome sizes file for this workflow are missing!")
+        exit 1}
+      .set { ch_genome_sizes }
+  }
 
   // Getting the kraken2 database
   ch_kraken2_db = params.kraken2_db
-    ? Channel
+    ? channel
       .fromPath(params.kraken2_db, type: "dir")
       .ifEmpty{
         println("No kraken2 database was found at ${params.kraken2_db}")
@@ -226,11 +236,11 @@ workflow INITIALIZE {
         exit 1
         }
         .view { "Local kraken2 database : $it" }
-    : Channel.empty()
+    : channel.empty()
 
   // Getting the mash reference
   ch_mash_db = params.mash_db 
-    ? Channel
+    ? channel
       .fromPath(params.mash_db, type: "file")
       .ifEmpty{
         println("No mash database was found at ${params.mash_db}")
@@ -238,11 +248,11 @@ workflow INITIALIZE {
         exit 1
         }
       .view { "Mash reference : $it" }
-    : Channel.empty()
+    : channel.empty()
 
   // Getting the kraken2 database
   ch_checkm2_db = params.checkm2_db
-    ? Channel
+    ? channel
       .fromPath(params.checkm2_db, type: "dir")
       .ifEmpty{
         println("No checkm2 database was found at ${params.checkm2_db}")
@@ -250,11 +260,23 @@ workflow INITIALIZE {
         exit 1
         }
         .view { "Local checkm2 database : $it" }
-    : Channel.empty()
+    : channel.empty()
 
-  // if using additional fasta files for ska2
+
+  ch_sylph_db = params.sylph_db
+    ? channel
+      .fromPath(params.sylph_db, type: "dir")
+      .ifEmpty{
+        println("No Sylph database was found at ${params.sylph_db}")
+        println("Set 'params.sylph_db' to directory with Sylph database")
+        exit 1
+        }
+        .view { "Local Sylph database : $it" }
+    : channel.empty()
+  
+  // if using additional fasta files for skani
   if (  params.reference_genomes ) {
-    Channel.fromPath(params.reference_genomes, type: "file")
+    channel.fromPath(params.reference_genomes, type: "file")
       .splitText()
       .map{ it -> it.trim()}
       .map{ it -> file(it) }
@@ -262,7 +284,7 @@ workflow INITIALIZE {
       .view{ "Additional reference genome from file : $it" }
       .set{ ch_reference_genomes }
   } else {
-    ch_reference_genomes = Channel.empty()
+    ch_reference_genomes = channel.empty()
   }
 
   println("The files and directory for results is " + params.outdir )
@@ -278,11 +300,6 @@ workflow INITIALIZE {
     ch_versions = TEST.out.versions
   }
 
-  workflow.onComplete {
-    println("Inititalization completed at: $workflow.complete")
-    println("Execution status: ${ workflow.success ? 'OK' : 'failed' }")
-  }
-
   emit:
   reads             = ch_reads
   fastas            = ch_fastas
@@ -292,6 +309,7 @@ workflow INITIALIZE {
   mash_db           = ch_mash_db
   kraken2_db        = ch_kraken2_db
   checkm2_db        = ch_checkm2_db
+  sylph_db          = ch_sylph_db
   dataset_script    = dataset_script
   evaluat_script    = evaluat_script
   jsoncon_script    = jsoncon_script
@@ -299,4 +317,11 @@ workflow INITIALIZE {
   summary_script    = summary_script
   summfle_script    = summfle_script
   version_script    = version_script
+
+
+}
+
+workflow.onComplete {
+  println("Inititalization completed at: $workflow.complete")
+  println("Execution status: ${ workflow.success ? 'OK' : 'failed' }")
 }

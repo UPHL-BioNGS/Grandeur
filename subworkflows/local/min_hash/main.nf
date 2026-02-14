@@ -1,5 +1,5 @@
-include { MASH_SKETCH as SKETCH }  from '../../../modules/local/mash'
-include { MASH_DIST   as DIST   }  from '../../../modules/local/mash'
+include { MASH_SKETCH as SKETCH }  from '../../../modules/local/mash_sketch'
+include { MASH_DIST   as DIST   }  from '../../../modules/local/mash_dist'
 
 workflow MIN_HASH {
     take:
@@ -9,6 +9,8 @@ workflow MIN_HASH {
 
     main:
         ch_versions      = Channel.empty()
+
+        ch_fastas.view()
 
         SKETCH(ch_reads.mix(ch_fastas))
 

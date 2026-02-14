@@ -16,11 +16,6 @@ workflow DE_NOVO_ALIGNMENT {
 
     ch_versions = ch_versions.mix(SPADES.out.versions.first())
 
-    workflow.onComplete {
-      println("De novo alignment completed at: $workflow.complete")
-      println("Execution status: ${ workflow.success ? 'OK' : 'failed' }")
-    }
-
   emit:
     // for downstream analyses
     reads_contigs = SPADES.out.reads_contigs
