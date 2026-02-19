@@ -1,11 +1,10 @@
 include { AVERAGE_NUCLEOTIDE_IDENTITY }   from "../../subworkflows/local/average_nucleotide_identity"
 include { DE_NOVO_ALIGNMENT }             from "../../subworkflows/local/de_novo_alignment" 
-include { KMER_TAXONOMIC_CLASSIFICATION } from "../../subworkflows/local/kmer_taxonomic_classification"
-include { MIN_HASH }                      from "../../subworkflows/local/min_hash"
-include { SUBTYPING }                     from "../../subworkflows/local/subtyping"
 include { PHYLOGENETIC_ANALYSIS }         from "../../subworkflows/local/phylogenetic_analysis"
 include { QUALITY_ASSESSMENT }            from "../../subworkflows/local/quality_assessment"
 include { REPORT }                        from "../../subworkflows/local/report"
+include { SUBTYPING }                     from "../../subworkflows/local/subtyping"
+include { TAXONOMIC_PROFILING }           from "../../subworkflows/local/taxonomic_profiling"
 
 workflow GRANDEUR {
     take:
@@ -53,30 +52,30 @@ workflow GRANDEUR {
     // getting a summary of everything
     if ( ! params.skip_extras ) {
         // optional subworkflow kraken2 (useful for interspecies contamination)
-        if ( params.kraken2_db && ( params.sample_sheet || params.reads || params.sra_accessions )) {
-            KMER_TAXONOMIC_CLASSIFICATION(ch_clean_reads, ch_kraken2_db )
+        TAXONOMIC_PROFILING(
+            ch_clean_reads.ifEmpty([]), 
+            ch_fastas.ifEmpty([]), 
+            ch_assembled.ifEmpty([]), 
+            ch_kraken2_db.ifEmpty([]),
+            ch_mash_db.ifEmpty([]),
+            ch_sylph_db.ifEmpty([])
+            )
 
-            ch_for_multiqc = ch_for_multiqc.mix(KMER_TAXONOMIC_CLASSIFICATION.out.for_multiqc)
-            ch_for_summary = ch_for_summary.mix(KMER_TAXONOMIC_CLASSIFICATION.out.for_summary)
-            ch_for_flag    = ch_for_flag.mix(KMER_TAXONOMIC_CLASSIFICATION.out.for_flag)
-            ch_versions    = ch_versions.mix(KMER_TAXONOMIC_CLASSIFICATION.out.versions)
-        } 
-
-        // subworkflow mash for species determination
-        MIN_HASH(ch_clean_reads, ch_fastas, ch_mash_db)
-        ch_versions    = ch_versions.mix(MIN_HASH.out.versions)
-        ch_for_summary = ch_for_summary.mix(MIN_HASH.out.for_summary)
+        ch_for_multiqc = ch_for_multiqc.mix(TAXONOMIC_PROFILING.out.for_multiqc)
+        ch_for_summary = ch_for_summary.mix(TAXONOMIC_PROFILING.out.for_summary)
+        ch_for_flag    = ch_for_flag.mix(TAXONOMIC_PROFILING.out.for_ref_download)
+        ch_versions    = ch_versions.mix(TAXONOMIC_PROFILING.out.versions)
 
         // determining organisms in sample
-        AVERAGE_NUCLEOTIDE_IDENTITY(
-            ch_for_summary.collect(),
-            ch_contigs,
-            ch_reference_genomes.ifEmpty([]),
-            ch_sylph_db.ifEmpty([]),
-            dataset_script)
+        //AVERAGE_NUCLEOTIDE_IDENTITY(
+        //    ch_for_summary.collect(),
+        //    ch_contigs,
+        //    ch_reference_genomes.ifEmpty([]),
+        //    ch_sylph_db.ifEmpty([]),
+        //    dataset_script)
 
-        ch_versions    = ch_versions.mix(AVERAGE_NUCLEOTIDE_IDENTITY.out.versions)
-        ch_for_summary = ch_for_summary.mix(AVERAGE_NUCLEOTIDE_IDENTITY.out.for_summary)
+        //ch_versions    = ch_versions.mix(AVERAGE_NUCLEOTIDE_IDENTITY.out.versions)
+        //ch_for_summary = ch_for_summary.mix(AVERAGE_NUCLEOTIDE_IDENTITY.out.for_summary)
 
     //     QUALITY_ASSESSMENT(
     //         ch_raw_reads,

@@ -4,7 +4,7 @@ include { REFERENCES }        from '../../../modules/local/references'
 include { SKANI }             from '../../../modules/local/skani'
 include { SPECIES }           from '../../../modules/local/species'
 include { SPESTIMATOR }       from '../../../modules/local/spestimator'
-include { SYLPH}              from '../../../modules/local/sylph' 
+
 
 workflow AVERAGE_NUCLEOTIDE_IDENTITY {
     take:
@@ -67,11 +67,7 @@ workflow AVERAGE_NUCLEOTIDE_IDENTITY {
                 name: "skani_summary.csv")
             .set { summary }
 
-        SKANI.out.top_len
-            .collectFile(
-                keepHeader: true,
-                name: "skani_top_len.csv")
-            .set { skani_len_summary }
+        skani_len_summary = channel.empty()
 
         ch_versions = ch_versions.mix(SKANI.out.versions.first())
 

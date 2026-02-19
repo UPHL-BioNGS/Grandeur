@@ -265,7 +265,7 @@ workflow INITIALIZE {
 
   ch_sylph_db = params.sylph_db
     ? channel
-      .fromPath(params.sylph_db, type: "dir")
+      .fromPath(params.sylph_db, type: "file", checkIfExists: true)
       .ifEmpty{
         println("No Sylph database was found at ${params.sylph_db}")
         println("Set 'params.sylph_db' to directory with Sylph database")
