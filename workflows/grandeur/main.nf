@@ -67,15 +67,14 @@ workflow GRANDEUR {
         ch_versions    = ch_versions.mix(TAXONOMIC_PROFILING.out.versions)
 
         // determining organisms in sample
-        //AVERAGE_NUCLEOTIDE_IDENTITY(
-        //    ch_for_summary.collect(),
-        //    ch_contigs,
-        //    ch_reference_genomes.ifEmpty([]),
-        //    ch_sylph_db.ifEmpty([]),
-        //    dataset_script)
+        AVERAGE_NUCLEOTIDE_IDENTITY(
+            ch_contigs,
+            ch_reference_genomes.ifEmpty([]),
+            TAXONOMIC_PROFILING.out.for_ref_download.ifEmpty([]),
+            dataset_script)
 
-        //ch_versions    = ch_versions.mix(AVERAGE_NUCLEOTIDE_IDENTITY.out.versions)
-        //ch_for_summary = ch_for_summary.mix(AVERAGE_NUCLEOTIDE_IDENTITY.out.for_summary)
+        ch_versions    = ch_versions.mix(AVERAGE_NUCLEOTIDE_IDENTITY.out.versions)
+        ch_for_summary = ch_for_summary.mix(AVERAGE_NUCLEOTIDE_IDENTITY.out.for_summary)
 
     //     QUALITY_ASSESSMENT(
     //         ch_raw_reads,

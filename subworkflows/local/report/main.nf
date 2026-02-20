@@ -43,3 +43,8 @@ workflow REPORT {
         summary  = SUMMARY.out.extended_tsv
         versions = ch_versions
 }
+
+workflow.onComplete {
+  log.info "Inititalization completed at: $workflow.complete"
+  log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+}

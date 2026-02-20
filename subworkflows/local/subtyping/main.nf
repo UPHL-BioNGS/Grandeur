@@ -32,7 +32,11 @@ workflow SUBTYPING {
     ch_summary  = Channel.empty()
     ch_versions = Channel.empty()
 
+    log.info "Running subtyping analysis. This workflow will perform in silico subtyping of assemblies with a variety of tools, depending on the species of interest."
+    log.info "Current species-specific subtyping tools are for Mycobacterium, Streptococcus pneumoniae, Salmonella, Escherichia coli, Vibrio, Neisseria meningitidis, Neisseria gonorrhoeae, Klebsiella, Legionella, and Streptococcus pyogenes."
+    log.info "If a desired sub-typing tool is not included here, please contact the developers or submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues"
 
+    log.info "DR_PRG is a tool for predicting the drug resistance phenotype of Mycobacterium tuberculosis from whole genome sequencing data."
     DRPRG(ch_myco)
 
     JSON_CONVERT(DRPRG.out.json.combine(jsoncon_script))
@@ -48,6 +52,7 @@ workflow SUBTYPING {
     ch_summary  = ch_summary.mix(drprg_summary)
     ch_versions = ch_versions.mix(DRPRG.out.versions.first())
 
+    log.info "EMMtyper is a tool for in silico emm typing of Streptococcus pyogenes assemblies."
     EMMTYPER(ch_gas.combine(summfle_script)) 
 
     EMMTYPER.out.collect
@@ -60,6 +65,7 @@ workflow SUBTYPING {
     ch_summary  = ch_summary.mix(emmtyper_summary)
     ch_versions = ch_versions.mix(EMMTYPER.out.versions.first())
 
+    log.info "KAPTIVE is used for in silico K and O locus typing of Vibrio assemblies, with a focus on Vibrio parahaemolyticus."
     KAPTIVE(ch_vibrio)      
 
     KAPTIVE.out.collect
@@ -72,6 +78,7 @@ workflow SUBTYPING {
     ch_summary  = ch_summary.mix(kaptive_summary)
     ch_versions = ch_versions.mix(KAPTIVE.out.versions.first())
 
+    log.info "Kleborate is a tool for in silico subtyping of Klebsiella assemblies, including species assignment, multi-locus sequence typing, K and O locus typing, and detection of virulence and AMR genes."
     KLEBORATE(ch_kleb.combine(summfle_script))
 
     KLEBORATE.out.collect
@@ -84,6 +91,7 @@ workflow SUBTYPING {
     ch_summary  = ch_summary.mix(kleborate_summary)
     ch_versions = ch_versions.mix(KLEBORATE.out.versions.first())
 
+    log.info "EL GATO is a tool for in silico subtyping of Legionella assemblies, including species assignment, multi-locus sequence typing, and detection of virulence genes."
     ELGATO(ch_legionella)
 
     ELGATO.out.collect
@@ -96,6 +104,7 @@ workflow SUBTYPING {
     ch_summary = ch_summary.mix(elgato_summary)
     ch_versions = ch_versions.mix(ELGATO.out.versions.first())
 
+    log.info "MYKROBE is a tool for predicting the drug resistance phenotype of Mycobacterium from whole genome sequencing data."
     MYKROBE(ch_myco)
 
     MYKROBE.out.collect
@@ -108,6 +117,7 @@ workflow SUBTYPING {
     ch_summary  = ch_summary.mix(mykrobe_summary)
     ch_versions = ch_versions.mix(MYKROBE.out.versions.first())
 
+    log.info "MENINGOTYPE is a tool for in silico subtyping of Neisseria meningitidis assemblies, including multi-locus sequence typing and PorA and FetA subtyping."
     MENINGOTYPE(ch_gc)
 
     MENINGOTYPE.out.files
@@ -120,6 +130,7 @@ workflow SUBTYPING {
     ch_summary  = ch_summary.mix(meningotype_summary)
     ch_versions = ch_versions.mix(MENINGOTYPE.out.versions.first())
 
+    log.info "NGMASTER is a tool for in silico NG-MAST typing of Neisseria gonorrhoeae assemblies."
     NGMASTER(ch_gc.combine(summfle_script))
 
     NGMASTER.out.collect
@@ -132,6 +143,7 @@ workflow SUBTYPING {
     ch_summary  = ch_summary.mix(ngmaster_summary)
     ch_versions = ch_versions.mix(NGMASTER.out.versions.first())
 
+    log.info "PBPTYPER is a tool for in silico penicillin binding protein (PBP) typer of Streptococcus pneumoniae assemblies."
     PBPTYPER(ch_strep)
 
     PBPTYPER.out.collect
@@ -144,6 +156,7 @@ workflow SUBTYPING {
     ch_summary  = ch_summary.mix(pbptyper_summary)
     ch_versions = ch_versions.mix(PBPTYPER.out.versions.first())
 
+    log.info "SEQSERO2 is a tool for in silico serotyping of Salmonella assemblies."
     SEQSERO2(ch_salmonella)
 
     SEQSERO2.out.collect
@@ -156,6 +169,7 @@ workflow SUBTYPING {
     ch_summary  = ch_summary.mix(seqsero2_summary)
     ch_versions = ch_versions.mix(SEQSERO2.out.versions.first())
 
+    log.info "SEROTYPERFINDER is a tool for in silico serotyping of Escherichia coli assemblies."
     SEROTYPEFINDER(ch_ecoli.combine(summfle_script))
 
     SEROTYPEFINDER.out.collect
@@ -168,6 +182,7 @@ workflow SUBTYPING {
     ch_summary  = ch_summary.mix(serotypefinder_summary)
     ch_versions = ch_versions.mix(SEROTYPEFINDER.out.versions.first())
 
+    log.info "SHIGAPASS is a tool for in silico subtyping of Shigella assemblies, including species assignment, multi-locus sequence typing, and detection of virulence genes."
     SHIGAPASS(ch_ecoli.combine(summfle_script))
 
     SHIGAPASS.out.collect
@@ -190,4 +205,9 @@ workflow SUBTYPING {
   emit:
     for_summary = ch_summary.collect()
     versions    = ch_versions
+}
+
+workflow.onComplete {
+  log.info "Inititalization completed at: $workflow.complete"
+  log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
 }

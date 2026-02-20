@@ -8,12 +8,14 @@ workflow DE_NOVO_ALIGNMENT {
   main:
     ch_versions = Channel.empty()
 
-    FASTP(reads)
+    log.info "Running de novo assembly. This workflow will perform quality control on the reads with fastp, and then assemble the reads into contigs with SPAdes."
+    log.info "The current threshold for the number of passed reads is ${params.minimum_reads}. Any samples with fewer than this will not be included in other steps."
+    log.info "The minimum number of reads can be adjusted with 'params.minimum_reads'."
 
+    FASTP(reads)
     ch_versions = ch_versions.mix(FASTP.out.versions.first())
 
     SPADES(FASTP.out.fastq)
-
     ch_versions = ch_versions.mix(SPADES.out.versions.first())
 
   emit:
@@ -25,4 +27,9 @@ workflow DE_NOVO_ALIGNMENT {
     // for multiqc
     for_multiqc = FASTP.out.fastp_files
     versions    = ch_versions
+}
+
+workflow.onComplete {
+  log.info "Inititalization completed at: $workflow.complete"
+  log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
 }

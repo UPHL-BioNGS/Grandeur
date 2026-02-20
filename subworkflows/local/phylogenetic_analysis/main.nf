@@ -22,6 +22,9 @@ workflow PHYLOGENETIC_ANALYSIS {
   ch_multiqc  = Channel.empty()
   ch_nwk      = Channel.empty()
 
+  log.info "Running phylogenetic analysis. This workflow will perform annotation, core genome alignment, and phylogenetic tree construction. The workflow is modular and can be adjusted to fit the needs of the analysis by changing the parameters for annotation and alignment, as well as skipping steps like ANI and top hit identification if desired."
+
+
   // adding in organism and top ani hit
   if ( ! params.skip_extras ) {
     ch_organism = ch_top_hit.map { it -> if (it) { tuple( it[0] , [ it[1].split("_")[0], it[1].split("_")[1]] )}}
@@ -45,7 +48,10 @@ workflow PHYLOGENETIC_ANALYSIS {
     // skipping ani and top hit
     ch_preannotation  = ch_contigs.map{ it -> tuple(it[0], it[1], null)}
   }
-
+  
+  log.info "Using the following annotator: ${params.annotator}"
+  log.info "Annotation can be ajusted by setting 'params.annotator' to 'prokka' or 'bakta'."
+  
   if (params.annotator == 'prokka' ) {
     PROKKA(ch_preannotation.unique())
     
@@ -64,6 +70,8 @@ workflow PHYLOGENETIC_ANALYSIS {
 
   }
 
+  log.info "Using the following aligner: ${params.aligner}"
+  log.info "Aligner can be ajusted by setting 'params.aligner' to 'panaroo' or 'roary' or 'none' to skip alignment."
   if (params.aligner == 'panaroo') {
     PANAROO(ch_gff.unique().collect())
 
@@ -81,52 +89,69 @@ workflow PHYLOGENETIC_ANALYSIS {
 
   CORE_GENOME_EVALUATION(ch_core.combine(evaluat_script))
 
+  log.info "Evaluating the core genome with CORE_GENOME_EVALUATION. This will provide information on the number of core genes and the percentage of the predicted genes that are shared by ALL samples in the analysis."
+  log.info "The number of genes that each input should share will differ based on the organism and purpose of the analysis, but a general rule of thumb is that at least 70% of the genes should be shared to have a robust core genome. If the number of core genes is very low, it may be worth investigating the samples with low shared gene content and considering removing them from the analysis if they are outliers or of poor quality."
+  log.info "The current thresholds for core genome evaluation are ${params.min_core_genes} core genes and ${params.min_core_per}% core genome percentage. These can be adjusted with 'params.min_core_genes' and 'params.min_core_per'."
+
   CORE_GENOME_EVALUATION.out.evaluation
     .splitText()
     .first()
-    .map{ it -> it.trim()}
-    .map { it ->
-      def (num_samples, num_core_genes, core_genome_per) = it.split(',')
-      return [num_samples, num_core_genes, core_genome_per]
+    .map { it.trim().split(',') }
+    .view { num_samples, num_core_genes, core_genome_per ->
+        "Core Genome Evaluation Complete: Found ${num_core_genes} core genes (Core Percentage: ${core_genome_per}%)"
+    }
+    .tap { ch_stats ->
+        ch_stats.subscribe { num_samples, num_core_genes, core_genome_per ->
+            if (params.min_core_genes && (num_core_genes as int) < params.min_core_genes) {
+                log.warn "WARNING: Core genes (${num_core_genes}) is below the minimum threshold of ${params.min_core_genes}!"
+            }
+            if (params.min_core_per && (core_genome_per as float) < params.min_core_per) {
+                log.warn "WARNING: Core percentage (${core_genome_per}%) is below the minimum threshold of ${params.min_core_per}%!"
+            }
+        }
     }
     .combine(ch_core)
+    // filter out if there are too few core genes or a very low core genome percentage.
+    .filter { num_samples, num_core_genes, core_genome_per, core_files ->
+        def pass_genes = params.min_core_genes ? (num_core_genes as int >= params.min_core_genes) : true
+        def pass_per   = params.min_core_per   ? (core_genome_per as float >= params.min_core_per) : true
+        return pass_genes && pass_per
+    }
+    .map{ it -> it[-2]}
     .set { ch_core_genome }
 
-  if (params.min_core_genes) {
-    ch_core_genome = ch_core_genome.filter{it[1] as int >= params.min_core_genes}
-  }
-
-  if (params.min_core_per) {
-    ch_core_genome = ch_core_genome.filter{it[2] as float >= params.min_core_per}
-  }
-
-  ch_core_genome = ch_core_genome.map{ it -> it[-2]}
   ch_multiqc = ch_multiqc.mix(CORE_GENOME_EVALUATION.out.for_multiqc)
 
+  log.info "Constructing phylogenetic trees with KSNP4 which uses a k-mer based approach to identify core SNPs."
   KSNP4(ch_contigs.combine(ch_top_hit))
   ch_nwk = ch_nwk.mix(KSNP4.out.newick)
   ch_versions = ch_versions.mix(KSNP4.out.versions.first())
 
+  log.info "Constructing phylogenetic trees with MASHTREE which uses a k-mer based approach to calculate distances between genomes and construct a tree."
   MASHTREE(ch_preannotation.map{it -> if (it) { tuple( it[1]) }}.collect())
   ch_nwk = ch_nwk.mix(MASHTREE.out.newick)
   ch_versions = ch_versions.mix(MASHTREE.out.versions)
 
+  log.info "Constructing phylogenetic trees with SKA2 which uses a k-mer based approach to align core genes and phylogenetic analysis will be completed with IQTREE."
   SKA2(ch_contigs.combine(ch_top_hit))
   ch_versions = ch_versions.mix(SKA2.out.versions.first())
     
+  log.info "Constructing phylogenetic trees with IQTREE which uses a maximum likelihood approach to construct a tree from a core gene alignment."
   IQTREE(ch_core_genome.mix(SKA2.out.aln))
   ch_nwk = ch_nwk.mix(IQTREE.out.newick)
   ch_versions = ch_versions.mix(IQTREE.out.versions.first())
 
+  log.info "Creating visualizations of the trees with GOTREE"
   GOTREE(ch_nwk)
   ch_versions = ch_versions.mix(GOTREE.out.versions.first())
   ch_multiqc  = ch_multiqc.mix(GOTREE.out.for_multiqc)
 
-  // SNP matrix
+  log.info "Calculating SNP distance matrix with SNPDISTS from gene alignments."
   SNPDISTS(ch_core_genome.mix(ska2.out.aln))
   ch_versions = ch_versions.mix(SNPDISTS.out.versions)
   ch_multiqc  = ch_multiqc.mix(SNPDISTS.out.snp_matrix)
 
+  log.info "Creating heatmap and clustering of the SNP distance matrix with HEATCLUSTER."
   HEATCLUSTER(SNPDISTS.out.snp_matrix)
   ch_versions = ch_versions.mix(HEATCLUSTER.out.versions)
   ch_multiqc  = ch_multiqc.mix(HEATCLUSTER.out.for_multiqc)
@@ -134,4 +159,9 @@ workflow PHYLOGENETIC_ANALYSIS {
   emit:
   for_multiqc = ch_multiqc
   versions    = ch_versions
+}
+
+workflow.onComplete {
+  log.info "Inititalization completed at: $workflow.complete"
+  log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
 }

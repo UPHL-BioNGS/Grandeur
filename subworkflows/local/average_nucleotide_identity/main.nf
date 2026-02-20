@@ -8,15 +8,19 @@ include { SPESTIMATOR }       from '../../../modules/local/spestimator'
 
 workflow AVERAGE_NUCLEOTIDE_IDENTITY {
     take:
-        ch_species
         ch_contigs
         ch_reference_genomes
-        ch_sylph_db
+        ch_species
         dataset_script
 
     main:
+        log.info "Running average nucleotide identity (ANI) analysis)."
         ch_versions = channel.empty()
+        
         if ( params.current_datasets ) {
+            log.info "Downloading reference genomes for species in the dataset from NCBI with DATASETS."
+            log.info "This is a third-party API that is not controlled by the Grandeur developers, requires the workflow to have internet access, and may be slow or have issues."
+            log.info "Reference genomes are identified using results from SPESTIMATOR and MASH, as well as SYLPH and KRAKEN2 (if their respective databases are provided)."
             SPECIES(ch_species)
 
             SPECIES.out.species
@@ -39,12 +43,19 @@ workflow AVERAGE_NUCLEOTIDE_IDENTITY {
                     name: "datasets_summary.csv")
                 .set { ch_datasets_summary }
 
-        } else {
-            ch_datasets_summary = channel.empty()
-        }
+            ch_datasets_summary
+                .subscribe { summaryFile ->
+                    def genomeCount = summaryFile.countLines() - 1 
+                    log.info "Successfully downloaded ${genomeCount} genomes from NCBI for ANI analysis."
+                    if (genomeCount == 0) {
+                        log.warn "No genomes were downloaded from NCBI for ANI analysis. This may be due to issues with the NCBI API, or because no reference genomes were identified for the species in the dataset. If you believe there should be reference genomes available, you can try running this workflow again, or you can provide your own reference genomes with 'params.reference_genomes'."
+                    }
+                }
 
-        if ( params.sylph_db ) {
-            SYLPH(ch_contigs.combine(ch_sylph_db))
+        } else {
+            log.info "Using local files and those provided with this workflow."
+            log.info "FYI: To download additional references from NCBI, set 'params.current_datasets'."
+            ch_datasets_summary = channel.empty()
         }
 
         REFERENCES()
@@ -56,24 +67,29 @@ workflow AVERAGE_NUCLEOTIDE_IDENTITY {
             .map { it -> tuple([it])}
             .set{ch_genomes}
 
-        SKANI(ch_contigs.combine(ch_genomes))
+        // SKANI(ch_contigs.combine(ch_genomes))
 
-        SKANI.out.results
-            .map { it -> it [1] }
-            .collectFile(
-                storeDir: "${params.outdir}/skani/",
-                keepHeader: true,
-                sort: { file -> file.text },
-                name: "skani_summary.csv")
-            .set { summary }
+        // SKANI.out.results
+        //     .map { it -> it [1] }
+        //     .collectFile(
+        //         storeDir: "${params.outdir}/skani/",
+        //         keepHeader: true,
+        //         sort: { file -> file.text },
+        //         name: "skani_summary.csv")
+        //     .set { ch_skani_summary }
 
-        skani_len_summary = channel.empty()
+        // skani_len_summary = channel.empty()
 
-        ch_versions = ch_versions.mix(SKANI.out.versions.first())
+        // ch_versions = ch_versions.mix(SKANI.out.versions.first())
 
     emit:
-        for_flag    = SKANI.out.results
-        for_summary = summary.mix(ch_datasets_summary).mix(skani_len_summary)
+        //for_summary = ch_skani_summary.mix(ch_datasets_summary).mix(skani_len_summary)
+        for_summary = channel.empty()
         top_hit     = channel.empty()
         versions    = ch_versions
+}
+
+workflow.onComplete {
+  log.info "Inititalization completed at: $workflow.complete"
+  log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
 }

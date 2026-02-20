@@ -1,4 +1,5 @@
 include { AMRFINDER }      from '../../../modules/local/amrfinder'
+include { CHECKM2 }         from '../../../modules/local/checkm2'
 include { FASTQC }         from '../../../modules/local/fastqc'
 include { MLST }           from '../../../modules/local/mlst'
 include { PLASMIDFINDER }  from '../../../modules/local/plasmidfinder'
@@ -9,6 +10,7 @@ workflow QUALITY_ASSESSMENT {
     ch_reads
     ch_contigs
     ch_reads_contigs
+    ch_checkm2_db
     summfle_script
 
     main:
@@ -17,12 +19,14 @@ workflow QUALITY_ASSESSMENT {
     ch_summary  = Channel.empty()
     ch_bams     = Channel.empty()
 
-    // fastq files only
+    log.info "Running quality assessment on the reads and assemblies. This workflow will perform quality control on the reads with FastQC, but the remaining processes of QUAST, CHECKM2, AMRFINDER, and PLASMIDFINDER will be run on generated assemblies as well as those specified with an input file designated with 'params.fasta_list'."
+
+    // fastq files only, so hidden if only fasta files are provided
     if ( params.sample_sheet || params.reads || params.sra_accessions ) {
+        log.info "Running quality assessment on the reads with FastQC. This will be performed on all read files provided, including those specified in the sample sheet, those provided with 'params.reads', and those downloaded from SRA with 'params.sra_accessions'."
         FASTQC(ch_reads)
         ch_versions = ch_versions.mix(FASTQC.out.versions.first())
         for_multiqc = for_multiqc.mix(FASTQC.out.for_multiqc)
-
 
         FASTQC.out.collect
             .collectFile(name: "fastqc_summary.csv",
@@ -47,8 +51,6 @@ workflow QUALITY_ASSESSMENT {
     ch_summary  = ch_summary.mix(amrfinderplus_summary)
     ch_versions = ch_versions.mix(AMRFINDER.out.versions.first())
 
-
-    // contigs
     QUAST(ch_reads_contigs)
     ch_versions = ch_versions.mix(QUAST.out.versions.first())
 
@@ -91,9 +93,27 @@ workflow QUALITY_ASSESSMENT {
         .set{ plasmidfinder_summary }
     ch_summary = ch_summary.mix(plasmidfinder_summary)
 
+    if (params.checkm2_db) {    
+        CHECKM2(ch_contigs.combine(ch_checkm2_db))
+        ch_versions = ch_versions.mix(CHECKM2.out.versions.first())
+
+        CHECKM2.out.collect
+            .collectFile(name: "checkm2_summary.tsv",
+                keepHeader: true,
+                sort: { file -> file.text },
+                storeDir: "${params.outdir}/checkm2")
+            .set{ checkm2_summary }
+        ch_summary = ch_summary.mix(checkm2_summary)
+    } 
+
     emit:
     bams        = ch_bams
     for_summary = ch_summary.collect()
     for_multiqc = for_multiqc.mix(QUAST.out.for_multiqc).collect()
     versions    = ch_versions
+}
+
+workflow.onComplete {
+  log.info "Inititalization completed at: $workflow.complete"
+  log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
 }
