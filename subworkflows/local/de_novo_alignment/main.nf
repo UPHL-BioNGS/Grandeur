@@ -30,6 +30,7 @@ workflow DE_NOVO_ALIGNMENT {
 }
 
 workflow.onComplete {
-  log.info "Inititalization completed at: $workflow.complete"
+  log.info "Assembly completed at: $workflow.complete"
+  log.info "Generated assemblies are at '${params.outdir}/contigs/'."
   log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
 }

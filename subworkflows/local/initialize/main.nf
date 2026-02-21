@@ -466,6 +466,8 @@ Initializing Complete
 }
 
 workflow.onComplete {
-  log.info "Inititalization completed at: $workflow.complete"
+  log.info "Inititalization workflow completed at: $workflow.complete"
+  //log.info "${ch_reads.count()} number of read sets were identified for analysis."
+  //log.info "${ch_fastas.contigs.count()} number of fasta files were identified for analysis."
   log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
 }

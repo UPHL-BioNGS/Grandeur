@@ -7,9 +7,12 @@ include { QUAST }          from '../../../modules/local/quast'
 
 workflow QUALITY_ASSESSMENT {
     take:
-    ch_reads
-    ch_contigs
+    ch_raw_reads
+    ch_clean_reads
+    ch_fastas_without_reads
+    ch_all_fastas
     ch_reads_contigs
+    ch_contigs_org
     ch_checkm2_db
     summfle_script
 
@@ -24,7 +27,7 @@ workflow QUALITY_ASSESSMENT {
     // fastq files only, so hidden if only fasta files are provided
     if ( params.sample_sheet || params.reads || params.sra_accessions ) {
         log.info "Running quality assessment on the reads with FastQC. This will be performed on all read files provided, including those specified in the sample sheet, those provided with 'params.reads', and those downloaded from SRA with 'params.sra_accessions'."
-        FASTQC(ch_reads)
+        FASTQC(ch_raw_reads)
         ch_versions = ch_versions.mix(FASTQC.out.versions.first())
         for_multiqc = for_multiqc.mix(FASTQC.out.for_multiqc)
 
@@ -39,7 +42,7 @@ workflow QUALITY_ASSESSMENT {
 
     }
 
-    AMRFINDER(ch_organism)
+    AMRFINDER(ch_contigs_org)
 
     AMRFINDER.out.collect
       .collectFile(name: 'amrfinderplus.txt',
@@ -51,7 +54,7 @@ workflow QUALITY_ASSESSMENT {
     ch_summary  = ch_summary.mix(amrfinderplus_summary)
     ch_versions = ch_versions.mix(AMRFINDER.out.versions.first())
 
-    QUAST(ch_reads_contigs)
+    QUAST(ch_reads_contigs.mix(ch_fastas_without_reads))
     ch_versions = ch_versions.mix(QUAST.out.versions.first())
 
     QUAST.out.collect
@@ -71,7 +74,7 @@ workflow QUALITY_ASSESSMENT {
         .set{ quast_contig_summary }
     ch_summary = ch_summary.mix(quast_contig_summary)
 
-    MLST(ch_contigs.combine(summfle_script))
+    MLST(ch_all_fastas.combine(summfle_script))
     ch_versions = ch_versions.mix(MLST.out.versions.first())
 
     MLST.out.collect
@@ -82,7 +85,7 @@ workflow QUALITY_ASSESSMENT {
         .set{ mlst_summary }
     ch_summary = ch_summary.mix(mlst_summary)
 
-    PLASMIDFINDER(ch_contigs.combine(summfle_script))
+    PLASMIDFINDER(ch_all_fastas.combine(summfle_script))
     ch_versions = ch_versions.mix(PLASMIDFINDER.out.versions.first())
 
     PLASMIDFINDER.out.collect
@@ -94,7 +97,7 @@ workflow QUALITY_ASSESSMENT {
     ch_summary = ch_summary.mix(plasmidfinder_summary)
 
     if (params.checkm2_db) {    
-        CHECKM2(ch_contigs.combine(ch_checkm2_db))
+        CHECKM2(ch_all_fastas.combine(ch_checkm2_db))
         ch_versions = ch_versions.mix(CHECKM2.out.versions.first())
 
         CHECKM2.out.collect
@@ -107,13 +110,13 @@ workflow QUALITY_ASSESSMENT {
     } 
 
     emit:
-    bams        = ch_bams
     for_summary = ch_summary.collect()
     for_multiqc = for_multiqc.mix(QUAST.out.for_multiqc).collect()
     versions    = ch_versions
 }
 
 workflow.onComplete {
-  log.info "Inititalization completed at: $workflow.complete"
+  log.info "Quality assessment workflow completed at: $workflow.complete"
+  log.info "Generated "
   log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
 }

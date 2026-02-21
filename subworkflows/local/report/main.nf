@@ -1,4 +1,3 @@
-include { CHECKM2 }  from '../../../modules/local/checkm2'
 include { NAMES }    from '../../../modules/local/names'
 include { MQC_PREP } from '../../../modules/local/mqc_prep'
 include { MULTIQC }  from '../../../modules/local/multiqc'
@@ -45,6 +44,8 @@ workflow REPORT {
 }
 
 workflow.onComplete {
-  log.info "Inititalization completed at: $workflow.complete"
-  log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+    log.info "Report workflow completed at: $workflow.complete"
+    log.info "MultiQC report can be found at ${params.outdir}/multiqc/multiqc_report.html"
+    log.info "Summary can be found at ${params.outdir}/grandeur_summary.tsv"
+    log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
 }

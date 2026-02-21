@@ -52,13 +52,13 @@ workflow {
         INITIALIZE.out.version_script
     )
 
-    // workflow.onComplete {
-    //     println("Pipeline completed at: $workflow.complete")
-    //     println("MultiQC report can be found at ${params.outdir}/multiqc/multiqc_report.html")
-    //     println("Summary can be found at ${params.outdir}/grandeur_summary.tsv")
-    //     println("Execution status: ${ workflow.success ? 'OK' : 'failed' }")
-    // }
 
+}
+
+
+workflow.onComplete {
+    log.info "Grander workflow completed at: $workflow.complete"
+    log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
 }
 
 /*

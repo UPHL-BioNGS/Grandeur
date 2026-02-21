@@ -208,6 +208,6 @@ workflow SUBTYPING {
 }
 
 workflow.onComplete {
-  log.info "Inititalization completed at: $workflow.complete"
+  log.info "Subtyping workflow completed at: $workflow.complete"
   log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
 }

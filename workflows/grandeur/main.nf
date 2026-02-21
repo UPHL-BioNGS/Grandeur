@@ -15,7 +15,7 @@ workflow GRANDEUR {
     ch_genome_sizes
     ch_mash_db
     ch_kraken2_db
-    ch_checkm_db
+    ch_checkm2_db
     ch_sylph_db
     dataset_script
     evaluat_script
@@ -66,6 +66,8 @@ workflow GRANDEUR {
         ch_for_flag    = ch_for_flag.mix(TAXONOMIC_PROFILING.out.for_ref_download)
         ch_versions    = ch_versions.mix(TAXONOMIC_PROFILING.out.versions)
 
+
+
         // determining organisms in sample
         AVERAGE_NUCLEOTIDE_IDENTITY(
             ch_contigs,
@@ -76,17 +78,20 @@ workflow GRANDEUR {
         ch_versions    = ch_versions.mix(AVERAGE_NUCLEOTIDE_IDENTITY.out.versions)
         ch_for_summary = ch_for_summary.mix(AVERAGE_NUCLEOTIDE_IDENTITY.out.for_summary)
 
-    //     QUALITY_ASSESSMENT(
-    //         ch_raw_reads,
-    //         ch_clean_reads,
-    //         ch_contigs,
-    //         ch_checkm2_db.ifEmpty([]),
-    //         summfle_script)
+        QUALITY_ASSESSMENT(
+            ch_raw_reads.ifEmpty([]),
+            ch_clean_reads.ifEmpty([]),
+            ch_fastas.ifEmpty([]),
+            ch_contigs.ifEmpty([]),
+            ch_reads_contigs.ifEmpty([]),
+            AVERAGE_NUCLEOTIDE_IDENTITY.out.ch_org_contigs.ifEmpty([]),
+            ch_checkm2_db.ifEmpty([]),
+            summfle_script)
 
-    //     ch_for_multiqc = ch_for_multiqc.mix(QUALITY_ASSESSMENT.out.for_multiqc)
-    //     ch_for_summary = ch_for_summary.mix(QUALITY_ASSESSMENT.out.for_summary)
-    //     ch_versions    = ch_versions.mix(QUALITY_ASSESSMENT.out.versions)
-    //     ch_top_hit     = QUALITY_ASSESSMENT.out.top_hit
+        ch_for_multiqc = ch_for_multiqc.mix(QUALITY_ASSESSMENT.out.for_multiqc)
+        ch_for_summary = ch_for_summary.mix(QUALITY_ASSESSMENT.out.for_summary)
+        ch_versions    = ch_versions.mix(QUALITY_ASSESSMENT.out.versions)
+
 
     //     // getting all the other information
     //     SUBTYPING(

@@ -162,6 +162,10 @@ workflow PHYLOGENETIC_ANALYSIS {
 }
 
 workflow.onComplete {
-  log.info "Inititalization completed at: $workflow.complete"
+  log.info "Phylogenetic analysis workflow completed at: $workflow.complete"
+  log.info "Generated newick files are at '${params.outdir}/nwk/'."
+  log.info "Generated SNP distance matrix is at '${params.outdir}/snpdists/'."
+  log.info "Generated heatmap and clustering of SNP distances is at '${params.outdir}/heatcluster/'."
+  log.info "Generated tree visualizations are at '${params.outdir}/gotree/'."
   log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
 }

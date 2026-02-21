@@ -49,6 +49,6 @@ workflow TEST {
 }
 
 workflow.onComplete {
-  log.info "Inititalization completed at: $workflow.complete"
+  log.info "Test files download workflow completed at: $workflow.complete"
   log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
 }

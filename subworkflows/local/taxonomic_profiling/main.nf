@@ -98,6 +98,14 @@ workflow TAXONOMIC_PROFILING {
 }
 
 workflow.onComplete {
-  log.info "Inititalization completed at: $workflow.complete"
-  log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+    log.info "Taxonomic profiling workflow completed at: $workflow.complete"
+    if ( params.kraken2_db && ( params.sample_sheet || params.reads || params.sra_accessions )) {
+        log.info "Generated KRAKEN2 summary file: ${params.outdir}/kraken2/kraken2_summary.csv"
+    }
+    log.info "Generated MASH DIST summary file: ${params.outdir}/mash/mashdist_summary.csv"
+    log.info "Generated MASH SCREEN summary file: ${params.outdir}/mash/mashscreen_summary.csv"
+    if (params.sylph_db) {
+        log.info "Generated SYLPH summary file: ${params.outdir}/sylph/sylph_summary.tsv"
+    }
+    log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
 }

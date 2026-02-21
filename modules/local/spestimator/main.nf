@@ -7,8 +7,7 @@ process SPESTIMATOR {
     tuple val(meta), file(contigs)
 
     output:
-    path "spestimator/*.tsv",          emit: results
-    path "spestimator/*",              emit: files
+    tuple val(meta), file("spestimator/*.tsv"), emit: results
     path "logs/${task.process}/*.log", emit: log
     path "versions.yml",               emit: versions
     val meta,                          emit: meta
@@ -24,11 +23,11 @@ process SPESTIMATOR {
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
     spestimator \
-      ${args} \
-      --assembly ${contigs} \
-      --output spestimator/${prefix}_spestimator.tsv \
-      --threads ${task.cpus} \
-      | tee -a \$log_file
+        ${args} \
+        --input ${contigs} \
+        --output spestimator/${prefix}_spestimator.tsv \
+        --threads ${task.cpus} \
+        | tee -a \$log_file
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

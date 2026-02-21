@@ -19,8 +19,8 @@ process MASH {
   task.ext.when == null || task.ext.when
 
   script:
-    def args        = task.ext.args        ?: "-v 0 -d 0.25"
-    def screen_args = task.ext.screen_args ?: "-v 0"
+    def args        = task.ext.args        ?: "-v 0 -d 0.15"
+    def screen_args = task.ext.screen_args ?: "-v 0 -w"
     def args_sketch = task.ext.sketch_args ?: "-s 1000 -k 21" 
     def is_fastq    = (reads instanceof List) || reads.name.toString().matches('.*\\.(fastq|fq)(\\.gz)?$')
     def sketch_opts = is_fastq ? "-m 2 ${args_sketch}" : "-m 1 ${args_sketch}"    
