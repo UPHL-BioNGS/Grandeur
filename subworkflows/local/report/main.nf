@@ -1,4 +1,3 @@
-include { NAMES }    from '../../../modules/local/names'
 include { MQC_PREP } from '../../../modules/local/mqc_prep'
 include { MULTIQC }  from '../../../modules/local/multiqc'
 include { SUMMARY }  from '../../../modules/local/summary'
@@ -27,13 +26,19 @@ workflow REPORT {
 
         MULTIQC(for_multiqc.mix(for_summary).mix(MQC_PREP.out.for_multiqc).mix(VERSIONS.out.for_multiqc).collect())
 
-        NAMES(ch_reads.mix(ch_fastas))
-
-        NAMES.out.collect
+        ch_reads
+            .mix(ch_fastas)
+            .map { meta, files -> 
+               def sample = meta.id
+               def file1 = files[0].name
+               def file2 = files[1] ? files[1].name : null
+               def version = "${workflow.manifest.version}"
+               return "${sample},${file1},${file2},${version}"
+            }
             .collectFile(
-                keepHeader: true,
-                sort: { file -> file.text },
-                name: "input_files.csv")
+                name: "input_files.txt",
+                newLine: true
+                )
             .set { ch_names }
 
         SUMMARY(for_summary.mix(ch_names).mix(MULTIQC.out.data_folder).collect())
@@ -43,9 +48,11 @@ workflow REPORT {
         versions = ch_versions
 }
 
-workflow.onComplete {
-    log.info "Report workflow completed at: $workflow.complete"
-    log.info "MultiQC report can be found at ${params.outdir}/multiqc/multiqc_report.html"
-    log.info "Summary can be found at ${params.outdir}/grandeur_summary.tsv"
-    log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+if (! params.skip_extras ) {
+    workflow.onComplete {
+        log.info "Report workflow completed at: $workflow.complete"
+        log.info "MultiQC report can be found at ${params.outdir}/multiqc/multiqc_report.html"
+        log.info "Summary can be found at ${params.outdir}/grandeur_summary.tsv"
+        log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+    }
 }

@@ -48,7 +48,9 @@ workflow TEST {
     versions = ch_versions
 }
 
-workflow.onComplete {
-  log.info "Test files download workflow completed at: $workflow.complete"
-  log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+if ( ! params.sra_accessions.isEmpty()  || ! params.genome_accessions.isEmpty() ) { 
+    workflow.onComplete {
+        log.info "Test files download workflow completed at: $workflow.complete"
+        log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+    }
 }

@@ -29,8 +29,10 @@ workflow DE_NOVO_ALIGNMENT {
     versions    = ch_versions
 }
 
-workflow.onComplete {
-  log.info "Assembly completed at: $workflow.complete"
-  log.info "Generated assemblies are at '${params.outdir}/contigs/'."
-  log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+if ( params.sample_sheet || params.reads || params.sra_accessions ) {
+  workflow.onComplete {
+    log.info "Assembly completed at: $workflow.complete"
+    log.info "Generated assemblies are at '${params.outdir}/contigs/'."
+    log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+  }
 }

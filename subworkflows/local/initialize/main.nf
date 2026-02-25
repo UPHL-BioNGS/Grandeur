@@ -54,8 +54,8 @@ def paramCheck(keys) {
 
   keys.each { x ->
     if (x !in set_keys){
-      println("WARNING: ${x} isn't a supported param!")
-      println("Supported params: ${set_keys}")
+      log.warn "WARNING: ${x} isn't a supported param!"
+      log.info "Supported params: ${set_keys}"
     }
   }
 }
@@ -419,7 +419,7 @@ Initializing Subworkflow Options
   if ( params.skip_extras ) {
     log.info "'params.skip_extras' is set to true. Skipping all \"extra\" processes and subworkflows. This focuses on the core assembly of reads (if FASTQ files are provided) or multiple sequence alignment (if 'params.msa' is set to true)."
   } else {
-    log.info "FYI: It is possible to skip the \"extra\" processes and subworkflows, which include ANI analysis, top hit identification, and adding organism information to the contigs for annotation. To skip these steps, set 'params.skip_extras' to true."
+    log.info "FYI: It is possible to skip ANI analysis, subtyping, and taxonomic profiling subworkflows. To skip these steps, set 'params.skip_extras' to true."
   }
 
   // getting test files
@@ -467,7 +467,5 @@ Initializing Complete
 
 workflow.onComplete {
   log.info "Inititalization workflow completed at: $workflow.complete"
-  //log.info "${ch_reads.count()} number of read sets were identified for analysis."
-  //log.info "${ch_fastas.contigs.count()} number of fasta files were identified for analysis."
   log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
 }

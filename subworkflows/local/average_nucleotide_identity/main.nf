@@ -17,6 +17,7 @@ workflow AVERAGE_NUCLEOTIDE_IDENTITY {
     main:
         log.info "Running average nucleotide identity (ANI) analysis)."
         ch_versions = channel.empty()
+        ch_summary = channel.empty()
         
         if ( params.current_datasets ) {
             log.info "Downloading reference genomes for species in the dataset from NCBI with DATASETS."
@@ -36,8 +37,10 @@ workflow AVERAGE_NUCLEOTIDE_IDENTITY {
 
 
             ch_versions = ch_versions.mix(SPESTIMATOR.out.versions.first())
+            ch_summary  = ch_summary.mix(ch_spestimator_summary)
             ch_species = ch_species.mix(ch_spestimator_summary )
 
+            // could be a channel, but some mash results are very long and may overload headnodes
             SPECIES(ch_species.collect())
 
             SPECIES.out.species
@@ -55,6 +58,8 @@ workflow AVERAGE_NUCLEOTIDE_IDENTITY {
                     sort: { file -> file.text },
                     name: "datasets_summary.csv")
                 .set { ch_datasets_summary }
+
+            ch_summary = ch_summary.mix(ch_datasets_summary)
 
             ch_datasets_summary
                 .subscribe { summaryFile ->
@@ -105,7 +110,7 @@ workflow AVERAGE_NUCLEOTIDE_IDENTITY {
 
         log.info "Running SKANI sketching and distance calculation for average nucleotide identity (ANI) analysis)."
         SKANI_SKETCH(ch_deduplicated_reference_genomes)
-        ch_versions = ch_versions.mix(SKANI_SKETCH.out.versions.first())
+        ch_versions = ch_versions.mix(SKANI_SKETCH.out.versions)
 
         SKANI_DIST(ch_contigs, SKANI_SKETCH.out.db)
 
@@ -118,6 +123,7 @@ workflow AVERAGE_NUCLEOTIDE_IDENTITY {
                 name: "skani_summary.tsv")
             .set { ch_skani_summary }
 
+        ch_summary = ch_summary.mix(ch_skani_summary)
         ch_versions = ch_versions.mix(SKANI_DIST.out.versions.first())
 
         log.info "Using SKANI results to designate species of contigs"
@@ -170,9 +176,8 @@ workflow AVERAGE_NUCLEOTIDE_IDENTITY {
             ch_top_hits = channel.empty()
         }
 
-
     emit:
-        for_summary      = ch_skani_summary.mix(ch_datasets_summary)
+        for_summary      = ch_summary
         top_hit          = ch_top_hits
         ch_org_contigs   = ch_org_contigs
         ch_salmonella    = SKANI_DIST.out.salmonella
@@ -186,10 +191,17 @@ workflow AVERAGE_NUCLEOTIDE_IDENTITY {
         ch_myco          = SKANI_DIST.out.myco
         ch_gc            = SKANI_DIST.out.gc
 
-        versions    = ch_versions
+        versions         = ch_versions
 }
 
-workflow.onComplete {
-  log.info "Average nucleotide identity workflow completed at: $workflow.complete"
-  log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+if ( ! params.skip_extras ) {
+    workflow.onComplete {
+        log.info "Average nucleotide identity workflow completed at: $workflow.complete"
+        if ( params.current_datasets ) {
+            log.info "Generated SPESTIMATOR summary is at '${params.outdir}/spestimator/spestimator_summary.tsv'."
+            log.info "Generated DATASETS summary is at '${params.outdir}/datasets/datasets_summary.csv'."
+        }
+        log.info "Generated SKANI  are at '${params.outdir}/skani/skani_summary.tsv'."
+        log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+    }
 }

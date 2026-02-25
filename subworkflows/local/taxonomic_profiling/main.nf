@@ -1,6 +1,7 @@
-include { KRAKEN2  } from '../../../modules/local/kraken2'
-include { MASH     } from '../../../modules/local/mash'
-include { SYLPH    } from '../../../modules/local/sylph'
+include { KRAKEN2     } from '../../../modules/local/kraken2'
+include { MASH_DIST   } from '../../../modules/local/mashdist'
+include { MASH_SCREEN } from '../../../modules/local/mashscreen'
+include { SYLPH       } from '../../../modules/local/sylph'
 // still struggling with downloading the database
 //include { SOURMASH } from '../../../modules/local/sourmash'
 
@@ -33,18 +34,21 @@ workflow TAXONOMIC_PROFILING {
             .set { ch_kraken2_summary }
 
         ch_versions = KRAKEN2.out.versions.first()
+        ch_summary  = ch_summary.mix(ch_kraken2_summary)
         ch_multiqc  = ch_multiqc.mix(KRAKEN2.out.for_multiqc)
         ch_species  = ch_species.mix(ch_kraken2_summary)
     }
 
     if (params.mash_db) {
         log.info "MASH uses MinHash sketches to rapidly estimate the distance between genomic sequences. The database used for comparison can be adjusted with 'params.mash_db'."
-        MASH(ch_reads.mix(ch_fastas).filter { it }.combine(ch_mash_db))
+        MASH_DIST(ch_reads.mix(ch_fastas).filter { it }.combine(ch_mash_db))
+        MASH_SCREEN(ch_reads.mix(ch_fastas).filter { it }.combine(ch_mash_db))
     } else {
-        MASH(ch_reads.mix(ch_fastas).filter { it }.map{it -> tuple(it[0], it[1], null)})
+        MASH_DIST(ch_reads.mix(ch_fastas).filter { it }.map{it -> tuple(it[0], it[1], null)})
+        MASH_SCREEN(ch_reads.mix(ch_fastas).filter { it }.map{it -> tuple(it[0], it[1], null)})
     }
 
-    MASH.out.results
+    MASH_DIST.out.results
         .collectFile(
             storeDir: file("${params.outdir}/mash/"),
             keepHeader: true,
@@ -52,7 +56,7 @@ workflow TAXONOMIC_PROFILING {
             name: "mashdist_summary.csv")
         .set { ch_mashdist_summary }
 
-    MASH.out.screen_results
+    MASH_SCREEN.out.screen_results
         .collectFile(
             storeDir: file("${params.outdir}/mash/"),
             keepHeader: true,
@@ -60,7 +64,8 @@ workflow TAXONOMIC_PROFILING {
             name: "mashscreen_summary.csv")
         .set { ch_mashscreen_summary }
 
-    ch_versions = ch_versions.mix(MASH.out.versions.first())
+    ch_versions = ch_versions.mix(MASH_DIST.out.versions.first()).mix(MASH_SCREEN.out.versions.first())
+    ch_summary  = ch_summary.mix(ch_mashdist_summary).mix(ch_mashscreen_summary)
     ch_species  = ch_species.mix(ch_mashdist_summary).mix(ch_mashscreen_summary)
 
     if (params.sylph_db) {
@@ -97,15 +102,17 @@ workflow TAXONOMIC_PROFILING {
         versions         = ch_versions
 }
 
-workflow.onComplete {
-    log.info "Taxonomic profiling workflow completed at: $workflow.complete"
-    if ( params.kraken2_db && ( params.sample_sheet || params.reads || params.sra_accessions )) {
-        log.info "Generated KRAKEN2 summary file: ${params.outdir}/kraken2/kraken2_summary.csv"
+if ( ! params.skip_extras ) {
+    workflow.onComplete {
+        log.info "Taxonomic profiling workflow completed at: $workflow.complete"
+        if ( params.kraken2_db && ( params.sample_sheet || params.reads || params.sra_accessions )) {
+            log.info "Generated KRAKEN2 summary file: ${params.outdir}/kraken2/kraken2_summary.csv"
+        }
+        log.info "Generated MASH DIST summary file: ${params.outdir}/mash/mashdist_summary.csv"
+        log.info "Generated MASH SCREEN summary file: ${params.outdir}/mash/mashscreen_summary.csv"
+        if (params.sylph_db) {
+            log.info "Generated SYLPH summary file: ${params.outdir}/sylph/sylph_summary.tsv"
+        }
+        log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
     }
-    log.info "Generated MASH DIST summary file: ${params.outdir}/mash/mashdist_summary.csv"
-    log.info "Generated MASH SCREEN summary file: ${params.outdir}/mash/mashscreen_summary.csv"
-    if (params.sylph_db) {
-        log.info "Generated SYLPH summary file: ${params.outdir}/sylph/sylph_summary.tsv"
-    }
-    log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
 }
