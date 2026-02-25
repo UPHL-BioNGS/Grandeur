@@ -4,7 +4,7 @@ process SYLPH {
     container     'staphb/sylph:latest'
 
     input:
-    tuple val(meta), file(reads), file(db)
+    tuple val(meta), file(reads), path(db)
 
     output:
     tuple val(meta), file("sylph/*sylph.tsv"), emit: tsv, optional: true

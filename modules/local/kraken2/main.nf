@@ -7,10 +7,10 @@ process KRAKEN2 {
   tuple val(meta), file(fastq), path(kraken2_db)
 
   output:
-  path "kraken2/*_kraken2_report.txt",                          emit: for_multiqc
+  path "kraken2/*_kraken2_report.txt",                          emit: for_multiqc, optional: true
   path "kraken2/*",                                             emit: files
   path "logs/${task.process}/*.log",                            emit: log
-  tuple val(meta), file("kraken2/*_reads_summary_kraken2.csv"), emit: results
+  tuple val(meta), file("kraken2/*_reads_summary_kraken2.csv"), emit: results, optional: true
   path  "versions.yml",                                         emit: versions
 
   when:

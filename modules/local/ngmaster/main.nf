@@ -32,5 +32,7 @@ process NGMASTER {
     "${task.process}":
         ngmaster: \$(echo \$(ngmaster --version 2>&1 | awk '{print \$2}'))
     END_VERSIONS
+
+    exit 1
     """
 }

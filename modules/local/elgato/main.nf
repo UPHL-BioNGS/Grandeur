@@ -7,7 +7,8 @@ process ELGATO {
   tuple val(meta), file(contigs)
 
   output:
-  path "elgato/*/possible_mlsts.txt", emit: collect
+  path "elgato/*/possible_mlsts.txt", emit: collect, optional: true
+  path "elgato/*/*", emit: results, optional: true
   path "logs/${task.process}/*.log" , emit: log
   path "versions.yml"               , emit: versions
   val meta                          , emit: meta

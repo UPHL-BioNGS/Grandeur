@@ -32,7 +32,7 @@ process SPADES {
 
     if [ -f "spades/${prefix}/contigs.fasta" ] ; then cp spades/${prefix}/contigs.fasta contigs/${prefix}_contigs.fa ; fi
     
-    rm -rf spades/${prefix}/tmp
+    rm -rf spades/${prefix}/{tmp,K127,K21,K33,K55,K77,K99,pipeline_state}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

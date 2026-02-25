@@ -9,7 +9,7 @@ process SEQSERO2 {
 
   output:
   path "seqsero2/*/*", emit: files
-  path "seqsero2/*/SeqSero_result.tsv", emit: collect
+  path "seqsero2/*/SeqSero_result.tsv", emit: collect, optional: true
   path "logs/${task.process}/*.log", emit: log
   path  "versions.yml", emit: versions
   val meta, emit: meta

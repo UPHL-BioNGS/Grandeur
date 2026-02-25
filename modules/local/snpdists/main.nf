@@ -8,7 +8,7 @@ process SNPDISTS {
   file(contigs)
 
   output:
-  path "snp-dists/snp_matrix.txt", emit: snp_matrix
+  path "snp-dists/snp_matrix.txt", emit: snp_matrix, optional: true
   path "versions.yml"            , emit: versions
 
   when:

@@ -7,7 +7,7 @@ process EMMTYPER {
   tuple val(meta), file(contigs), file(script)
 
   output:
-  path "emmtyper/*_emmtyper.txt"   , emit: collect
+  path "emmtyper/*_emmtyper.txt"   , emit: collect, optional: true
   path "emmtyper/*"                , emit: everything
   path "logs/${task.process}/*.log", emit: log
   path "versions.yml"              , emit: versions

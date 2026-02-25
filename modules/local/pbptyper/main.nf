@@ -8,7 +8,7 @@ process PBPTYPER {
   tuple val(meta), file(contigs)
 
   output:
-  path "pbptyper/${meta.id}.tsv"   , emit: collect
+  path "pbptyper/${meta.id}.tsv"   , emit: collect, optional: true
   path "pbptyper/*"                , emit: all
   path "logs/${task.process}/*.log", emit: log
   path "versions.yml"              , emit: versions

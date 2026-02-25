@@ -7,9 +7,9 @@ process FASTQC {
   tuple val(meta), file(fastq)
 
   output:
-  path "fastqc/*html"              , emit: fastq_files
-  path "fastqc/*_fastqc.zip"       , emit: for_multiqc
-  path "fastqc/*_summary.csv"      , emit: collect
+  path "fastqc/*html"              , emit: fastq_files, optional: true
+  path "fastqc/*_fastqc.zip"       , emit: for_multiqc, optional: true
+  path "fastqc/*_summary.csv"      , emit: collect, optional: true
   path "logs/${task.process}/*.log", emit: log_files
   path "versions.yml"              , emit: versions
   val meta                         , emit: meta

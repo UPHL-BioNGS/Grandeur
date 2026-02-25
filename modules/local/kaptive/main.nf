@@ -7,7 +7,7 @@ process KAPTIVE {
   tuple val(meta), file(contigs)
 
   output:
-  path "kaptive/${meta.id}_table.txt", emit: collect
+  path "kaptive/${meta.id}_table.txt", emit: collect, optional: true
   path "kaptive/*", emit: files
   path "logs/${task.process}/*.log", emit: log
   path "versions.yml", emit: versions

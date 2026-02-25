@@ -4,7 +4,7 @@ process AMRFINDER {
   container     'staphb/ncbi-amrfinderplus:4.0.23-2025-07-16.1'
 
   input:
-  tuple val(meta), file(contigs), val(genus), val(species)
+  tuple val(meta), val(organism), file(contigs)
 
   output:
   path "amrfinder/*_amrfinder.txt", emit: collect, optional: true
@@ -22,19 +22,19 @@ process AMRFINDER {
     mkdir -p amrfinder logs/${task.process}
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
-    organism=\$(amrfinder -l | tr " " "\\n" | grep -i ${genus} | grep -i ${species} | sed 's/,//g' | head -n 1 )
-    if [ -z "\$organism" ] ; then organism=\$(amrfinder -l | tr " " "\\n" | grep -i ${genus} | sed 's/,//g' | head -n 1 ) ; fi
+    organism=\$(amrfinder -l | tr " " "\\n" | grep -i ${organism[0]} | grep -i ${organism[1]} | sed 's/,//g' | head -n 1 )
+    if [ -z "\$organism" ] ; then organism=\$(amrfinder -l | tr " " "\\n" | grep -i ${organism[0]} | sed 's/,//g' | head -n 1 ) ; fi
     if [ -n "\$organism" ]
     then
       organism_check="--organism \$organism"
-      echo "Top organism result of ${genus} ${species} matched with \$organism" >> \$log_file
-    elif [ "${genus}" == "Shigella" ]
+      echo "Top organism result of ${organism[0]} ${organism[1]} matched with \$organism" >> \$log_file
+    elif [ "${organism[0]}" == "Shigella" ]
     then
       organism_check="--organism Escherichia"
-      echo "--organism Escherichia with be used because of top organism result of ${genus}" >> \$log_file
+      echo "--organism Escherichia with be used because of top organism result of ${organism[0]}" >> \$log_file
     else
       organism_check=''
-      echo "Top organism result of ${genus} ${species} did not match any of the organisms" >> \$log_file
+      echo "Top organism result of ${organism[0]} ${organism[1]} did not match any of the organisms" >> \$log_file
     fi
 
     amrfinder ${args} \

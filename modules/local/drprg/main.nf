@@ -7,7 +7,7 @@ process DRPRG {
   tuple val(meta), file(contigs)
 
   output:
-  tuple val(meta), val("drprg"), file("drprg/*/*.drprg.json"), emit: json
+  tuple val(meta), val("drprg"), file("drprg/*/*.drprg.json"), emit: json, optional: true
   path "drprg/*/*", emit: results
   path "logs/${task.process}/*.log", emit: log
   path "versions.yml", emit: versions

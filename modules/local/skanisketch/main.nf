@@ -8,7 +8,7 @@ process SKANI_SKETCH {
     path genomes
 
     output:
-    path "skani_db" , emit: db
+    path "skani_db" , emit: db, optional: true
     path "logs/${task.process}/*.log", emit: log
     path "versions.yml", emit: versions
 

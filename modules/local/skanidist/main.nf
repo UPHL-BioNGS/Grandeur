@@ -28,7 +28,7 @@ process SKANI_DIST {
     task.ext.when == null || task.ext.when
 
     script:
-    def args   = task.ext.args   ?: '--short-header'
+    def args   = task.ext.args   ?: '--short-header -s 90'
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     mkdir -p skani top_hit logs/${task.process}
@@ -53,34 +53,34 @@ process SKANI_DIST {
 
     for organism in Salmonella Escherichia Klebsiella Enterobacter Serratia Legionella Vibrio Acinetobacter Mycobacteri Neisseria
     do
-        if [ grep -q "^\$organism" skani/${prefix}_skani.tsv ]
+        if grep -q "^\$organism" skani/${prefix}_skani.tsv
         then
             echo "Contigs from ${prefix} matched to \${organism} in SKANI results. Copying contigs to \${organism}/ directory." >> \$log_file
             mkdir -p \${organism} 
-            cp $contigs \${organism}/
+            cp ${contigs} \${organism}/
         fi
     done
 
-    if [ grep -q "^Shigella" skani/${prefix}_skani.tsv ]
+    if grep -q "^Shigella" skani/${prefix}_skani.tsv
     then
         echo "Contigs from ${prefix} matched to Shigella in SKANI results. Copying contigs to Escherichia/ directory." >> \$log_file
         mkdir -p Escherichia
-        cp $contigs Escherichia/
+        cp ${contigs} Escherichia/
     fi
 
-    if [ grep -q "^Streptococcus" skani/${prefix}_skani.tsv ]
+    if grep -q "^Streptococcus" skani/${prefix}_skani.tsv
     then
-        if [ grep "pyogenes\\|dysgalactiae\\|anginosus" skani/${prefix}_skani.tsv | grep -q "^Streptococcus" ]
+        if grep "pyogenes\\|dysgalactiae\\|anginosus" skani/${prefix}_skani.tsv | grep -q "^Streptococcus"
         then
             echo "Contigs from ${prefix} matched to Streptococcus pyogenes/dysgalactiae/anginosus in SKANI results. Copying contigs to gas/ directory." >> \$log_file
             mkdir -p gas
-            cp $contigs gas/
+            cp ${contigs} gas/
         fi
-        if [ grep "pneumoniae" skani/${prefix}_skani.tsv | grep -q "^Streptococcus" ]
+        if grep "pneumoniae" skani/${prefix}_skani.tsv | grep -q "^Streptococcus"
         then
-            echo "Contigs from ${prefix} matched to Streptococcus pneumoniae in SKANI results. Copying contigs to Mycobacteri/ directory." >> \$log_file
+            echo "Contigs from ${prefix} matched to Streptococcus pneumoniae in SKANI results. Copying contigs to Streptococcus/ directory." >> \$log_file
             mkdir -p Streptococcus
-            cp $contigs Streptococcus/
+            cp ${contigs} Streptococcus/
         fi
     fi
     """

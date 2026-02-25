@@ -7,10 +7,9 @@ process SPESTIMATOR {
     tuple val(meta), file(contigs)
 
     output:
-    tuple val(meta), file("spestimator/*.tsv"), emit: results
+    tuple val(meta), file("spestimator/*.tsv"), emit: results, optional: true
     path "logs/${task.process}/*.log", emit: log
-    path "versions.yml",               emit: versions
-    val meta,                          emit: meta
+    path "versions.yml", emit: versions
 
     when:
     task.ext.when == null || task.ext.when

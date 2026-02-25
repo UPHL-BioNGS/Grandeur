@@ -7,8 +7,8 @@ process SHIGAPASS {
     tuple val(meta), file(contigs)
 
     output:
-    path "shigapass/*_summary.csv", emit: summary
-    path "shigapass/*", emit: files
+    path "shigapass/*_summary.csv", emit: summary, optional: true
+    path "shigapass/*", emit: all_files, optional: true
     path "logs/${task.process}/*.log", emit: log
     path "versions.yml", emit: versions
     val meta, emit: meta
@@ -17,23 +17,25 @@ process SHIGAPASS {
     task.ext.when == null || task.ext.when
 
     script:
+    def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     mkdir -p shigapass logs/${task.process}
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
-    shigapass \
-      --contigs ${contigs} \
-      --out_dir shigapass \
-      --threads ${task.cpus} \
-      | tee -a \$log_file
+    echo "${contigs}" > list.txt
 
-    # Rename output to include sample name if not already present or to standardize
-    mv shigapass/summary.csv shigapass/${prefix}_shigapass_summary.csv
+    ShigaPass.sh \
+        ${args} \
+        -l list.txt \
+        -o shigapass/${prefix} \
+        -p \${DB_PATH} \
+        -t ${task.cpus} \
+        | tee -a \$log_file
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        shigapass: \$(shigapass --version 2>&1 | awk '{print \$2}')
+        shigapass: \$(ShigaPass.sh -v | awk '{print \$NF}')
     END_VERSIONS
     """
 }
