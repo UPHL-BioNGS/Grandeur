@@ -66,8 +66,6 @@ workflow GRANDEUR {
         ch_for_flag    = ch_for_flag.mix(TAXONOMIC_PROFILING.out.for_ref_download)
         ch_versions    = ch_versions.mix(TAXONOMIC_PROFILING.out.versions)
 
-
-
         // determining organisms in sample
         AVERAGE_NUCLEOTIDE_IDENTITY(
             ch_contigs,
@@ -93,29 +91,36 @@ workflow GRANDEUR {
         ch_versions    = ch_versions.mix(QUALITY_ASSESSMENT.out.versions)
 
 
-    //     // getting all the other information
-    //     SUBTYPING(
-    //         ch_contigs, 
-    //         ch_for_flag, 
-    //         summfle_script,
-    //         jsoncon_script)
+        // getting all the other information
+        SUBTYPING(
+            AVERAGE_NUCLEOTIDE_IDENTITY.out.ch_myco.ifEmpty([]),
+            AVERAGE_NUCLEOTIDE_IDENTITY.out.ch_gas.ifEmpty([]),
+            AVERAGE_NUCLEOTIDE_IDENTITY.out.ch_kleb.ifEmpty([]),
+            AVERAGE_NUCLEOTIDE_IDENTITY.out.ch_legionella.ifEmpty([]),
+            AVERAGE_NUCLEOTIDE_IDENTITY.out.ch_strep.ifEmpty([]),
+            AVERAGE_NUCLEOTIDE_IDENTITY.out.ch_salmonella.ifEmpty([]),
+            AVERAGE_NUCLEOTIDE_IDENTITY.out.ch_ecoli.ifEmpty([]),
+            AVERAGE_NUCLEOTIDE_IDENTITY.out.ch_vibrio.ifEmpty([]),
+            AVERAGE_NUCLEOTIDE_IDENTITY.out.ch_gc.ifEmpty([]),
+            summfle_script,
+            jsoncon_script)
 
-    //     ch_for_summary = ch_for_summary.mix(SUBTYPING.out.for_summary)
-    //     ch_versions    = ch_versions.mix(SUBTYPING.out.versions)
+        ch_for_summary = ch_for_summary.mix(SUBTYPING.out.for_summary)
+        ch_versions    = ch_versions.mix(SUBTYPING.out.versions)
     } else {
         ch_top_hit = Channel.empty()
     }
 
-    // // optional subworkflow for comparing shared genes
-    // if ( params.msa ) {
-    //     PHYLOGENETIC_ANALYSIS(
-    //         evaluat_script,
-    //         ch_contigs.ifEmpty([]),
-    //         ch_top_hit.ifEmpty([]))
+    // optional subworkflow for comparing shared genes
+    if ( params.msa ) {
+        PHYLOGENETIC_ANALYSIS(
+            evaluat_script,
+            ch_contigs.ifEmpty([]),
+            ch_top_hit.ifEmpty([]))
             
-    //     ch_for_multiqc = ch_for_multiqc.mix(PHYLOGENETIC_ANALYSIS.out.for_multiqc)
-    //     ch_versions    = ch_versions.mix(PHYLOGENETIC_ANALYSIS.out.versions)
-    // }
+        ch_for_multiqc = ch_for_multiqc.mix(PHYLOGENETIC_ANALYSIS.out.for_multiqc)
+        ch_versions    = ch_versions.mix(PHYLOGENETIC_ANALYSIS.out.versions)
+    }
 
     // getting a summary of everything
     if ( ! params.skip_extras ) {
