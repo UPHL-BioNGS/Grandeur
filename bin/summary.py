@@ -52,6 +52,7 @@ def check_isolate_purity(group):
 # input files
 names          = 'input_files.txt'
 amrfinderplus  = 'amrfinderplus.txt'
+checkm2        = 'checkm2_summary.tsv'
 core           = 'multiqc_core_genome_evaluation-plot.txt'
 datasets       = 'datasets_summary.csv'
 drprg          = 'drprg_summary.tsv'
