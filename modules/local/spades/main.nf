@@ -11,7 +11,7 @@ process SPADES {
   tuple val(meta), file("contigs/*_contigs.fa"), optional: true,  emit: contigs
   tuple val(meta), file("contigs/*_contigs.fa"), file(reads), optional: true,  emit: reads_contigs
   path "logs/${task.process}/*.log", emit: log
-  path  "versions.yml", emit: versions
+  path "versions.yml", emit: versions
 
   when:
   task.ext.when == null || task.ext.when

@@ -23,7 +23,7 @@ Relevant params and their values:
 
 """
 
-    ch_versions = Channel.empty()
+    ch_versions = channel.empty()
 
     FASTP(reads)
     ch_versions = ch_versions.mix(FASTP.out.versions.first())

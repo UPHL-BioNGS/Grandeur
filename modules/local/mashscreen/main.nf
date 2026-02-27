@@ -16,12 +16,10 @@ process MASH_SCREEN {
   task.ext.when == null || task.ext.when
 
   script:
-    def args        = task.ext.args        ?: "-v 0 -i 0.9 -w"
-    def is_fastq    = (reads instanceof List) || reads.name.toString().matches('.*\\.(fastq|fq)(\\.gz)?$')   
+    def args        = task.ext.args        ?: "-v 0 -i 0.9 -w" 
     def better_ref  = reference.toString().contains("input") ? "/db/RefSeqSketchesDefaults.msh" : reference
     def org_cmd     = reference.toString().contains("input") ? "echo \$line | awk '{print \$5}' | cut -f 8 -d - | cut -f 1,2 -d _ | cut -f 1 -d ." : "echo \$line | awk '{print \$5}' | cut -f 1,2 -d _ | cut -f 1 -d ."
     def prefix      = task.ext.prefix      ?: "${meta.id}"
-    def input_files = (reads instanceof List) ? reads.join(" ") : reads
 
     """
     mkdir -p mash

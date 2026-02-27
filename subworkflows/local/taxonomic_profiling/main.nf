@@ -96,8 +96,7 @@ Relevant params and their values:
     if (params.sylph_db) {
         SYLPH(ch_reads.mix(ch_fastas).filter { it }.combine(ch_sylph_db))
 
-        SYLPH.out.tsv
-            .map { it -> it [1] }
+        SYLPH.out.results
             .collectFile(
                 storeDir: "${params.outdir}/sylph/",
                 keepHeader: true,
@@ -137,18 +136,17 @@ TAXONOMIC PROFILING subworkflow completed at: $workflow.complete
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
 │   'params.outdir'                                     │"""
     if ( params.kraken2_db && ( params.sample_sheet || params.reads || params.sra_accessions )) {
-            log.info """│    ├── kraken2                                        │
+        log.info """│    ├── kraken2                                        │
 │    │   └── kraken2_summary.csv                        │"""
     }
-    log.info """│    ├── mash                                           │
-│    │   ├── mashdist_summary.csv                       │
-│    │   └── mashscreen_summary.csv                     │"""
     if (params.sylph_db ) {
-        log.info """│    └── sylph                                          │
-│        └── sylph_summary.tsv                          │"""
+        log.info """│    ├── sylph                                          │
+│    │   └── sylph_summary.tsv                          │"""
         }
 
-    log.info """\
+        log.info """│    └── mash                                           │
+│        ├── mashdist_summary.csv                       │
+│        └── mashscreen_summary.csv                     │
 └───────────────────────────────────────────────────────┘
 
 ------------------------------------------------------

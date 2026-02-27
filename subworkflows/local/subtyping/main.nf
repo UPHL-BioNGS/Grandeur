@@ -29,8 +29,8 @@ workflow SUBTYPING {
     jsoncon_script
 
   main:
-    ch_summary  = Channel.empty()
-    ch_versions = Channel.empty()
+    ch_summary  = channel.empty()
+    ch_versions = channel.empty()
 
     log.info """
 

@@ -26,10 +26,10 @@ workflow GRANDEUR {
     version_script
 
     main:
-    ch_for_multiqc   = Channel.empty()
+    ch_for_multiqc   = channel.empty()
     ch_for_summary   = ch_genome_sizes
-    ch_for_flag      = Channel.empty()
-    ch_versions      = Channel.empty()
+    ch_for_flag      = channel.empty()
+    ch_versions      = channel.empty()
     ch_reads_contigs = ch_fastas.map{it -> tuple(it[0], it[1], null)}
 
 
@@ -45,8 +45,8 @@ workflow GRANDEUR {
 
     } else {
         ch_contigs       = ch_fastas
-        ch_clean_reads   = Channel.empty()
-        ch_assembled     = Channel.empty()
+        ch_clean_reads   = channel.empty()
+        ch_assembled     = channel.empty()
     }
 
     // getting a summary of everything
@@ -75,6 +75,8 @@ workflow GRANDEUR {
 
         ch_versions    = ch_versions.mix(AVERAGE_NUCLEOTIDE_IDENTITY.out.versions)
         ch_for_summary = ch_for_summary.mix(AVERAGE_NUCLEOTIDE_IDENTITY.out.for_summary)
+        ch_top_hit     = AVERAGE_NUCLEOTIDE_IDENTITY.out.top_hit
+        ch_org_contigs = AVERAGE_NUCLEOTIDE_IDENTITY.out.ch_org_contigs
 
         QUALITY_ASSESSMENT(
             ch_raw_reads.ifEmpty([]),
@@ -108,14 +110,15 @@ workflow GRANDEUR {
         ch_for_summary = ch_for_summary.mix(SUBTYPING.out.for_summary)
         ch_versions    = ch_versions.mix(SUBTYPING.out.versions)
     } else {
-        ch_top_hit = Channel.empty()
+        ch_top_hit = channel.empty()
+        ch_org_contigs = ch_contigs.map{it -> tuple(it[0], ["Unknown", "Unknown"], it[1])}
     }
 
     // optional subworkflow for comparing shared genes
     if ( params.msa ) {
         PHYLOGENETIC_ANALYSIS(
             evaluat_script,
-            ch_contigs.ifEmpty([]),
+            ch_org_contigs,
             ch_top_hit.ifEmpty([]))
             
         ch_for_multiqc = ch_for_multiqc.mix(PHYLOGENETIC_ANALYSIS.out.for_multiqc)

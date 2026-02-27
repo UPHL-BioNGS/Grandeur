@@ -56,10 +56,12 @@ Creating final reports
                 )
             .set { ch_names }
 
-        SUMMARY(for_summary.mix(ch_names).mix(MULTIQC.out.data_folder).collect())
+        // TODO : BRING BACK
+        // SUMMARY(for_summary.mix(ch_names).mix(MULTIQC.out.data_folder).collect())
 
     emit:
-        summary  = SUMMARY.out.extended_tsv
+        //summary  = SUMMARY.out.extended_tsv
+        summary  = channel.empty()
         versions = ch_versions
 }
 

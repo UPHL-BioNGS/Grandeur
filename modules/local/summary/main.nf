@@ -21,6 +21,5 @@ process SUMMARY {
 
     python3 summary.py
 
-    exit 1
   """
 }

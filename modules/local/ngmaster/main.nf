@@ -33,6 +33,7 @@ process NGMASTER {
         ngmaster: \$(echo \$(ngmaster --version 2>&1 | awk '{print \$2}'))
     END_VERSIONS
 
+    # add sample to column name
     exit 1
     """
 }

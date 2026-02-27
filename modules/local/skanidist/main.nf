@@ -20,6 +20,7 @@ process SKANI_DIST {
     tuple val(meta), file("Escherichia/*"), emit: ecoli, optional: true
     tuple val(meta), file("Vibrio/*"), emit: vibrio, optional: true
     tuple val(meta), file("Neisseriac/*"), emit: gc, optional: true
+    path "skani/*txt", emit: skani, optional: true
     path "top_hit/*", emit: top_hit, optional: true
     path "logs/${task.process}/*.log", emit: log
     path "versions.yml", emit: versions
@@ -41,13 +42,17 @@ process SKANI_DIST {
         -o skani/${prefix}_skani.tsv \
         | tee -a \$log_file
 
+    # ensure prefix is in summary file
+    head -n 1 skani/${prefix}_skani.tsv | awk '{print "sample\\t" \$0}' > skani/${prefix}_skani.txt
+    tail -n +2 skani/${prefix}_skani.tsv | awk '{print "${prefix}\\t" \$0}' >> skani/${prefix}_skani.txt
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         skani: \$(skani --version | awk '{print \$NF}')
     END_VERSIONS
 
     # getting the values of all the top hits
-    tail -n +2 skani/${prefix}_skani.tsv | head -n 1 | cut -f 1 > top_hit/${prefix}_top_hit.tsv
+    tail -n +2 skani/${prefix}_skani.tsv | sort -rk 3 | head -n 1 | cut -f 1 > top_hit/${prefix}_top_hit.tsv
 
     # using the skani results to separate contigs for subtyping
 

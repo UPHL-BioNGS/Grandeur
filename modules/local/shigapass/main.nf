@@ -37,5 +37,8 @@ process SHIGAPASS {
     "${task.process}":
         shigapass: \$(ShigaPass.sh -v | awk '{print \$NF}')
     END_VERSIONS
+
+    # add sample to column name
+    exit 1
     """
 }

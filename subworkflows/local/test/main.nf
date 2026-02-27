@@ -31,7 +31,7 @@ issues.
 
 """
 
-    ch_versions = Channel.empty()
+    ch_versions = channel.empty()
 
     if ( ! params.sra_accessions.isEmpty() ) {
         DOWNLOAD_FASTQ(ch_sra_accessions.filter({it[0]}))
@@ -44,7 +44,7 @@ issues.
             }
             .set { ch_fastq }
     } else {
-        ch_fastq = Channel.empty()
+        ch_fastq = channel.empty()
     }
 
     if ( ! params.genome_accessions.isEmpty() ) {
@@ -59,7 +59,7 @@ issues.
             }
             .set { ch_fasta }
     } else {
-        ch_fasta    = Channel.empty()
+        ch_fasta    = channel.empty()
     }
 
     emit:

@@ -137,8 +137,7 @@ Relevant params and their values:
 
         SKANI_DIST(ch_contigs, SKANI_SKETCH.out.db)
 
-        SKANI_DIST.out.results
-            .map { it -> it [1] }
+        SKANI_DIST.out.skani
             .collectFile(
                 storeDir: "${params.outdir}/skani/",
                 keepHeader: true,
@@ -146,7 +145,7 @@ Relevant params and their values:
                 name: "skani_summary.tsv")
             .set { ch_skani_summary }
 
-        ch_summary = ch_summary.mix(ch_skani_summary)
+        ch_summary  = ch_summary.mix(ch_skani_summary)
         ch_versions = ch_versions.mix(SKANI_DIST.out.versions.first())
 
         SKANI_DIST.out.hits
@@ -169,7 +168,7 @@ Relevant params and their values:
             .set {ch_org_contigs }
 
         if ( params.msa && ! params.exclude_top_hit ) {
-            log.info "Adding top hits from SKANI results to the analysis for multiple sequence alignment (MSA) and phylogenetic analysis. This will add the reference genome with the highest ANI for use in the phylogenetic analysis workflow. If you want to skip this step, set 'params.exclude_top_hit' to true."
+            log.info "Adding top hits from SKANI results to the analysis."
             SKANI_DIST.out.top_hit
                 .collectFile(name: 'top_hits.txt', newLine: true)
                 .splitText()

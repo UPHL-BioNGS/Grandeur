@@ -144,7 +144,7 @@ for file in tsv_files :
         summary_df.drop(analysis + "_sample", axis=1, inplace=True)
 
 # to do, fix this
-summary_df['warnings'] = summary_df['warnings'] + summary_df['kleborate_qc_warnings']
+# summary_df['warnings'] = summary_df['warnings'] + summary_df['kleborate_qc_warnings']
 
 # for specific tools
 

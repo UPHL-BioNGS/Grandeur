@@ -17,10 +17,10 @@ workflow QUALITY_ASSESSMENT {
     summfle_script
 
     main:
-    ch_for_multiqc = Channel.empty()
-    ch_versions    = Channel.empty()
-    ch_summary     = Channel.empty()
-    ch_bams        = Channel.empty()
+    ch_for_multiqc = channel.empty()
+    ch_versions    = channel.empty()
+    ch_summary     = channel.empty()
+    ch_bams        = channel.empty()
 
 
     log.info """
@@ -90,7 +90,7 @@ Relevant params and their values:
     ch_summary  = ch_summary.mix(amrfinderplus_summary)
     ch_versions = ch_versions.mix(AMRFINDER.out.versions.first())
 
-    QUAST(ch_reads_contigs.mix(ch_fastas_without_reads).filter{it})
+    QUAST(ch_reads_contigs.filter{it})
     ch_versions = ch_versions.mix(QUAST.out.versions.first())
 
     QUAST.out.collect

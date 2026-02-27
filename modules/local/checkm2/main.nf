@@ -7,7 +7,8 @@ process CHECKM2 {
     tuple val(meta), file(contigs), path(db)
 
     output:
-    path "checkm2/*/quality_report.tsv", emit: report, optional: true
+    tuple val(meta), file ("checkm2/*/quality_report.tsv"), emit: results, optional: true
+    path "checkm2/*_quality_report.tsv", emit: report, optional: true
     path "checkm2/*/*",                  emit: files
     path "logs/${task.process}/*.log",   emit: log
     path "versions.yml",                 emit: versions
@@ -29,6 +30,10 @@ process CHECKM2 {
         --output-directory checkm2/${prefix} \
         --database_path ${db} \
         | tee -a \$log_file
+
+    # for summary file
+    head -n 1  checkm2/${prefix}/quality_report.tsv | awk '{print "sample\\t"    \$0 }' >  checkm2/${prefix}_quality_report.tsv
+    tail -n +2 checkm2/${prefix}/quality_report.tsv | awk '{print "${prefix}\\t" \$0 }' >> checkm2/${prefix}_quality_report.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
