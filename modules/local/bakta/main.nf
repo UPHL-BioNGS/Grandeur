@@ -5,8 +5,7 @@ process BAKTA {
   time    '30m'
 
   input:
-  tuple val(meta), file(contigs), val(organism)
-
+  tuple val(meta), val(organism), file(contigs)
   output:
   path "bakta/*"      , emit: bakta_files
   path "bakta/*.txt"  , emit: for_multiqc, optional: true

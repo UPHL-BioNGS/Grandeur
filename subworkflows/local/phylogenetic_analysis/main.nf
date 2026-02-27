@@ -14,14 +14,10 @@ include { SNPDISTS }               from '../../../modules/local/snpdists'
 workflow PHYLOGENETIC_ANALYSIS {
   take:
   evaluat_script
-  ch_contigs
+  ch_org_contigs
   ch_top_hit
 
   main:
-  ch_versions = Channel.empty()
-  ch_multiqc  = Channel.empty()
-  ch_nwk      = Channel.empty()
-
   log.info """
 
 Running phylogenetic analysis.
@@ -74,45 +70,27 @@ Relevant params and their values:
 
 """
 
-  // adding in organism and top ani hit
-  if ( ! params.skip_extras ) {
-    ch_organism = ch_top_hit.map { it -> if (it) { tuple( it[0] , [ it[1].split("_")[0], it[1].split("_")[1]] )}}
+  ch_versions = channel.empty()
+  ch_summary  = channel.empty()
+  ch_multiqc  = channel.empty()
+  ch_nwk      = channel.empty()
+  ch_contigs  = ch_org_contigs.mix(ch_top_hit).map{it -> tuple(it[0], it[2])}
 
-    if ( ! params.exclude_top_hit ) {
-      ch_top_hit
-        .map { it -> if (it) { tuple( it[1].split("_", 3)[2], it[2], it[1].split("_")[0, 1]) }}
-        .groupTuple(by: 0)
-        .map { it -> 
-          if (it) {
-            def meta = [id:it[1][0].baseName] 
-            tuple( meta, it[1][0], it[2][0] ) }}
-        .unique()
-        .set { ch_representative }
-
-      ch_preannotation = ch_contigs.join( ch_organism, by: 0, remainder: true).mix(ch_representative).filter{it}
-    } else {
-      ch_preannotation = ch_contigs.join( ch_organism, by: 0, remainder: true)
-    }
-  } else {
-    // skipping ani and top hit
-    ch_preannotation  = ch_contigs.map{ it -> tuple(it[0], it[1], null)}
-  }
-  
   if (params.annotator == 'prokka' ) {
-    PROKKA(ch_preannotation.unique())
+    PROKKA(ch_org_contigs.mix(ch_top_hit).unique())
     
     ch_versions = ch_versions.mix(PROKKA.out.versions.first())
     ch_multiqc  = ch_multiqc.mix(PROKKA.out.for_multiqc)
     ch_gff      = PROKKA.out.gff
   } else if (params.annotator == 'bakta') {
-    BAKTA(ch_preannotation.unique())
+    BAKTA(ch_org_contigs.mix(ch_top_hit).unique())
     
     ch_versions = ch_versions.mix(BAKTA.out.versions.first())
     ch_multiqc  = ch_multiqc.mix(BAKTA.out.for_multiqc)
     ch_gff      = BAKTA.out.gff
 
   } else {
-    ch_gff = Channel.empty()
+    ch_gff = channel.empty()
 
   }
 
@@ -128,7 +106,7 @@ Relevant params and their values:
     ch_core     = ROARY.out.core_gene_alignment
     ch_versions = ch_versions.mix(ROARY.out.versions)
   } else {
-    ch_core     = Channel.empty()
+    ch_core     = channel.empty()
   }
 
   CORE_GENOME_EVALUATION(ch_core.combine(evaluat_script))
@@ -136,52 +114,57 @@ Relevant params and their values:
   CORE_GENOME_EVALUATION.out.evaluation
     .splitText()
     .first()
+    .filter { it }
     .map { it.trim().split(',') }
-    .view { num_samples, num_core_genes, core_genome_per ->
-        "Core Genome Evaluation Complete: Found ${num_core_genes} core genes (Core Percentage: ${core_genome_per}%)"
+    .view { it ->
+        "Core Genome Evaluation Complete: Found ${it[1]} core genes (Core Percentage: ${String.format("%.2f", it[2] as float * 100)}%)"
     }
-    .tap { ch_stats ->
-        ch_stats.subscribe { num_samples, num_core_genes, core_genome_per ->
-            if (params.min_core_genes && (num_core_genes as int) < params.min_core_genes) {
-                log.warn "WARNING: Core genes (${num_core_genes}) is below the minimum threshold of ${params.min_core_genes}!"
-            }
-            if (params.min_core_per && (core_genome_per as float) < params.min_core_per) {
-                log.warn "WARNING: Core percentage (${core_genome_per}%) is below the minimum threshold of ${params.min_core_per}%!"
-            }
-        }
-    }
+    // combine core genome file
     .combine(ch_core)
     // filter out if there are too few core genes or a very low core genome percentage.
-    .filter { num_samples, num_core_genes, core_genome_per, core_files ->
-        def pass_genes = params.min_core_genes ? (num_core_genes as int >= params.min_core_genes) : true
-        def pass_per   = params.min_core_per   ? (core_genome_per as float >= params.min_core_per) : true
-        return pass_genes && pass_per
+    .filter { it ->
+      def genes = it[0][1] as int
+      def per   = it[0][2] as float
+      def pass_genes = params.min_core_genes ? (genes >= params.min_core_genes) : true
+      def pass_per   = params.min_core_per   ? (per >= params.min_core_per) : true
+        
+      return pass_genes && pass_per
     }
     .map{ it -> it[-2]}
     .set { ch_core_genome }
 
   ch_multiqc = ch_multiqc.mix(CORE_GENOME_EVALUATION.out.for_multiqc)
 
-  KSNP4(ch_contigs.combine(ch_top_hit))
-  ch_nwk = ch_nwk.mix(KSNP4.out.newick)
-  ch_versions = ch_versions.mix(KSNP4.out.versions.first())
+  // KSNP4(ch_contigs.combine(ch_top_hit))
+  // ch_nwk = ch_nwk.mix(KSNP4.out.newick)
+  // ch_versions = ch_versions.mix(KSNP4.out.versions.first())
 
-  MASHTREE(ch_preannotation.map{it -> if (it) { tuple( it[1]) }}.collect())
+  MASHTREE(ch_contigs.map{it -> it[1]}.collect())
   ch_nwk = ch_nwk.mix(MASHTREE.out.newick)
   ch_versions = ch_versions.mix(MASHTREE.out.versions)
 
-  SKA2(ch_contigs.combine(ch_top_hit))
-  ch_versions = ch_versions.mix(SKA2.out.versions.first())
+  // SKA2(ch_contigs.combine(ch_top_hit))
+  // ch_versions = ch_versions.mix(SKA2.out.versions.first())
     
-  IQTREE(ch_core_genome.mix(SKA2.out.aln))
+  IQTREE(ch_core_genome)
   ch_nwk = ch_nwk.mix(IQTREE.out.newick)
   ch_versions = ch_versions.mix(IQTREE.out.versions.first())
 
   GOTREE(ch_nwk)
+
+  GOTREE.out.stats
+    .collectFile(
+      storeDir: "${params.outdir}/gotree/",
+      keepHeader: true,
+      sort: { file -> file.text },
+      name: "gotree_summary.tsv")
+    .set { ch_gotree_summary }
+
   ch_versions = ch_versions.mix(GOTREE.out.versions.first())
   ch_multiqc  = ch_multiqc.mix(GOTREE.out.for_multiqc)
+  ch_summary  = ch_summary.mix(ch_gotree_summary)
 
-  SNPDISTS(ch_core_genome.mix(ska2.out.aln))
+  SNPDISTS(ch_core_genome)
   ch_versions = ch_versions.mix(SNPDISTS.out.versions)
   ch_multiqc  = ch_multiqc.mix(SNPDISTS.out.snp_matrix)
 
@@ -191,6 +174,7 @@ Relevant params and their values:
 
   emit:
   for_multiqc = ch_multiqc
+  summary     = ch_summary
   versions    = ch_versions
 }
 
@@ -203,16 +187,31 @@ PHYLOGENETIC ANALYSIS subworkflow completed at: $workflow.complete
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Subworkflow Output Files                              ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│   'params.outdir'                                     │"""
-        if ( params.aligner ) {
-    log.info """│    ├── spestimator                                    │
-│    │   └── spestimator_summary.tsv                    │
-│    ├── datasets                                       │
-│    │   └── datasets_summary.csv                       │"""
-        }
-
-        log.info """│    └── skani                                          │
-│        └── skani_summary.tsv                          │
+│   'params.outdir'                                     │
+│    ├── gff                                            │
+│    │   └── *gff                                       │
+│    ├── 'params.annotator'                             │
+│    │   ├── *gbff                                      │
+│    │   └── *gff3                                      │
+│    ├── 'params.aligner'                               │
+│    │   └── core_gene_alignment.aln                    │
+│    ├── 'iqtree'                                       │
+│    │   └── iqtree.treefile                            │
+│    ├── 'mashtree'                                     │
+│    │   ├── mashtree.nwk                               │
+│    │   └── mashtree.txt                               │
+│    ├── ksnp4                                          │
+│    │   └── TBA                                        │
+│    ├── ska2                                           │
+│    │   └── TBA                                        │
+│    ├── gotree                                         │
+│    │   ├── gotree_summary.tsv                         │
+│    │   └── *png                                       │
+│    ├── snp-dists                                      │
+│    │   └── snp_matrix.txt                             │
+│    └── heatcluster                                    │
+│        ├── heatcluster_sorted.csv                     │
+│        └── heatcluster.png                            │
 └───────────────────────────────────────────────────────┘
 
 ------------------------------------------------------

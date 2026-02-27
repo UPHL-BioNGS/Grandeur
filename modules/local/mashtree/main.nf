@@ -7,10 +7,10 @@ process MASHTREE {
   file(assemblies)
 
   output:
-  path "mashtree/*"                                                    , emit: tree
-  tuple val("mashtree"), file("mashtree/mashtree.nwk"), optional: true , emit: newick
-  path "logs/${task.process}/*.log"                                    , emit: log
-  path "versions.yml"                                                  , emit: versions
+  path "mashtree/*", emit: tree
+  tuple val("mashtree"), file("mashtree/*.nwk"), optional: true , emit: newick
+  path "logs/${task.process}/*.log", emit: log
+  path "versions.yml", emit: versions
 
   when:
   task.ext.when == null || task.ext.when

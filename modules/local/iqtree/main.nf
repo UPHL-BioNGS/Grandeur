@@ -7,34 +7,34 @@ process IQTREE {
   file(msa)
 
   output:
-  path "iqtree2/iqtree*"                                               , emit: tree
-  tuple val("iqtree"), file("iqtree2/iqtree.contree"), optional: true  , emit: newick
+  path "iqtree/iqtree*" , emit: tree
+  tuple val("iqtree"), file("iqtree/*nwk"), optional: true  , emit: newick
   path "logs/${task.process}/${task.process}.${workflow.sessionId}.log", emit: log
-  path  "versions.yml"                                                 , emit: versions
+  path "versions.yml", emit: versions
 
   when:
   task.ext.when == null || task.ext.when
 
   script:
-  def args     = task.ext.args ?: '-t RANDOM -m GTR+F+I -bb 1000 -alrt 1000'
-  def outgroup = params.iqtree2_outgroup ? "-o ${params.iqtree2_outgroup}" : "" 
+  def args = task.ext.args ?: '-t RANDOM -m GTR+F+I -bb 1000 -alrt 1000'
+  def prefix = task.ext.prefix ?: "iqtree"
+
   """
-    mkdir -p iqtree2 logs/${task.process}
+    mkdir -p iqtree logs/${task.process}
     log_file=logs/${task.process}/${task.process}.${workflow.sessionId}.log
 
-    iqtree2 ${args} \
+    iqtree3 ${args} \
       -s ${msa} \
-      -pre iqtree2/iqtree \
+      -pre iqtree/${prefix} \
       -nt AUTO \
       -ntmax ${task.cpus} \
-      ${outgroup} \
       | tee -a \$log_file
 
-    if [ -f "iqtree2/iqtree.treefile" ]; then cp iqtree2/iqtree.treefile iqtree2/iqtree.treefile.nwk ; fi
+    if [ -f "iqtree/${prefix}.treefile" ]; then cp iqtree/${prefix}.treefile iqtree/${prefix}.treefile.nwk ; fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        iqtree2: \$(echo \$(iqtree2 -version 2>&1) | sed 's/^IQ-TREE multicore version //;s/ .*//')
+        iqtree: \$(echo \$( iqtree3 --version | head -n 1 | awk '{print \$3}')
     END_VERSIONS
   """
 }

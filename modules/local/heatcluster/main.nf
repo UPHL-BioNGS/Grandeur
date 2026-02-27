@@ -8,7 +8,7 @@ process HEATCLUSTER {
 
   output:
   path "heatcluster/*", optional : true, emit: files
-  path "heatcluster/heatcluster.png", optional : true, emit: for_multiqc
+  path "heatcluster/*.png", optional : true, emit: for_multiqc
   path "logs/${task.process}/*.log", emit: log_files
   path "versions.yml", emit: versions
 
@@ -16,21 +16,23 @@ process HEATCLUSTER {
   task.ext.when == null || task.ext.when
 
   script:
-  def args   = task.ext.args   ?: '-t png'
+  def args   = task.ext.args   ?: ''
+  def prefix = task.ext.prefix ?: "heatcluster"
   """
-    mkdir -p heatcluster logs/${task.process}
+    mkdir -p heatcluster tmp logs/${task.process}
     log_file=logs/${task.process}/heatcluster.${workflow.sessionId}.log
 
-    heatcluster.py ${args} \
-        -i ${matrix} \
-        -o heatcluster/heatcluster \
-        | tee -a \$log_file
+    export MPLCONFIGDIR=tmp
 
-    if [ -f "sorted_matrix.csv" ]; then cp sorted_matrix.csv heatcluster/. ; fi
+    heatcluster ${args} \
+      -i ${matrix} \
+      -o heatcluster/${prefix}.png  \
+      -c heatcluster/${prefix}_sorted.csv \
+        | tee -a \$log_file
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-      heatcluster: \$(echo \$(heatcluster.py --version | grep -v DeprecationWarning | grep -i heatcluster | awk '{print \$NF}' ))
+      heatcluster: \$(echo \$(heatcluster -v | awk '{print \$NF}' ))
     END_VERSIONS
   """
 }

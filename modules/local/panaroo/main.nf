@@ -36,6 +36,8 @@ process PANAROO {
       -i input_genomes.txt \
       | tee -a \$log_file
 
+    rm -rf ${prefix}/aligned_gene_sequences
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         panaroo: \$(echo \$(panaroo --version 2>&1) | sed 's/^.*panaroo //' )
