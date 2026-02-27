@@ -150,6 +150,18 @@ Initializing Sample Input Files
 
 ------------------------------------------------------
 
+┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━
+┃ param             ┃ type  ┃ value                              
+┣━━━━━━━━━━━━━━━━━━━╋━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━
+┃ sample_sheet      ┃ file  ┃ ${params.sample_sheet}
+┃ reads             ┃ dir   ┃ ${params.reads}
+┃ fasta_list        ┃ file  ┃ ${params.fasta_list}
+┃ fastas            ┃ dir   ┃ ${params.fastas}
+┃ sra_accessions    ┃ list  ┃ ${params.sra_accessions}
+┃ genome_accessions ┃ list  ┃ ${params.sra_accessions}
+┗━━━━━━━━━━━━━━━━━━━┻━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+------------------------------------------------------
 """
 
 
@@ -288,6 +300,16 @@ Initializing Databases and References
 
 ------------------------------------------------------
 
+┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━
+┃ param             ┃ type  ┃ value                              
+┣━━━━━━━━━━━━━━━━━━━╋━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━
+┃ kraken2_db        ┃ dir   ┃ ${params.kraken2_db}
+┃ mash_db           ┃ file  ┃ ${params.mash_db}
+┃ checkm2_db        ┃ file  ┃ ${params.checkm2_db}
+┃ sylph_db          ┃ file  ┃ ${params.sylph_db}
+┃ reference_genomes ┃ file  ┃ ${params.reference_genomes}
+┗━━━━━━━━━━━━━━━━━━━┻━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 """
 
 
@@ -401,9 +423,23 @@ Initializing Databases and References
   log.info """
 ------------------------------------------------------
 
-Initializing Subworkflow Options
+Initializing Workflow Options
 
 ------------------------------------------------------
+
+┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━
+┃ param             ┃ type  ┃ value                              
+┣━━━━━━━━━━━━━━━━━━━╋━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━
+┃ msa               ┃ bool  ┃ ${params.msa}
+┃ skip_extras       ┃ bool  ┃ ${params.skip_extras}
+┃ aligner           ┃ str   ┃ ${params.aligner}
+┃ minimum_reads     ┃ int   ┃ ${params.minimum_reads}
+┃ min_core_genes    ┃ int   ┃ ${params.min_core_genes}
+┃ min_core_per      ┃ float ┃ ${params.min_core_per}
+┃ current_datasets  ┃ bool  ┃ ${params.current_datasets}
+┃ exclude_top_hit   ┃ bool  ┃ ${params.exclude_top_hit}
+┗━━━━━━━━━━━━━━━━━━━┻━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 
 """
 
@@ -433,7 +469,6 @@ Initializing Subworkflow Options
     ch_fastas   = ch_fastas.mix(TEST.out.fasta)
     ch_versions = TEST.out.versions
   }
-
 
   log.info """
 ------------------------------------------------------
@@ -465,7 +500,13 @@ Initializing Complete
 
 }
 
-workflow.onComplete {
-  log.info "Inititalization workflow completed at: $workflow.complete"
-  log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+if ( ! params.skip_extras ) {
+  workflow.onComplete {
+    log.info """------------------------------------------------------
+
+INITIALIZE subworkflow completed at: $workflow.complete
+
+------------------------------------------------------
+"""
+  }
 }

@@ -15,14 +15,40 @@ workflow AVERAGE_NUCLEOTIDE_IDENTITY {
         dataset_script
 
     main:
-        log.info "Running average nucleotide identity (ANI) analysis)."
+        log.info """
+
+Running average nucleotide identity (ANI) analysis).
+
+Relevant params and their values:
+- 'params.current_datasets' : ${params.current_datasets}
+    - When 'true', subworkflow will download additional references from NCBI
+    - When 'false', subworkflow will use local references and SPESTIMATOR, SPECIES,
+      DATASETS_SUMAMRY, and DATASETS_DOWNLOAD will be skipped.
+    - Downloading reference genomes uses a third-party API that is not controlled by 
+      the Grandeur developers, requires the workflow to have internet access, and may be 
+      slow or have issues."
+
+┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ process           ┃ description                                                        ┃
+┣━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ SPESTIMATOR       ┃ Uses 16S to identify range of species to download.                 ┃
+┃ SPECIES           ┃ Reference genomes are identified using results from SPESTIMATOR    ┃
+┃                   ┃ and MASH, as well as SYLPH and KRAKEN2 (if their respective        ┃
+┃                   ┃ databases are provided).                                           ┃
+┃ DATASETS_SUMMARY  ┃ Looks up refence accession for each identified species.            ┃
+┃ DATASETS_DOWNLOAD ┃ Downloads reference genomes.                                       ┃
+┃ REFERENCES        ┃ Loads stored reference genomes.                                    ┃
+┃ SKANI_SKETCH      ┃ Creates a sketch of all reference genomes.                         ┃
+┃ SKANI_DIST        ┃ Estimates distance of input files to references. Core process of   ┃
+┃                   ┃ organism estimation.                                               ┃ 
+┗━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+"""
+
         ch_versions = channel.empty()
         ch_summary = channel.empty()
-        
+
         if ( params.current_datasets ) {
-            log.info "Downloading reference genomes for species in the dataset from NCBI with DATASETS."
-            log.info "This is a third-party API that is not controlled by the Grandeur developers, requires the workflow to have internet access, and may be slow or have issues."
-            log.info "Reference genomes are identified using results from SPESTIMATOR and MASH, as well as SYLPH and KRAKEN2 (if their respective databases are provided)."
 
             SPESTIMATOR(ch_contigs)
 
@@ -88,8 +114,6 @@ workflow AVERAGE_NUCLEOTIDE_IDENTITY {
 
 
         } else {
-            log.info "Using local files and those provided with this workflow."
-            log.info "FYI: To download additional references from NCBI, set 'params.current_datasets'."
             ch_datasets_summary = channel.empty()
         }
 
@@ -108,7 +132,6 @@ workflow AVERAGE_NUCLEOTIDE_IDENTITY {
             .collect()
             .set { ch_deduplicated_reference_genomes }
 
-        log.info "Running SKANI sketching and distance calculation for average nucleotide identity (ANI) analysis)."
         SKANI_SKETCH(ch_deduplicated_reference_genomes)
         ch_versions = ch_versions.mix(SKANI_SKETCH.out.versions)
 
@@ -126,7 +149,6 @@ workflow AVERAGE_NUCLEOTIDE_IDENTITY {
         ch_summary = ch_summary.mix(ch_skani_summary)
         ch_versions = ch_versions.mix(SKANI_DIST.out.versions.first())
 
-        log.info "Using SKANI results to designate species of contigs"
         SKANI_DIST.out.hits
             .map { meta, contigs, tsv ->
                 def lines = tsv.readLines()
@@ -196,12 +218,26 @@ workflow AVERAGE_NUCLEOTIDE_IDENTITY {
 
 if ( ! params.skip_extras ) {
     workflow.onComplete {
-        log.info "Average nucleotide identity workflow completed at: $workflow.complete"
+        log.info """------------------------------------------------------
+
+AVERAGE NUCLEOTIDE IDENTITY subworkflow completed at: $workflow.complete
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Subworkflow Output Files                              ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│   'params.outdir'                                     │"""
         if ( params.current_datasets ) {
-            log.info "Generated SPESTIMATOR summary is at '${params.outdir}/spestimator/spestimator_summary.tsv'."
-            log.info "Generated DATASETS summary is at '${params.outdir}/datasets/datasets_summary.csv'."
+    log.info """│    ├── spestimator                                    │
+│    │   └── spestimator_summary.tsv                    │
+│    ├── datasets                                       │
+│    │   └── datasets_summary.csv                       │"""
         }
-        log.info "Generated SKANI  are at '${params.outdir}/skani/skani_summary.tsv'."
-        log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+
+        log.info """│    └── skani                                          │
+│        └── skani_summary.tsv                          │
+└───────────────────────────────────────────────────────┘
+
+------------------------------------------------------
+"""
     }
 }

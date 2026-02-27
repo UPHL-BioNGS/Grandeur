@@ -55,10 +55,17 @@ workflow {
 
 }
 
+if ( ! params.skip_extras ) {
+  workflow.onComplete {
+    log.info """------------------------------------------------------
 
-workflow.onComplete {
-    log.info "Grander workflow completed at: $workflow.complete"
-    log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+GRANDEUR workflow completed at: $workflow.complete
+
+Execution status: ${ workflow.success ? 'OK' : 'failed' }
+
+------------------------------------------------------
+"""
+  }
 }
 
 /*

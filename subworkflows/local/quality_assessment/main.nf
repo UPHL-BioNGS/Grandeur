@@ -22,11 +22,47 @@ workflow QUALITY_ASSESSMENT {
     ch_summary     = Channel.empty()
     ch_bams        = Channel.empty()
 
-    log.info "Running quality assessment on the reads and assemblies. This workflow will perform quality control on the reads with FastQC, but the remaining processes of QUAST, CHECKM2, AMRFINDER, and PLASMIDFINDER will be run on generated assemblies as well as those specified with an input file designated with 'params.fasta_list'."
+
+    log.info """
+
+Running quality assessment on the reads and assemblies. 
+
+This workflow will perform quality control on the reads with FastQC, but the remaining 
+processes of QUAST, CHECKM2, AMRFINDER, and PLASMIDFINDER will be run on generated 
+assemblies as well as those specified with an input file designated with 
+'params.fasta_list'."
+
+Relevant params and their values:
+- 'params.checkm2_db' : ${params.checkm2_db}
+    - Set to CHECKM2 database file
+
+┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ process           ┃ description                                                        ┃
+┣━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ FASTQC            ┃ Running quality assessment on the reads with FastQC. This will be  ┃
+┃                   ┃ performed on all read files provided, including those specified in ┃
+┃                   ┃ the sample sheet, those provided with 'params.reads', and those    ┃
+┃                   ┃ downloaded from SRA with 'params.sra_accessions'.                  ┃
+┃ AMRFINDER         ┃ AMRFINDERPLUS is a tool for in silico detection of antimicrobial   ┃
+┃                   ┃ resistance genes and point mutations in assemblies.                ┃
+┃ QUAST             ┃ QUAST is a tool for assessing the quality of genome assemblies by  ┃
+┃                   ┃ comparing them to reference genomes and calculating various        ┃
+┃                   ┃ assembly metrics.                                                  ┃
+┃ MLST              ┃ MLST is a tool for in silico multi-locus sequence typing of        ┃
+┃                   ┃ assemblies.                                                        ┃
+┃ PLASMIDFINDER     ┃ PLASMIDFINDER is a tool for in silico detection of plasmids in     ┃
+┃                   ┃ assemblies.                                                        ┃
+┃ CHECKM2           ┃ CHECKM2 is a tool for assessing the quality of genome assemblies   ┃
+┃                   ┃ by estimating completeness and contamination based on lineage-     ┃
+┃                   ┃ specific marker genes.                                             ┃
+┗━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+"""
+
+
 
     // fastq files only, so hidden if only fasta files are provided
     if ( params.sample_sheet || params.reads || params.sra_accessions ) {
-        log.info "Running quality assessment on the reads with FastQC. This will be performed on all read files provided, including those specified in the sample sheet, those provided with 'params.reads', and those downloaded from SRA with 'params.sra_accessions'."
         FASTQC(ch_raw_reads)
         ch_versions    = ch_versions.mix(FASTQC.out.versions.first())
         ch_for_multiqc = ch_for_multiqc.mix(FASTQC.out.for_multiqc)
@@ -42,21 +78,17 @@ workflow QUALITY_ASSESSMENT {
 
     }
 
-    log.info "AMRFINDERPLUS is a tool for in silico detection of antimicrobial resistance genes and point mutations in assemblies."
-
     AMRFINDER(ch_contigs_org)
 
     AMRFINDER.out.collect
-      .collectFile(name: 'amrfinderplus.txt',
-        keepHeader: true,
-        sort: { file -> file.text },
-        storeDir: "${params.outdir}/amrfinder")
-      .set{ amrfinderplus_summary }
+        .collectFile(name: 'amrfinderplus.txt',
+            keepHeader: true,
+            sort: { file -> file.text },
+            storeDir: "${params.outdir}/amrfinder")
+        .set{ amrfinderplus_summary }
 
     ch_summary  = ch_summary.mix(amrfinderplus_summary)
     ch_versions = ch_versions.mix(AMRFINDER.out.versions.first())
-
-    log.info "QUAST is a tool for assessing the quality of genome assemblies by comparing them to reference genomes and calculating various assembly metrics."
 
     QUAST(ch_reads_contigs.mix(ch_fastas_without_reads).filter{it})
     ch_versions = ch_versions.mix(QUAST.out.versions.first())
@@ -79,7 +111,7 @@ workflow QUALITY_ASSESSMENT {
         .set{ quast_contig_summary }
     ch_summary = ch_summary.mix(quast_contig_summary)
 
-    log.info "MLST is a tool for in silico multi-locus sequence typing of assemblies."
+    
 
     MLST(ch_all_fastas.combine(summfle_script))
     ch_versions = ch_versions.mix(MLST.out.versions.first())
@@ -92,7 +124,7 @@ workflow QUALITY_ASSESSMENT {
         .set{ mlst_summary }
     ch_summary = ch_summary.mix(mlst_summary)
 
-    log.info "PLASMIDFINDER is a tool for in silico detection of plasmids in assemblies."
+    
 
     PLASMIDFINDER(ch_all_fastas.combine(summfle_script))
     ch_versions = ch_versions.mix(PLASMIDFINDER.out.versions.first())
@@ -105,7 +137,6 @@ workflow QUALITY_ASSESSMENT {
         .set{ plasmidfinder_summary }
     ch_summary = ch_summary.mix(plasmidfinder_summary)
 
-    log.info "CHECKM2 is a tool for assessing the quality of genome assemblies by estimating completeness and contamination based on lineage-specific marker genes."
 
     if (params.checkm2_db) {    
         CHECKM2(ch_all_fastas.combine(ch_checkm2_db))
@@ -128,15 +159,30 @@ workflow QUALITY_ASSESSMENT {
 
 if ( ! params.skip_extras ) {
     workflow.onComplete {
-        log.info "Quality assessment workflow completed at: $workflow.complete"
-        log.info "Generated FastQC summary is at '${params.outdir}/fastqc/fastqc_summary.csv'."
-        log.info "Generated AMRFINDER summary is at '${params.outdir}/amrfinder/amrfinderplus.txt'."
-        log.info "Generated QUAST summary is at '${params.outdir}/quast/quast_report.tsv'."
-        log.info "Generated MLST summary is at '${params.outdir}/mlst/mlst_summary.tsv'."
-        log.info "Generated PLASMIDFINDER summary is at '${params.outdir}/plasmidfinder/plasmidfinder_result.tsv'."
-        if ( params.checkm2_db) {
-            log.info "Generated CHECKM2 summary is at '${params.outdir}/checkm2/checkm2_summary.tsv'."
+        log.info """------------------------------------------------------
+
+QUALITY ASSESSMENT subworkflow completed at: $workflow.complete
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Subworkflow Output Files                              ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│   'params.outdir'                                     │
+│    ├── fastqc                                         │
+│    │   └── fastqc_summary.csv                         │"""
+        if ( params.checkm2_db ) {
+            log.info """│    ├── checkm2                                        │
+│    │   └── checkm2_summary.tsv                        │"""
         }
-        log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
-        }
+
+        log.info """│    ├── mlst                                           │
+│    │   └── mlst_summary.tsv                           │
+│    ├── plasmidfinder                                  │
+│    │   └── plasmidfinder_result.tsv                   │
+│    └── quast                                          │
+│        └── quast_report.tsv                           │
+└───────────────────────────────────────────────────────┘
+
+------------------------------------------------------
+"""
+    }
 }

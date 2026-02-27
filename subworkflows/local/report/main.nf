@@ -14,6 +14,21 @@ workflow REPORT {
         version_script
 
     main:
+
+        log.info """
+
+Creating final reports
+
+┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ process           ┃ description                                                        ┃
+┣━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ VERSIONS          ┃ Custom process to convert versions.yml for MultiQC                 ┃
+┃ MULTIQC           ┃ Creation of html summary file.                                     ┃
+┃ SUMMARY           ┃ Custom process that summarizes all results in text format.         ┃ 
+┗━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+"""
+
         ch_versions
             .collectFile(
                 keepHeader: false,
@@ -29,11 +44,11 @@ workflow REPORT {
         ch_reads
             .mix(ch_fastas)
             .map { meta, files -> 
-               def sample = meta.id
-               def file1 = files[0].name
-               def file2 = files[1] ? files[1].name : null
-               def version = "${workflow.manifest.version}"
-               return "${sample},${file1},${file2},${version}"
+                def sample = meta.id
+                def file1 = files[0].name
+                def file2 = files[1] ? files[1].name : null
+                def version = "${workflow.manifest.version}"
+                return "${sample},${file1},${file2},${version}"
             }
             .collectFile(
                 name: "input_files.txt",
@@ -48,11 +63,22 @@ workflow REPORT {
         versions = ch_versions
 }
 
-if (! params.skip_extras ) {
+if ( ! params.skip_extras ) {
     workflow.onComplete {
-        log.info "Report workflow completed at: $workflow.complete"
-        log.info "MultiQC report can be found at ${params.outdir}/multiqc/multiqc_report.html"
-        log.info "Summary can be found at ${params.outdir}/grandeur_summary.tsv"
-        log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+        log.info """------------------------------------------------------
+
+REPORT subworkflow completed at: $workflow.complete
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Subworkflow Output Files                              ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│   'params.outdir'                                     │
+│    ├── multiqc                                        │
+│    │   └── multiqc_report.html                        │
+│    └── grandeur_summary.tsv                           │
+└───────────────────────────────────────────────────────┘
+
+------------------------------------------------------
+"""
     }
 }

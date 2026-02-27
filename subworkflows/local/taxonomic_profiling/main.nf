@@ -15,13 +15,39 @@ workflow TAXONOMIC_PROFILING {
     ch_sylph_db
 
     main:
+
+        log.info """
+
+Running average nucleotide identity (ANI) analysis).
+
+Relevant params and their values:
+- 'params.kraken2_db' : ${params.kraken2_db}
+    - Set to kraken2 directory
+- 'params.mash_db' : ${params.mash_db}
+    - Set to mash reference file
+    - Used for both MASH_DIST and MASH_SCREEN
+- 'params.sylph_db' : ${params.sylph_db}
+    - Set to mash database file
+
+
+┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ process           ┃ description                                                        ┃
+┣━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ KRAKEN2           ┃ Uses KMERS to classify reads to taxa.                              ┃
+┃ MASH_DIST         ┃ Uses MinHash sketches to rapidly estimate the distance between     ┃
+┃                   ┃ genomic sequences.                                                 ┃
+┃ MASH_SCREEN       ┃ Estimates containment of input files.                              ┃
+┃ SYLPH             ┃ Uses a machine learning approach to classify reads to taxa.        ┃
+┗━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+"""
+
     ch_versions = channel.empty()
     ch_summary  = channel.empty()
     ch_multiqc  = channel.empty()
     ch_species  = channel.empty()
 
     if ( params.kraken2_db && ( params.sample_sheet || params.reads || params.sra_accessions )) {
-        log.info "KRAKEN2 uses KMERS to classify reads to taxa. The database used for classification can be adjusted with 'params.kraken2_db'."
         KRAKEN2(ch_reads.combine(ch_kraken2_db))
 
         KRAKEN2.out.results
@@ -40,7 +66,6 @@ workflow TAXONOMIC_PROFILING {
     }
 
     if (params.mash_db) {
-        log.info "MASH uses MinHash sketches to rapidly estimate the distance between genomic sequences. The database used for comparison can be adjusted with 'params.mash_db'."
         MASH_DIST(ch_reads.mix(ch_fastas).filter { it }.combine(ch_mash_db))
         MASH_SCREEN(ch_reads.mix(ch_fastas).filter { it }.combine(ch_mash_db))
     } else {
@@ -69,7 +94,6 @@ workflow TAXONOMIC_PROFILING {
     ch_species  = ch_species.mix(ch_mashdist_summary).mix(ch_mashscreen_summary)
 
     if (params.sylph_db) {
-        log.info "SYLPH uses a machine learning approach to classify reads to taxa. The database used for classification can be adjusted with 'params.sylph_db'."
         SYLPH(ch_reads.mix(ch_fastas).filter { it }.combine(ch_sylph_db))
 
         SYLPH.out.tsv
@@ -104,15 +128,30 @@ workflow TAXONOMIC_PROFILING {
 
 if ( ! params.skip_extras ) {
     workflow.onComplete {
-        log.info "Taxonomic profiling workflow completed at: $workflow.complete"
-        if ( params.kraken2_db && ( params.sample_sheet || params.reads || params.sra_accessions )) {
-            log.info "Generated KRAKEN2 summary file: ${params.outdir}/kraken2/kraken2_summary.csv"
+        log.info """------------------------------------------------------
+
+TAXONOMIC PROFILING subworkflow completed at: $workflow.complete
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Subworkflow Output Files                              ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│   'params.outdir'                                     │"""
+    if ( params.kraken2_db && ( params.sample_sheet || params.reads || params.sra_accessions )) {
+            log.info """│    ├── kraken2                                        │
+│    │   └── kraken2_summary.csv                        │"""
+    }
+    log.info """│    ├── mash                                           │
+│    │   ├── mashdist_summary.csv                       │
+│    │   └── mashscreen_summary.csv                     │"""
+    if (params.sylph_db ) {
+        log.info """│    └── sylph                                          │
+│        └── sylph_summary.tsv                          │"""
         }
-        log.info "Generated MASH DIST summary file: ${params.outdir}/mash/mashdist_summary.csv"
-        log.info "Generated MASH SCREEN summary file: ${params.outdir}/mash/mashscreen_summary.csv"
-        if (params.sylph_db) {
-            log.info "Generated SYLPH summary file: ${params.outdir}/sylph/sylph_summary.tsv"
-        }
-        log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+
+    log.info """\
+└───────────────────────────────────────────────────────┘
+
+------------------------------------------------------
+"""
     }
 }

@@ -32,11 +32,45 @@ workflow SUBTYPING {
     ch_summary  = Channel.empty()
     ch_versions = Channel.empty()
 
-    log.info "Running subtyping analysis. This workflow will perform in silico subtyping of assemblies with a variety of tools, depending on the species of interest."
-    log.info "Current species-specific subtyping tools are for Mycobacterium, Streptococcus pneumoniae, Salmonella, Escherichia coli, Vibrio, Neisseria meningitidis, Neisseria gonorrhoeae, Klebsiella, Legionella, and Streptococcus pyogenes."
-    log.info "If a desired sub-typing tool is not included here, please contact the developers or submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues"
+    log.info """
 
-    log.info "DR_PRG is a tool for predicting the drug resistance phenotype of Mycobacterium tuberculosis from whole genome sequencing data."
+Running subtyping analysis. This workflow will perform in silico subtyping of assemblies 
+with a variety of tools, depending on the species of interest.
+
+If a desired sub-typing tool is not included here, please contact the developers or 
+submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
+
+┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ process           ┃ description                                                        ┃
+┣━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ DRPRG             ┃ Predicting the drug resistance phenotype of Mycobacterium          ┃
+┃                   ┃ tuberculosis from whole genome sequencing data.                    ┃
+┃ EMMTYPER          ┃ In silico emm typing of Streptococcus pyogenes assemblies.         ┃
+┃ KAPTIVE           ┃ In silico K and O locus typing of Vibrio assemblies, with a focus  ┃
+┃                   ┃ on Vibrio parahaemolyticus.                                        ┃
+┃ Kleborate         ┃ In silico subtyping of Klebsiella assemblies, including species    ┃
+┃                   ┃ assignment, multi-locus sequence typing, K and O locus typing, and ┃
+┃                   ┃ detection of virulence and AMR genes.                              ┃
+┃ EL GATO           ┃ In silico subtyping of Legionella assemblies, including species    ┃
+┃                   ┃ assignment, multi-locus sequence typing, and detection of          ┃
+┃                   ┃ virulence genes.                                                   ┃
+┃ MYKROBE           ┃ Predicting the drug resistance phenotype of Mycobacterium from     ┃
+┃                   ┃ whole genome sequencing data.                                      ┃
+┃ MENINGOTYPE       ┃ In silico subtyping of Neisseria meningitidis assemblies,          ┃
+┃                   ┃ including multi-locus sequence typing and PorA and FetA subtyping. ┃
+┃ NGMASTER          ┃ NG-MAST typing of Neisseria gonorrhoeae assemblies.                ┃
+┃ PBPTYPER          ┃ In silico penicillin binding protein (PBP) typer of Streptococcus  ┃
+┃                   ┃ pneumoniae assemblies.                                             ┃
+┃ SEQSERO2          ┃ In silico serotyping of Salmonella assemblies.                     ┃
+┃ SEROTYPEFINDER    ┃ In silico serotyping of Escherichia coli assemblies.               ┃
+┃ SHIGAPASS         ┃ In silico subtyping of Shigella assemblies, including species      ┃
+┃                   ┃ assignment, multi-locus sequence typing, and detection of          ┃
+┃                   ┃ virulence genes.                                                   ┃
+┗━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+"""
+
+
     DRPRG(ch_myco.filter{it})
 
     JSON_CONVERT(DRPRG.out.json.combine(jsoncon_script))
@@ -52,7 +86,6 @@ workflow SUBTYPING {
     ch_summary  = ch_summary.mix(drprg_summary)
     ch_versions = ch_versions.mix(DRPRG.out.versions.first())
 
-    log.info "EMMtyper is a tool for in silico emm typing of Streptococcus pyogenes assemblies."
     EMMTYPER(ch_gas.filter{it}.combine(summfle_script)) 
 
     EMMTYPER.out.collect
@@ -65,7 +98,6 @@ workflow SUBTYPING {
     ch_summary  = ch_summary.mix(emmtyper_summary)
     ch_versions = ch_versions.mix(EMMTYPER.out.versions.first())
 
-    log.info "KAPTIVE is used for in silico K and O locus typing of Vibrio assemblies, with a focus on Vibrio parahaemolyticus."
     KAPTIVE(ch_vibrio.filter{it})      
 
     KAPTIVE.out.collect
@@ -78,7 +110,6 @@ workflow SUBTYPING {
     ch_summary  = ch_summary.mix(kaptive_summary)
     ch_versions = ch_versions.mix(KAPTIVE.out.versions.first())
 
-    log.info "Kleborate is a tool for in silico subtyping of Klebsiella assemblies, including species assignment, multi-locus sequence typing, K and O locus typing, and detection of virulence and AMR genes."
     KLEBORATE(ch_kleb.filter{it}.combine(summfle_script))
 
     KLEBORATE.out.collect
@@ -91,7 +122,6 @@ workflow SUBTYPING {
     ch_summary  = ch_summary.mix(kleborate_summary)
     ch_versions = ch_versions.mix(KLEBORATE.out.versions.first())
 
-    log.info "EL GATO is a tool for in silico subtyping of Legionella assemblies, including species assignment, multi-locus sequence typing, and detection of virulence genes."
     ELGATO(ch_legionella.filter{it})
 
     ELGATO.out.collect
@@ -104,7 +134,6 @@ workflow SUBTYPING {
     ch_summary = ch_summary.mix(elgato_summary)
     ch_versions = ch_versions.mix(ELGATO.out.versions.first())
 
-    log.info "MYKROBE is a tool for predicting the drug resistance phenotype of Mycobacterium from whole genome sequencing data."
     MYKROBE(ch_myco.filter{it})
 
     MYKROBE.out.collect
@@ -117,7 +146,6 @@ workflow SUBTYPING {
     ch_summary  = ch_summary.mix(mykrobe_summary)
     ch_versions = ch_versions.mix(MYKROBE.out.versions.first())
 
-    log.info "MENINGOTYPE is a tool for in silico subtyping of Neisseria meningitidis assemblies, including multi-locus sequence typing and PorA and FetA subtyping."
     MENINGOTYPE(ch_gc.filter{it})
 
     MENINGOTYPE.out.files
@@ -130,7 +158,6 @@ workflow SUBTYPING {
     ch_summary  = ch_summary.mix(meningotype_summary)
     ch_versions = ch_versions.mix(MENINGOTYPE.out.versions.first())
 
-    log.info "NGMASTER is a tool for in silico NG-MAST typing of Neisseria gonorrhoeae assemblies."
     NGMASTER(ch_gc.filter{it}.combine(summfle_script))
 
     NGMASTER.out.collect
@@ -143,7 +170,6 @@ workflow SUBTYPING {
     ch_summary  = ch_summary.mix(ngmaster_summary)
     ch_versions = ch_versions.mix(NGMASTER.out.versions.first())
 
-    log.info "PBPTYPER is a tool for in silico penicillin binding protein (PBP) typer of Streptococcus pneumoniae assemblies."
     PBPTYPER(ch_strep.filter{it})
 
     PBPTYPER.out.collect
@@ -156,7 +182,6 @@ workflow SUBTYPING {
     ch_summary  = ch_summary.mix(pbptyper_summary)
     ch_versions = ch_versions.mix(PBPTYPER.out.versions.first())
 
-    log.info "SEQSERO2 is a tool for in silico serotyping of Salmonella assemblies."
     SEQSERO2(ch_salmonella.filter{it})
 
     SEQSERO2.out.collect
@@ -169,7 +194,6 @@ workflow SUBTYPING {
     ch_summary  = ch_summary.mix(seqsero2_summary)
     ch_versions = ch_versions.mix(SEQSERO2.out.versions.first())
 
-    log.info "SEROTYPERFINDER is a tool for in silico serotyping of Escherichia coli assemblies."
     SEROTYPEFINDER(ch_ecoli.filter{it}.combine(summfle_script))
 
     SEROTYPEFINDER.out.collect
@@ -182,7 +206,6 @@ workflow SUBTYPING {
     ch_summary  = ch_summary.mix(serotypefinder_summary)
     ch_versions = ch_versions.mix(SEROTYPEFINDER.out.versions.first())
 
-    log.info "SHIGAPASS is a tool for in silico subtyping of Shigella assemblies, including species assignment, multi-locus sequence typing, and detection of virulence genes."
     SHIGAPASS(ch_ecoli.filter{it})
 
     SHIGAPASS.out.summary
@@ -204,19 +227,44 @@ workflow SUBTYPING {
 
 if ( ! params.skip_extras ) {
   workflow.onComplete {
-    log.info "Subtyping workflow completed at: $workflow.complete"
-    log.info "Generated DRPRG summary file: ${params.outdir}/drprg/drprg_summary.tsv"
-    log.info "Generated EMMtyper summary file: ${params.outdir}/emmtyper/emmtyper_summary.tsv"
-    log.info "Generated KAPTIVE summary file: ${params.outdir}/kaptive/kaptive_summary.txt"
-    log.info "Generated Kleborate summary file: ${params.outdir}/kleborate/kleborate_results.tsv"
-    log.info "Generated EL GATO summary file: ${params.outdir}/elgato/elgato_summary.tsv"
-    log.info "Generated MYKROBE summary file: ${params.outdir}/mykrobe/mykrobe_summary.csv"
-    log.info "Generated MENINGOTYPE summary file: ${params.outdir}/meningotype/meningotype_summary.tsv"
-    log.info "Generated NGMASTER summary file: ${params.outdir}/ngmaster/ngmaster_summary.tsv"
-    log.info "Generated PBPTYPER summary file: ${params.outdir}/pbptyper/pbptyper_summary.tsv"
-    log.info "Generated SEQSERO2 summary file: ${params.outdir}/seqsero2/seqsero2_results.txt"
-    log.info "Generated SEROTYPEFINDER summary file: ${params.outdir}/serotypefinder/serotypefinder_results.txt"
-    log.info "Generated SHIGAPASS summary file: ${params.outdir}/shigapass/*_summary.csv"
-    log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+    log.info """------------------------------------------------------
+
+SUBTYPING subworkflow completed at: $workflow.complete
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Subworkflow Output Files                              ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│   'params.outdir'                                     │
+│    ├── drprg                                          │
+│    │   └── drprg_summary.tsv                          │
+│    ├── emmtyper                                       │
+│    │   └── emmtyper_summary.tsv                       │
+│    ├── kaptive                                        │
+│    │   └── kaptive_summary.txt                        │
+│    ├── kleborate                                      │
+│    │   └── kleborate_results.tsv                      │
+│    ├── elgato                                         │
+│    │   └── elgato_summary.tsv                         │
+│    ├── mykrobe                                        │
+│    │   └── mykrobe_summary.csv                        │
+│    ├── meningotype                                    │
+│    │   └── meningotype_summary.tsv                    │
+│    ├── ngmaster                                       │
+│    │   └── ngmaster_summary.tsv                       │
+│    ├── pbptyper                                       │
+│    │   └── pbptyper_summary.tsv                       │
+│    ├── seqsero2                                       │
+│    │   └── seqsero2_results.txt                       │
+│    ├── serotypefinder                                 │
+│    │   └── serotypefinder_results.txt                 │
+│    └── shigapass                                      │
+│        └── shigapass_summary.csv                      │
+└───────────────────────────────────────────────────────┘
+
+Input files are divided by organism for these processes, 
+so not all files will be present.
+
+------------------------------------------------------
+"""
   }
 }

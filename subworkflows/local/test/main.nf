@@ -7,11 +7,33 @@ workflow TEST {
     ch_genome_accessions
 
     main:
+
+    log.info """
+
+Downloading files from external databases.
+
+Relevant params and their values:
+- 'params.sra_accessions' : ${params.sra_accessions}
+    - List of SRA accessions to download from the ENA
+- 'params.genome_accessions' : ${params.genome_accessions}
+    - List of genome accessions to download from NCBI genomes
+
+┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ process           ┃ description                                                        ┃
+┣━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ DOWNLOAD_FASTQ    ┃ Downloads FASTQ files from ENA using enaDataGet.                   ┃
+┃ DOWNLOAD_GENOME   ┃ Downloads FASTA files from NCBI using DATASETS                     ┃
+┗━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+This subworkflow is dependant on third-part API which is out of the control by the 
+Grandeur developers. These processes require internet access, and may be slow or have 
+issues.
+
+"""
+
     ch_versions = Channel.empty()
 
     if ( ! params.sra_accessions.isEmpty() ) {
-        log.info "Downloading FASTQ files using enaDataGet for the following accessions: ${params.sra_accessions}."
-        log.info "This is a third-party API that is not controlled by the Grandeur developers, requires the workflow to have internet access, and may be slow or have issues."
         DOWNLOAD_FASTQ(ch_sra_accessions.filter({it[0]}))
         ch_versions = ch_versions.mix(DOWNLOAD_FASTQ.out.versions.first())
 
@@ -26,8 +48,6 @@ workflow TEST {
     }
 
     if ( ! params.genome_accessions.isEmpty() ) {
-        log.info "Downloading FASTA files from NCBI for the following accessions: ${params.genome_accessions}."
-        log.info "This is a third-party API that is not controlled by the Grandeur developers, requires the workflow to have internet access, and may be slow or have issues."
         DOWNLOAD_GENOME(ch_genome_accessions.collectFile(name: 'ids.csv', newLine: true))
         ch_versions = ch_versions.mix(DOWNLOAD_GENOME.out.versions.first())
 
@@ -50,7 +70,11 @@ workflow TEST {
 
 if ( ! params.sra_accessions.isEmpty()  || ! params.genome_accessions.isEmpty() ) { 
     workflow.onComplete {
-        log.info "Test files download workflow completed at: $workflow.complete"
-        log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+        log.info """------------------------------------------------------
+
+TEST subworkflow completed at: $workflow.complete
+
+------------------------------------------------------
+"""
     }
 }
