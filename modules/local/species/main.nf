@@ -1,7 +1,7 @@
 process SPECIES {
   tag           "Creating list of species"
   label         "process_single"
-  container     'staphb/pandas:2.3.0'
+  container     'staphb/pandas:3.0.1'
   
   input:
   path results // Changed from file(results) for modern Nextflow syntax

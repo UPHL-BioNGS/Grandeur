@@ -1,7 +1,7 @@
 process SNPDISTS {
   tag           "SNP matrix"
   label         "process_medium"
-  container     'staphb/snp-dists:0.8.2'
+  container     'staphb/snp-dists:1.2.0'
 
   
   input:

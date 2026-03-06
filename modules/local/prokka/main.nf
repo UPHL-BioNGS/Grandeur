@@ -1,7 +1,7 @@
 process PROKKA {
   tag           "${meta.id}"
   label         "process_high"
-  container     'staphb/prokka:1.14.6'
+  container     'staphb/prokka:1.15.6'
 
   input:
   tuple val(meta), val(organism), file(contigs)

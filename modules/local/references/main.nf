@@ -1,7 +1,7 @@
 process REFERENCES {
   tag       "Preparing references"
   label     "process_single"
-  container 'staphb/grandeur_ref:4.5'
+  container 'staphb/grandeur_ref:4.6'
 
   output:
   path "ref/*", emit: fastas

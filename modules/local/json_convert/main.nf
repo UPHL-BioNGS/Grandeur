@@ -1,7 +1,7 @@
 process JSON_CONVERT {
   tag       "${meta.id}"
   label     "process_single"
-  container 'staphb/pandas:2.3.0'
+  container 'staphb/pandas:3.0.1'
 
   input:
   tuple val(meta), val(analysis), file(json), file(script)
