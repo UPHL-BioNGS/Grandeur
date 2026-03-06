@@ -30,7 +30,7 @@ Running quality assessment on the reads and assemblies.
 This workflow will perform quality control on the reads with FastQC, but the remaining 
 processes of QUAST, CHECKM2, AMRFINDER, and PLASMIDFINDER will be run on generated 
 assemblies as well as those specified with an input file designated with 
-'params.fasta_list'."
+'params.fasta_list'.
 
 Relevant params and their values:
 - 'params.checkm2_db' : ${params.checkm2_db}
