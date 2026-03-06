@@ -46,7 +46,7 @@ jobs:
 
       - name: Check Salmonella file
         run: |
-          for file in grandeur/seqsero2/seqsero2_results.txt
+          for file in grandeur/seqsero2/seqsero2_results.txt grandeur/seqsero2s/seqsero2s_results.txt
           do
             head $file
             wc -l $file

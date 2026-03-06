@@ -43,7 +43,7 @@ jobs:
           
       - name: Check E. coli file
         run: |
-          for file in grandeur/shigatyper/shigatyper_summary.txt grandeur/shigatyper/shigatyper_hits.txt grandeur/serotypefinder/serotypefinder_results.txt
+          for file in grandeur/shigapass/shigapass_summary.tsv grandeur/serotypefinder/serotypefinder_results.txt
           do
             head $file
             wc -l $file
