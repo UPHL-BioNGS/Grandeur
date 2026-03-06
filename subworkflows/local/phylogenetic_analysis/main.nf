@@ -41,11 +41,11 @@ Relevant params and their values:
     - A general rule of thumb is that at least 70% of the genes should be shared to have 
       a robust core genome when evaluating outbreaks. 
 - 'params.exclude_top_hit' : ${params.exclude_top_hit}
-    - When 'true', subworkflow does not add the top hits identified in SKANI_DIST
-    - When 'false', subworkflow will not add SKANI_DIST results
+    - When 'true', subworkflow does not add the top hits identified in SKANI_DIST.
+    - When 'false', subworkflow will not add SKANI_DIST results.
 - 'params.skip_extras' : ${params.skip_extras}
     - When 'true', subworkflow does not run skani and cannot use the skani top hit in 
-      analysis
+      analysis.
 
 ┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ process           ┃ description                                                        ┃
