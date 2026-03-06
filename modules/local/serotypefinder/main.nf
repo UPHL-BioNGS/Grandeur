@@ -8,7 +8,7 @@ process SEROTYPEFINDER {
   tuple val(meta), file(file), file(script)
 
   output:
-  path "serotypefinder/*/*"                 , emit: files
+  path "serotypefinder/*/*"                 , emit: files, optional: true
   path "serotypefinder/*_serotypefinder.tsv", emit: collect, optional: true
   path "logs/${task.process}/*.log"         , emit: log
   path "versions.yml"                       , emit: versions

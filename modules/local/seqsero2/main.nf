@@ -1,18 +1,17 @@
 process SEQSERO2 {
   tag           "${meta.id}"
   label         "process_medium"
-  container     'staphb/seqsero2:1.3.1'
+  container     'staphb/seqsero2:1.3.2'
 
 
   input:
   tuple val(meta), file(file)
 
   output:
-  path "seqsero2/*/*", emit: files
-  path "seqsero2/*/SeqSero_result.tsv", emit: collect, optional: true
+  tuple val(meta), file("seqsero2/*/*"), emit: files, optional: true
+  path "seqsero2/*_seqsero_result.tsv", emit: collect, optional: true
   path "logs/${task.process}/*.log", emit: log
   path  "versions.yml", emit: versions
-  val meta, emit: meta
 
   when:
   task.ext.when == null || task.ext.when
@@ -23,13 +22,6 @@ process SEQSERO2 {
   """
     mkdir -p seqsero2 logs/${task.process}
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
-
-    # time stamp + capturing tool versions
-    date > \$log_file
-    echo "container : ${task.container}" >> \$log_file
-    SeqSero2_package.py --version >> \$log_file
-    echo "Nextflow command : " >> \$log_file
-    cat .command.sh >> \$log_file
 
     SeqSero2_package.py ${args} \
       -m k \
@@ -42,23 +34,21 @@ process SEQSERO2 {
 
     if [ -f "seqsero2/${prefix}/SeqSero_result.tsv" ]
     then
+      head -n 1 seqsero2/${prefix}/SeqSero_result.tsv | sed 's/Sample name/sample/g' > seqsero2/${prefix}_seqsero_result.tsv
+
       enteritidis_check=\$(grep "Enteritidis" seqsero2/${prefix}/SeqSero_result.tsv | head -n 1)
       sdf_check=\$(grep "Detected Sdf" seqsero2/${prefix}/SeqSero_result.tsv | head -n 1 )
 
       if [ -n "\$enteritidis_check" ] && [ -n "\$sdf_check" ]
       then
-        head -n 1 seqsero2/${prefix}/SeqSero_result.tsv > SeqSero_result.tsv.tmp
-        tail -n 1 seqsero2/${prefix}/SeqSero_result.tsv | awk -F "\\t" -v OFS='\t' '{(\$9 = \$9 " (Sdf+)") ; print \$0}' >> SeqSero_result.tsv.tmp
-        mv SeqSero_result.tsv.tmp seqsero2/${prefix}/SeqSero_result.tsv
+        tail -n 1 seqsero2/${prefix}/SeqSero_result.tsv | awk -F "\\t" -v OFS='\t' '{(\$9 = \$9 " (Sdf+)") ; print \$0}' >> seqsero2/${prefix}_seqsero_result.tsv
       elif [ -n "\$enteritidis_check" ] && [ -z "\$sdf_check" ]
       then
-        head -n 1 seqsero2/${prefix}/SeqSero_result.tsv > SeqSero_result.tsv.tmp
-        tail -n 1 seqsero2/${prefix}/SeqSero_result.tsv | awk -F "\\t" -v OFS='\t' '{(\$9 = \$9 " (Sdf-)") ; print \$0}' >> SeqSero_result.tsv.tmp
-        mv SeqSero_result.tsv.tmp seqsero2/${prefix}/SeqSero_result.tsv
+        tail -n 1 seqsero2/${prefix}/SeqSero_result.tsv | awk -F "\\t" -v OFS='\t' '{(\$9 = \$9 " (Sdf-)") ; print \$0}' >> seqsero2/${prefix}_seqsero_result.tsv
+      else
+        tail -n 1 seqsero2/${prefix}/SeqSero_result.tsv >> seqsero2/${prefix}_seqsero_result.tsv
       fi
 
-      cat seqsero2/${prefix}/SeqSero_result.tsv | sed 's/Sample name/sample/g' > seqsero2/${prefix}/SeqSero_result.tsv.tmp
-      mv seqsero2/${prefix}/SeqSero_result.tsv.tmp seqsero2/${prefix}/SeqSero_result.tsv
     fi
 
     cat <<-END_VERSIONS > versions.yml

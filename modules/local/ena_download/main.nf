@@ -1,7 +1,7 @@
 process ENA_DOWNLOAD {
     tag           "${SRR}"
     label         "process_single"
-    container     'staphb/enabrowsertools:1.7.1'
+    container     'staphb/enabrowsertools:1.7.2'
     
     input:
     val(SRR)

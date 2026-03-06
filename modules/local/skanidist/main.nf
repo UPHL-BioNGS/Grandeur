@@ -1,7 +1,7 @@
 process SKANI_DIST {
     tag           "${meta.id}"
     label         "process_medium"
-    container     'staphb/skani:latest'
+    container     'staphb/skani:0.3.1'
 
     input:
     tuple val(meta), file(contigs)

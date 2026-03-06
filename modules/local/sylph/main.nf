@@ -1,7 +1,7 @@
 process SYLPH {
     tag           "${meta.id}"
     label         "process_medium"
-    container     'staphb/sylph:latest'
+    container     'staphb/sylph:0.9.0'
 
     input:
     tuple val(meta), file(reads), path(db)

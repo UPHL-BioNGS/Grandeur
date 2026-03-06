@@ -7,9 +7,9 @@ process SPADES {
   tuple val(meta), file(reads)
 
   output:
-  path "spades/*/*", emit: files
-  tuple val(meta), file("contigs/*_contigs.fa"), optional: true,  emit: contigs
-  tuple val(meta), file("contigs/*_contigs.fa"), file(reads), optional: true,  emit: reads_contigs
+  path "spades/*/*", emit: files, optional: true
+  tuple val(meta), file("contigs/*_contigs.fa"), optional: true, emit: contigs
+  tuple val(meta), file("contigs/*_contigs.fa"), file(reads), optional: true, emit: reads_contigs
   path "logs/${task.process}/*.log", emit: log
   path "versions.yml", emit: versions
 
@@ -38,5 +38,7 @@ process SPADES {
     "${task.process}":
       spades: \$(spades.py --version 2>&1 | sed 's/^.*SPAdes genome assembler v//; s/ .*\$//')
     END_VERSIONS
+
+    exit 0
   """
 }

@@ -1,6 +1,6 @@
 process SUMMARY {
   tag           "Creating summary files"
-  container     'staphb/pandas:2.3.0'
+  container     'staphb/pandas:3.0.1'
   label         "process_single"
 
   input:
@@ -20,6 +20,7 @@ process SUMMARY {
     mkdir -p summary
 
     python3 summary.py
+    exit 1
 
   """
 }

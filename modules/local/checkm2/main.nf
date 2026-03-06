@@ -1,7 +1,7 @@
 process CHECKM2 {
     tag           "${meta.id}"
     label         "process_high"
-    container     'staphb/checkm2:latest'
+    container     'staphb/checkm2:1.1.0'
 
     input:
     tuple val(meta), file(contigs), path(db)

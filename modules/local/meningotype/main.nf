@@ -7,7 +7,7 @@ process MENINGOTYPE {
   tuple val(meta), file(contigs)
 
   output:
-  path "meningotype/*.tsv", emit: files
+  path "meningotype/*.tsv", emit: files, optional: true
   path "versions.yml", emit: versions
   val meta, emit: meta
 

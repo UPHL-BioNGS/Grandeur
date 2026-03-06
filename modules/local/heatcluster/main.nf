@@ -1,7 +1,7 @@
 process HEATCLUSTER {
   tag           "HeatCluster"
   label         "process_single"
-  container     'staphb/heatcluster:latest'
+  container     'staphb/heatcluster:1.3.0'
 
   input:
   file(matrix)

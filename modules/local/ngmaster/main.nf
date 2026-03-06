@@ -7,7 +7,7 @@ process NGMASTER {
     tuple val(meta), file(contigs)
 
     output:
-    path "ngmaster/*.tsv", emit: collect
+    path "ngmaster/*.tsv", emit: collect, optional: true
     path "logs/${task.process}/*.log", emit: log
     path "versions.yml", emit: versions
     val meta, emit: meta

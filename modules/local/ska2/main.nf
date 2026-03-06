@@ -1,14 +1,14 @@
 process SKA2 {
     tag           "SKA alignment"
     label         "process_medium"
-    container     'staphb/ska2:latest'
+    container     'staphb/ska2:0.5.1'
 
     input:
     file(contigs)
 
     output:
-    path "ska/*_alignment.aln",        emit: aln
-    path "ska/*",                      emit: files
+    path "ska/*_alignment.aln",        emit: aln, optional: true
+    path "ska/*",                      emit: files, optional: true
     path "logs/${task.process}/*.log", emit: log
     path "versions.yml",               emit: versions
 

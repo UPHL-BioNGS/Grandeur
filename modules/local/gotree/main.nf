@@ -1,7 +1,7 @@
 process GOTREE {
   tag           "${analysis}"
   label         "process_medium"
-  container     'staphb/gotree:latest'
+  container     'staphb/gotree:0.5.1'
 
   
   input:

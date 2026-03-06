@@ -7,7 +7,7 @@ process BAKTA {
   input:
   tuple val(meta), val(organism), file(contigs)
   output:
-  path "bakta/*"      , emit: bakta_files
+  path "bakta/*"      , emit: bakta_files, optional: true
   path "bakta/*.txt"  , emit: for_multiqc, optional: true
   path "gff/*gff"     , emit: gff, optional: true
   path "logs/*/*.log" , emit: log

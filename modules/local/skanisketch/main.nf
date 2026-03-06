@@ -1,7 +1,7 @@
 process SKANI_SKETCH {
     tag           "Sketching reference genomes with SKANI"
     label         "process_medium"
-    container     'staphb/skani:latest'
+    container     'staphb/skani:0.3.1'
     stageInMode   'copy'
 
     input:

@@ -1,7 +1,7 @@
 process PLASMIDFINDER {
   tag           "${meta.id}"
   label         "process_medium"
-  container     'staphb/plasmidfinder:2.1.6_2025-02-19'
+  container     'staphb/plasmidfinder:3.0.2'
 
 
   input:

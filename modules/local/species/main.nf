@@ -7,8 +7,8 @@ process SPECIES {
   path results // Changed from file(results) for modern Nextflow syntax
 
   output:
-  path "datasets/species_list.txt", emit: species
-  path "datasets/accessions_list.txt", emit: accessions                                   
+  path "datasets/species_list.txt", emit: species, optional: true
+  path "datasets/accessions_list.txt", emit: accessions, optional: true                                 
 
   when:
   task.ext.when == null || task.ext.when

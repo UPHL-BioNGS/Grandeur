@@ -1,14 +1,14 @@
 process CORE_GENOME_EVALUATION {
   tag         "Evaluating core genome"
   label       "process_single"
-  container   'staphb/pandas:2.3.0'
+  container   'staphb/pandas:3.0.1'
 
   input:
   tuple file(fasta), file(summary), file(script)
 
   output:
-  path("core_genome_values.csv"), emit: evaluation
-  path "core_genome_evaluation/core_genome_evaluation.csv", emit: for_multiqc
+  path("core_genome_values.csv"), emit: evaluation, optional: true
+  path "core_genome_evaluation/core_genome_evaluation.csv", emit: for_multiqc, optional: true
   path "logs/${task.process}/*.log"                       , emit: log_files
 
   when:

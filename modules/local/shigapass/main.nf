@@ -1,17 +1,16 @@
 process SHIGAPASS {
     tag           "${meta.id}"
     label         "process_medium"
-    container     'staphb/shigapass:latest'
+    container     'staphb/shigapass:1.5.0'
 
     input:
     tuple val(meta), file(contigs)
 
     output:
-    path "shigapass/*_summary.csv", emit: summary, optional: true
-    path "shigapass/*", emit: all_files, optional: true
+    path "shigapass/*_shigapass.tsv", emit: summary, optional: true
+    tuple val(meta), file("shigapass/*/*"), emit: all_files, optional: true
     path "logs/${task.process}/*.log", emit: log
     path "versions.yml", emit: versions
-    val meta, emit: meta
 
     when:
     task.ext.when == null || task.ext.when
@@ -33,12 +32,13 @@ process SHIGAPASS {
         -t ${task.cpus} \
         | tee -a \$log_file
 
+    # ensure prefix is in summary file
+    head -n 1  shigapass/${prefix}/ShigaPass_summary.csv | sed 's/;/\\t/g' | awk '{print "sample\\t"    \$0 }' >  shigapass/${prefix}_shigapass.tsv
+    tail -n +2 shigapass/${prefix}/ShigaPass_summary.csv | sed 's/;/\\t/g' | awk '{print "${prefix}\\t" \$0 }' >> shigapass/${prefix}_shigapass.tsv
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         shigapass: \$(ShigaPass.sh -v | awk '{print \$NF}')
     END_VERSIONS
-
-    # add sample to column name
-    exit 1
     """
 }
