@@ -21,7 +21,7 @@ Relevant params and their values:
 ┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ process           ┃ description                                                        ┃
 ┣━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
-┃ DOWNLOAD_FASTQ    ┃ Downloads FASTQ files from ENA using enaDataGet.                   ┃
+┃ DOWNLOAD_FASTQ    ┃ Downloads FASTQ files from ENA using enaDataGet                    ┃
 ┃ DOWNLOAD_GENOME   ┃ Downloads FASTA files from NCBI using DATASETS                     ┃
 ┗━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
