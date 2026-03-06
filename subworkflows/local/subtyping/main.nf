@@ -10,6 +10,7 @@ include { MYKROBE }        from '../../../modules/local/mykrobe'
 include { NGMASTER }       from '../../../modules/local/ngmaster'
 include { PBPTYPER }       from '../../../modules/local/pbptyper'
 include { SEQSERO2 }       from '../../../modules/local/seqsero2'
+include { SEQSERO2S }      from '../../../modules/local/seqsero2s'
 include { SEROTYPEFINDER } from '../../../modules/local/serotypefinder'
 include { SHIGAPASS }      from '../../../modules/local/shigapass'
 
@@ -48,7 +49,7 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
 ┃ EMMTYPER          ┃ In silico emm typing of Streptococcus pyogenes assemblies.         ┃
 ┃ KAPTIVE           ┃ In silico K and O locus typing of Vibrio assemblies, with a focus  ┃
 ┃                   ┃ on Vibrio parahaemolyticus.                                        ┃
-┃ Kleborate         ┃ In silico subtyping of Klebsiella assemblies, including species    ┃
+┃ KLEBORATE         ┃ In silico subtyping of Klebsiella assemblies, including species    ┃
 ┃                   ┃ assignment, multi-locus sequence typing, K and O locus typing, and ┃
 ┃                   ┃ detection of virulence and AMR genes.                              ┃
 ┃ EL GATO           ┃ In silico subtyping of Legionella assemblies, including species    ┃
@@ -62,6 +63,7 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
 ┃ PBPTYPER          ┃ In silico penicillin binding protein (PBP) typer of Streptococcus  ┃
 ┃                   ┃ pneumoniae assemblies.                                             ┃
 ┃ SEQSERO2          ┃ In silico serotyping of Salmonella assemblies.                     ┃
+┃ SEQSERO2S         ┃ In silico serotyping of Salmonella assemblies.                     ┃
 ┃ SEROTYPEFINDER    ┃ In silico serotyping of Escherichia coli assemblies.               ┃
 ┃ SHIGAPASS         ┃ In silico subtyping of Shigella assemblies, including species      ┃
 ┃                   ┃ assignment, multi-locus sequence typing, and detection of          ┃
@@ -194,6 +196,19 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
     ch_summary  = ch_summary.mix(seqsero2_summary)
     ch_versions = ch_versions.mix(SEQSERO2.out.versions.first())
 
+    SEQSERO2S(ch_salmonella.filter{it})
+
+    SEQSERO2S.out.collect
+      .collectFile(name: 'seqsero2s_results.txt',
+        keepHeader: true,
+        sort: { file -> file.text },
+        storeDir: "${params.outdir}/seqsero2s")
+      .set{ seqsero2s_summary }
+
+    ch_summary  = ch_summary.mix(seqsero2s_summary)
+    ch_versions = ch_versions.mix(SEQSERO2S.out.versions.first())
+
+
     SEROTYPEFINDER(ch_ecoli.filter{it}.combine(summfle_script))
 
     SEROTYPEFINDER.out.collect
@@ -209,7 +224,7 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
     SHIGAPASS(ch_ecoli.filter{it})
 
     SHIGAPASS.out.summary
-      .collectFile(name: 'shigapass_summary.csv',
+      .collectFile(name: 'shigapass_summary.tsv',
         keepHeader: true,
         sort: { file -> file.text },
         storeDir: "${params.outdir}/shigapass")
