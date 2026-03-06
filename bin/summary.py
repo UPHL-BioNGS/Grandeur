@@ -45,6 +45,20 @@ def check_isolate_purity(group):
         
     return ", ".join(notes)
 
+def parse_file(summary_df, file, delim):
+    print("Adding results for " + file)
+    
+    analysis = str(file).split("_")[0]
+    new_df = pd.read_csv(file, dtype = str, index_col= False, delimiter=delim)
+    new_df = new_df.add_prefix(analysis + "_")
+    new_df = new_df.replace('Sample', 'sample', regex=True)
+    new_df.columns = [x.lower() for x in new_df.columns]
+    summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
+    summary_df.drop(analysis + "_sample", axis=1, inplace=True)
+    
+    return summary_df
+
+
 ##########################################
 # defining files                         #
 ##########################################
@@ -71,11 +85,13 @@ mash_err       = 'mash_err_summary.csv'
 meningotype    = 'meningotype_summary.tsv'
 mlst           = 'mlst_summary.tsv'
 mykrobe        = 'mykrobe_summary.csv'
+ngmaster       = 'ngmaster_summary.tsv'
 pbptyper       = 'pbptyper_summary.tsv'
 plasmidfinder  = 'plasmidfinder_result.tsv'
 quast          = 'quast_report.tsv'
 quast_contig   = 'quast_contig_report.tsv'
 seqsero2       = 'seqsero2_results.txt'
+seqsero2s      = 'seqsero2s_results.txt'
 serotypefinder = 'serotypefinder_results.txt'
 shigapass      = 'shigapass_summary.csv'
 spestimator    = 'spestimator_summary.tsv'
@@ -92,7 +108,7 @@ extended       = 'summary/grandeur_extended_summary'
 ##########################################
 
 csv_files = [ legsta, mykrobe ]
-tsv_files = [ drprg, elgato, seqsero2, kleborate, mlst, emmtyper, pbptyper ]
+tsv_files = [ drprg, checkm2, elgato, meningotype, ngmaster, seqsero2, seqsero2s, shigapass, kleborate, mlst, emmtyper, pbptyper ]
 
 ##########################################
 # exiting if no input files              #
@@ -123,25 +139,13 @@ columns = list(summary_df.columns)
 # csv files
 for file in csv_files :
     if exists(file) :
-        print("Adding results for " + file)
-        analysis = str(file).split("_")[0]
-        new_df = pd.read_csv(file, dtype = str, index_col= False)
-        new_df = new_df.add_prefix(analysis + "_")
-        new_df = new_df.replace('Sample', 'sample', regex=True)
-        new_df.columns = [x.lower() for x in new_df.columns]
-        summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
-        summary_df.drop(analysis + "_sample", axis=1, inplace=True)
+        summary_df = parse_file(summary_df, file, ",")
 
 # tsv files
 for file in tsv_files :
     if exists(file) :
-        print("Adding results for " + file)
-        analysis = str(file).split("_")[0]
-        new_df = pd.read_table(file, dtype = str, index_col= False)
-        new_df = new_df.add_prefix(analysis + "_")
-        new_df.columns = [x.lower() for x in new_df.columns]
-        summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
-        summary_df.drop(analysis + "_sample", axis=1, inplace=True)
+        summary_df = parse_file(summary_df, file, "\t")        
+
 
 # to do, fix this
 # summary_df['warnings'] = summary_df['warnings'] + summary_df['kleborate_qc_warnings']
@@ -351,19 +355,6 @@ if exists(mash_screen) :
     summary_df['warnings'] = summary_df['warnings'] + summary_df[analysis + '_warnings']
 
 
-# meningotype : renaming column and reformatting for matching
-if exists(meningotype) :
-    file = meningotype
-    print("Adding results for " + file)
-    analysis = "meningotype"
-    new_df = pd.read_table(file, dtype = str, index_col= False)
-    new_df = new_df.add_prefix(analysis + "_")
-    new_df.columns = [x.lower() for x in new_df.columns]
-    new_df[analysis + "_sample"] = new_df[analysis + "_sample_id"].str.replace(r'\.(fasta|fna|fa)$', '', regex=True)
-    summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
-    summary_df.drop([analysis + "_sample_id", analysis + "_sample"], axis=1, inplace=True)
-
-
 # plasmidfinder : merging relevant rows into one
 if exists(plasmidfinder) :
     file = plasmidfinder
@@ -440,19 +431,6 @@ if exists(serotypefinder) :
     summary_df.drop(analysis + "_sample_O", axis=1, inplace=True)
     summary_df = pd.merge(summary_df, H_df, left_on="sample", right_on=analysis + "_sample_H", how = 'left')
     summary_df.drop(analysis + "_sample_H", axis=1, inplace=True)
-
-
-# shigapass
-if exists(shigapass) :
-    file = shigapass
-    print("Adding results for " + file)
-    analysis = "shigapass"
-    new_df = pd.read_csv(file, dtype = str, index_col= False)
-    new_df = new_df.groupby('sample', as_index=False).agg({'Hit': lambda x: list(x)})
-    new_df = new_df.add_prefix(analysis + '_')
-    new_df.columns = [x.lower() for x in new_df.columns]
-    summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
-    summary_df.drop(analysis + "_sample", axis=1, inplace=True)
 
 
 # skani
@@ -588,10 +566,6 @@ if 'mash_dist_organism' in summary_df.columns:
 
 # 5. Final Cleanup
 summary_df['predicted_organism'] = summary_df['predicted_organism'].fillna("Unknown")
-
-##########################################
-# size and coverage estimates            #
-##########################################
 
 ##########################################
 # size and coverage estimates            #
