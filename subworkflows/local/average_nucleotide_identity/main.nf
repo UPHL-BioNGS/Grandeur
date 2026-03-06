@@ -26,7 +26,7 @@ Relevant params and their values:
       DATASETS_SUMAMRY, and DATASETS_DOWNLOAD will be skipped.
     - Downloading reference genomes uses a third-party API that is not controlled by 
       the Grandeur developers, requires the workflow to have internet access, and may be 
-      slow or have issues."
+      slow or have issues.
 
 ┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ process           ┃ description                                                        ┃
