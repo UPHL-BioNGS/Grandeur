@@ -22,7 +22,7 @@ Creating final reports
 ┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ process           ┃ description                                                        ┃
 ┣━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
-┃ VERSIONS          ┃ Custom process to convert versions.yml for MultiQC                 ┃
+┃ VERSIONS          ┃ Custom process to convert versions.yml for MultiQC.                ┃
 ┃ MULTIQC           ┃ Creation of html summary file.                                     ┃
 ┃ SUMMARY           ┃ Custom process that summarizes all results in text format.         ┃ 
 ┗━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
@@ -56,8 +56,7 @@ Creating final reports
                 )
             .set { ch_names }
 
-        // TODO : BRING BACK
-        // SUMMARY(for_summary.mix(ch_names).mix(MULTIQC.out.data_folder).collect())
+        SUMMARY(for_summary.mix(ch_names).mix(MULTIQC.out.data_folder).collect())
 
     emit:
         //summary  = SUMMARY.out.extended_tsv
