@@ -7,7 +7,8 @@ process MENINGOTYPE {
   tuple val(meta), file(contigs)
 
   output:
-  path "meningotype/*.tsv", emit: files, optional: true
+  tuple val(meta), file("meningotype/*.tsv"), emit: files
+  path "*meningotype.tsv", emit: summary
   path "versions.yml", emit: versions
   val meta, emit: meta
 
@@ -24,6 +25,11 @@ process MENINGOTYPE {
       ${args} \
       ${contigs} \
       > meningotype/${prefix}.tsv
+
+    # ensure prefix is in summary file
+    head -n 1  meningotype/${prefix}.tsv | awk '{print "sample\\t"    \$0 }' >  ${prefix}_meningotype.tsv
+    tail -n +2 meningotype/${prefix}.tsv | awk '{print "${prefix}\\t" \$0 }' >> ${prefix}_meningotype.tsv
+
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

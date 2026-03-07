@@ -1,16 +1,16 @@
 process NGMASTER {
     tag           "${meta.id}"
     label         "process_medium"
-    container     'staphb/ngmaster:0.5.8-2023-05'
+    container     'staphb/ngmaster:1.0.0'
 
     input:
     tuple val(meta), file(contigs)
 
     output:
-    path "ngmaster/*.tsv", emit: collect, optional: true
+    tuple val(meta), file("ngmaster/*"), emit: files
+    path "*ngmaster.csv", emit: collect
     path "logs/${task.process}/*.log", emit: log
     path "versions.yml", emit: versions
-    val meta, emit: meta
 
     when:
     task.ext.when == null || task.ext.when
@@ -25,15 +25,16 @@ process NGMASTER {
     ngmaster \
       ${args} \
       ${contigs} \
-      > ngmaster/${prefix}_ngmaster.tsv \
+      > ngmaster/${prefix}_ngmaster.csv \
       2>> \$log_file
+
+        # ensure prefix is in summary file
+    head -n 1  ngmaster/${prefix}_ngmaster.csv | awk '{print "sample,"    \$0 }' >  ${prefix}_ngmaster.csv
+    tail -n +2 ngmaster/${prefix}_ngmaster.csv | awk '{print "${prefix}," \$0 }' >> ${prefix}_ngmaster.csv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         ngmaster: \$(echo \$(ngmaster --version 2>&1 | awk '{print \$2}'))
     END_VERSIONS
-
-    # add sample to column name
-    exit 1
     """
 }
