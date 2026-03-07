@@ -43,7 +43,7 @@ jobs:
 
       - name: Check Neisseria file
         run: |
-          for file in grandeur/meningotype/meningotype_summary.tsv grandeur/ngmaster/ngmaster_summary.tsv
+          for file in grandeur/meningotype/meningotype_summary.tsv grandeur/ngmaster/ngmaster_summary.csv
           do
             head $file
             wc -l $file
