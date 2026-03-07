@@ -20,7 +20,5 @@ process SUMMARY {
     mkdir -p summary
 
     python3 summary.py
-    exit 1
-
   """
 }
