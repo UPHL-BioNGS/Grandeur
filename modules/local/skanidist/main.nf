@@ -19,7 +19,7 @@ process SKANI_DIST {
     tuple val(meta), file("Salmonella/*"), emit: salmonella, optional: true
     tuple val(meta), file("Escherichia/*"), emit: ecoli, optional: true
     tuple val(meta), file("Vibrio/*"), emit: vibrio, optional: true
-    tuple val(meta), file("Neisseriac/*"), emit: gc, optional: true
+    tuple val(meta), file("Neisseria/*"), emit: gc, optional: true
     path "skani/*txt", emit: skani, optional: true
     path "top_hit/*", emit: top_hit, optional: true
     path "logs/${task.process}/*.log", emit: log
