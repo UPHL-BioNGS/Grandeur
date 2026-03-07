@@ -4,12 +4,12 @@ process MLST {
   container     'staphb/mlst:2.32.2'
 
   input:
-  tuple val(meta), file(contig), file(script)
+  tuple val(meta), file(contig)
 
   output:
-  path "mlst/*_mlst.tsv", emit: collect, optional: true
-  path "versions.yml"   , emit: versions
-  val meta              , emit: meta
+  tuple val(meta), file("mlst/*_mlst.tsv"), emit: files, optional: true
+  path "*_mlst_summary.txt", emit: collect
+  path "versions.yml", emit: versions
 
   when:
   task.ext.when == null || task.ext.when
@@ -20,17 +20,22 @@ process MLST {
   """
     mkdir -p mlst 
 
+    # there are file permission issues sometimes
+    cat ${contig} > input_${prefix}.fasta
+
     mlst ${args} \
       --threads ${task.cpus} \
-      ${contig} | \
+      input_${prefix}.fasta | \
       tr ' ' '_' \
-      > ${prefix}_mlst.txt
+      > mlst/${prefix}_mlst.txt
 
-    python3 ${script} ${prefix}_mlst.txt mlst/${prefix}_mlst.tsv mlst ${prefix}
+    echo -e "sample\\tfilename\\tmatching PubMLST scheme\\tST\\tID1\\tID2\\tID3\\tID4\\tID5\\tID6\\tID7\\tID8\\tID9\\tID10\\tID11\\tID12\\tID13\\tID14\\tID15" > ${prefix}_mlst_summary.txt
+    cat mlst/${prefix}_mlst.txt | awk '{print "${prefix}\\t" \$1 "\\t" \$2 "\\t" \$3 "\\t" \$4 "\\t" \$5 "\\t" \$6 "\\t" \$7 "\\t" \$8 "\\t" \$9 "\\t" \$10 "\\t" \$11 "\\t" \$12 "\\t" \$13 "\\t" \$14 "\\t" \$15 "\\t" \$16 "\\t" \$17 "\\t" \$18 }' >> ${prefix}_mlst_summary.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         mlst: \$( echo \$(mlst --version 2>&1) | sed 's/mlst //' )
+        scheme_db_date: 2026-01-13
     END_VERSIONS
   """
 }
