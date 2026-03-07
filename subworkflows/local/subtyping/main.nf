@@ -150,7 +150,7 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
 
     MENINGOTYPE(ch_gc.filter{it})
 
-    MENINGOTYPE.out.files
+    MENINGOTYPE.out.summary
       .collectFile(name: 'meningotype_summary.tsv',
         keepHeader: true,
         sort: {file -> file.text },
@@ -160,10 +160,10 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
     ch_summary  = ch_summary.mix(meningotype_summary)
     ch_versions = ch_versions.mix(MENINGOTYPE.out.versions.first())
 
-    NGMASTER(ch_gc.filter{it}.combine(summfle_script))
+    NGMASTER(ch_gc.filter{it})
 
     NGMASTER.out.collect
-      .collectFile(name: 'ngmaster_summary.tsv',
+      .collectFile(name: 'ngmaster_summary.csv',
         keepHeader: true,
         sort: { file -> file.text },
         storeDir: "${params.outdir}/ngmaster")
@@ -265,7 +265,7 @@ SUBTYPING subworkflow completed at: $workflow.complete
 │    ├── meningotype                                    │
 │    │   └── meningotype_summary.tsv                    │
 │    ├── ngmaster                                       │
-│    │   └── ngmaster_summary.tsv                       │
+│    │   └── ngmaster_summary.csv                       │
 │    ├── pbptyper                                       │
 │    │   └── pbptyper_summary.tsv                       │
 │    ├── seqsero2                                       │

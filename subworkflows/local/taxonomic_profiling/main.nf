@@ -81,16 +81,22 @@ Relevant params and their values:
             name: "mashdist_summary.csv")
         .set { ch_mashdist_summary }
 
+    MASH_DIST.out.mash_err
+        .collectFile(
+            storeDir: "${params.outdir}/mash/",
+            name: "mash_err_summary.csv")
+        .set { mash_err_summary }
+
     MASH_SCREEN.out.screen_results
         .collectFile(
             storeDir: file("${params.outdir}/mash/"),
             keepHeader: true,
             sort: { file -> file.text },
-            name: "mashscreen_summary.csv")
+            name: "mashscreen_summary.txt")
         .set { ch_mashscreen_summary }
 
     ch_versions = ch_versions.mix(MASH_DIST.out.versions.first()).mix(MASH_SCREEN.out.versions.first())
-    ch_summary  = ch_summary.mix(ch_mashdist_summary).mix(ch_mashscreen_summary)
+    ch_summary  = ch_summary.mix(ch_mashdist_summary).mix(ch_mashscreen_summary).mix(mash_err_summary)
     ch_species  = ch_species.mix(ch_mashdist_summary).mix(ch_mashscreen_summary)
 
     if (params.sylph_db) {

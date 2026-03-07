@@ -111,9 +111,7 @@ Relevant params and their values:
         .set{ quast_contig_summary }
     ch_summary = ch_summary.mix(quast_contig_summary)
 
-    
-
-    MLST(ch_all_fastas.combine(summfle_script))
+    MLST(ch_all_fastas)
     ch_versions = ch_versions.mix(MLST.out.versions.first())
 
     MLST.out.collect
@@ -124,16 +122,14 @@ Relevant params and their values:
         .set{ mlst_summary }
     ch_summary = ch_summary.mix(mlst_summary)
 
-    
-
-    PLASMIDFINDER(ch_all_fastas.combine(summfle_script))
+    PLASMIDFINDER(ch_all_fastas)
     ch_versions = ch_versions.mix(PLASMIDFINDER.out.versions.first())
 
     PLASMIDFINDER.out.collect
-        .collectFile(name: "plasmidfinder_result.tsv",
-            keepHeader: true,
-            sort: { file -> file.text },
-            storeDir: "${params.outdir}/plasmidfinder")
+        .collectFile(
+            name: "plasmidfinder_result.json",
+            storeDir: "${params.outdir}/plasmidfinder"
+            )
         .set{ plasmidfinder_summary }
     ch_summary = ch_summary.mix(plasmidfinder_summary)
 
@@ -177,7 +173,7 @@ QUALITY ASSESSMENT subworkflow completed at: $workflow.complete
         log.info """│    ├── mlst                                           │
 │    │   └── mlst_summary.tsv                           │
 │    ├── plasmidfinder                                  │
-│    │   └── plasmidfinder_result.tsv                   │
+│    │   └── plasmidfinder_result.json                  │
 │    └── quast                                          │
 │        └── quast_report.tsv                           │
 └───────────────────────────────────────────────────────┘
