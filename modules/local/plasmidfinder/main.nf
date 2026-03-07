@@ -3,16 +3,14 @@ process PLASMIDFINDER {
   label         "process_medium"
   container     'staphb/plasmidfinder:3.0.2'
 
-
   input:
-  tuple val(meta), file(file), file(script)
+  tuple val(meta), file(file)
 
   output:
-  path "plasmidfinder/*/*"                , emit: files
-  path "plasmidfinder/*_plasmidfinder.tsv", emit: collect, optional: true
-  path "logs/${task.process}/*.log"       , emit: log
-  path "versions.yml"                     , emit: versions
-  val meta                                , emit: meta
+  tuple val(meta), file("plasmidfinder/*/*"), emit: files
+  path "plasmidfinder/*/*json", emit: collect, optional: true
+  path "logs/${task.process}/*.log", emit: log
+  path "versions.yml", emit: versions
 
   when:
   task.ext.when == null || task.ext.when
@@ -24,19 +22,18 @@ process PLASMIDFINDER {
     mkdir -p plasmidfinder/${prefix} logs/${task.process}
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
-    plasmidfinder.py ${args} \
+    git config --global --add safe.directory /database
+
+    python -m plasmidfinder ${args} \
       -i ${file} \
       -o plasmidfinder/${prefix} \
-      --extented_output \
+      -j plasmidfinder/${prefix}/results_${prefix}_plasmidfinder.json \
       | tee -a \$log_file
 
-    python3 ${script} plasmidfinder/${prefix}/results_tab.tsv plasmidfinder/${prefix}_plasmidfinder.tsv plasmidfinder ${prefix}
-
-    rm -rf plasmidfinder/${prefix}/tmp
-
+    python -m plasmidfinder -h
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        plasmidfinder: "${task.container}"
+        plasmidfinder: \$(echo \$(python -m plasmidfinder -v))
     END_VERSIONS
   """
 }
