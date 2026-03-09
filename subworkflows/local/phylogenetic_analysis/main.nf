@@ -77,13 +77,13 @@ Relevant params and their values:
   ch_contigs  = ch_org_contigs.mix(ch_top_hit).map{it -> tuple(it[0], it[2])}
 
   if (params.annotator == 'prokka' ) {
-    PROKKA(ch_org_contigs.mix(ch_top_hit).unique())
+    PROKKA(ch_org_contigs.mix(ch_top_hit).filter{it}.unique())
     
     ch_versions = ch_versions.mix(PROKKA.out.versions.first())
     ch_multiqc  = ch_multiqc.mix(PROKKA.out.for_multiqc)
     ch_gff      = PROKKA.out.gff
   } else if (params.annotator == 'bakta') {
-    BAKTA(ch_org_contigs.mix(ch_top_hit).unique())
+    BAKTA(ch_org_contigs.mix(ch_top_hit).filter{it}.unique())
     
     ch_versions = ch_versions.mix(BAKTA.out.versions.first())
     ch_multiqc  = ch_multiqc.mix(BAKTA.out.for_multiqc)

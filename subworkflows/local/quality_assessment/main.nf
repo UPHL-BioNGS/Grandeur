@@ -78,7 +78,7 @@ Relevant params and their values:
 
     }
 
-    AMRFINDER(ch_contigs_org)
+    AMRFINDER(ch_contigs_org.filter{it})
 
     AMRFINDER.out.collect
         .collectFile(name: 'amrfinderplus.txt',
@@ -111,7 +111,7 @@ Relevant params and their values:
         .set{ quast_contig_summary }
     ch_summary = ch_summary.mix(quast_contig_summary)
 
-    MLST(ch_all_fastas)
+    MLST(ch_all_fastas.filter{it})
     ch_versions = ch_versions.mix(MLST.out.versions.first())
 
     MLST.out.collect
@@ -122,7 +122,7 @@ Relevant params and their values:
         .set{ mlst_summary }
     ch_summary = ch_summary.mix(mlst_summary)
 
-    PLASMIDFINDER(ch_all_fastas)
+    PLASMIDFINDER(ch_all_fastas.filter{it})
     ch_versions = ch_versions.mix(PLASMIDFINDER.out.versions.first())
 
     PLASMIDFINDER.out.collect
@@ -135,7 +135,7 @@ Relevant params and their values:
 
 
     if (params.checkm2_db) {    
-        CHECKM2(ch_all_fastas.combine(ch_checkm2_db))
+        CHECKM2(ch_all_fastas.filter{it}.combine(ch_checkm2_db))
         ch_versions = ch_versions.mix(CHECKM2.out.versions.first())
 
         CHECKM2.out.report
