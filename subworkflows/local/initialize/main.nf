@@ -345,7 +345,7 @@ Initializing Databases and References
         .view { "Using KRAKEN2 database : $it" }
         .set { ch_kraken2_db }
   } else {
-    log.info "FYI: A KRAKEN2 database can be loaded into Grandeur with 'params.kraken2_db'."
+    log.info "FYI: A KRAKEN2 database can be loaded into Grandeur with 'params.kraken2_db', more information can be found at https://github.com/UPHL-BioNGS/Grandeur/wiki/kraken2_ref"
     ch_kraken2_db = channel.empty()
   }
 
@@ -381,7 +381,7 @@ Initializing Databases and References
         .set { ch_checkm2_db }
   } else {
     log.info "FYI: A CHECKM2 database can be loaded into Grandeur with 'params.checkm2_db'."
-    log.info "\t- Please read the wiki for instructions on how to create a CHECKM2 database for use with Grandeur at https://github.com/UPHL-BioNGS/Grandeur/wiki/checkm2_db"
+    log.info "\t- Please read the wiki for instructions on how to create a CHECKM2 database for use with Grandeur at https://github.com/UPHL-BioNGS/Grandeur/wiki/checkm2_database"
     ch_checkm2_db = channel.empty()
   }
 
@@ -456,6 +456,12 @@ Initializing Workflow Options
     log.info "'params.skip_extras' is set to true. Skipping all \"extra\" processes and subworkflows. This focuses on the core assembly of reads (if FASTQ files are provided) or multiple sequence alignment (if 'params.msa' is set to true)."
   } else {
     log.info "FYI: It is possible to skip ANI analysis, subtyping, and taxonomic profiling subworkflows. To skip these steps, set 'params.skip_extras' to true."
+  }
+
+
+  if ( ! params.reads && ! params.fastas && ! params.input && ! params.sample_sheet && ! params.fasta_list ) { 
+    log.fatal "No input files were detected. Exiting."
+    exit 0
   }
 
   // getting test files

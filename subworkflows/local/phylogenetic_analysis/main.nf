@@ -22,6 +22,8 @@ workflow PHYLOGENETIC_ANALYSIS {
 
 Running phylogenetic analysis.
 
+More information can be found at https://github.com/UPHL-BioNGS/Grandeur/wiki/phylogenetic_analysis.
+
 Relevant params and their values:
 - 'params.annotator' : ${params.annotator}
     - Specifies what is used to annotate assemblies (impacts what genes are predicted)

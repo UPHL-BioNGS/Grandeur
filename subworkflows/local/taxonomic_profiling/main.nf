@@ -18,7 +18,11 @@ workflow TAXONOMIC_PROFILING {
 
         log.info """
 
-Running average nucleotide identity (ANI) analysis).
+This subworkflow is designed to take raw reads and/or assembled FASTA files and quickly 
+identify the organisms present in the samples. It relies heavily on fast, 
+k-mer/MinHash-based algorithms rather than computationally heavy alignments.
+
+More information can be found at https://github.com/UPHL-BioNGS/Grandeur/wiki/taxonomic_profiling.
 
 Relevant params and their values:
 - 'params.kraken2_db' : ${params.kraken2_db}

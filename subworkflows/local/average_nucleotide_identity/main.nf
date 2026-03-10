@@ -19,11 +19,13 @@ workflow AVERAGE_NUCLEOTIDE_IDENTITY {
 
 Running average nucleotide identity (ANI) analysis).
 
+More information can be found at https://github.com/UPHL-BioNGS/Grandeur/wiki/average_nucleotide_identity.
+
 Relevant params and their values:
 - 'params.current_datasets' : ${params.current_datasets}
     - When 'true', subworkflow will download additional references from NCBI
     - When 'false', subworkflow will use local references and SPESTIMATOR, SPECIES,
-      DATASETS_SUMAMRY, and DATASETS_DOWNLOAD will be skipped.
+      DATASETS_SUMMARY, and DATASETS_DOWNLOAD will be skipped.
     - Downloading reference genomes uses a third-party API that is not controlled by 
       the Grandeur developers, requires the workflow to have internet access, and may be 
       slow or have issues.
@@ -58,7 +60,7 @@ Relevant params and their values:
                     storeDir: "${params.outdir}/spestimator/",
                     keepHeader: true,
                     sort: { file -> file.text },
-                    name: "spestimator_summary.tsv")
+                    name: "spestimator_summary.csv")
                 .set { ch_spestimator_summary }
 
 
@@ -227,7 +229,7 @@ AVERAGE NUCLEOTIDE IDENTITY subworkflow completed at: $workflow.complete
 │   'params.outdir'                                     │"""
         if ( params.current_datasets ) {
     log.info """│    ├── spestimator                                    │
-│    │   └── spestimator_summary.tsv                    │
+│    │   └── spestimator_summary.csv                    │
 │    ├── datasets                                       │
 │    │   └── datasets_summary.csv                       │"""
         }

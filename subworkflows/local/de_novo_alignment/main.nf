@@ -10,6 +10,8 @@ workflow DE_NOVO_ALIGNMENT {
 
 Running de novo assembly.
 
+More information can be found at https://github.com/UPHL-BioNGS/Grandeur/wiki/de_novo_alignment.
+
 Relevant params and their values:
 - 'params.minimum_reads' : ${params.minimum_reads}
     - Any samples with fewer than this will not be included in other steps.

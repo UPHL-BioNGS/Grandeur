@@ -19,6 +19,8 @@ workflow REPORT {
 
 Creating final reports
 
+More information can be found at https://github.com/UPHL-BioNGS/Grandeur/wiki/report.
+
 ┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ process           ┃ description                                                        ┃
 ┣━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫

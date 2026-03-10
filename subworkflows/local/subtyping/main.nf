@@ -1,4 +1,3 @@
-
 include { DRPRG }          from '../../../modules/local/drprg'
 include { ELGATO }         from '../../../modules/local/elgato'
 include { EMMTYPER }       from '../../../modules/local/emmtyper'
@@ -37,6 +36,8 @@ workflow SUBTYPING {
 
 Running subtyping analysis. This workflow will perform in silico subtyping of assemblies 
 with a variety of tools, depending on the species of interest.
+
+More information can be found at https://github.com/UPHL-BioNGS/Grandeur/wiki/information.
 
 If a desired sub-typing tool is not included here, please contact the developers or 
 submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues

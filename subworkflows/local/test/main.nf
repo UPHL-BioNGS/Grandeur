@@ -12,6 +12,8 @@ workflow TEST {
 
 Downloading files from external databases.
 
+More information can be found at https://github.com/UPHL-BioNGS/Grandeur/wiki/test.
+
 Relevant params and their values:
 - 'params.sra_accessions' : ${params.sra_accessions}
     - List of SRA accessions to download from the ENA

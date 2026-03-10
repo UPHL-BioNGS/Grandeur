@@ -27,6 +27,8 @@ workflow QUALITY_ASSESSMENT {
 
 Running quality assessment on the reads and assemblies. 
 
+More information can be found at https://github.com/UPHL-BioNGS/Grandeur/wiki/Quality-Assessment.
+
 This workflow will perform quality control on the reads with FastQC, but the remaining 
 processes of QUAST, CHECKM2, AMRFINDER, and PLASMIDFINDER will be run on generated 
 assemblies as well as those specified with an input file designated with 
