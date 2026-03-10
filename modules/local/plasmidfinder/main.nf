@@ -30,7 +30,7 @@ process PLASMIDFINDER {
       -j plasmidfinder/${prefix}/results_${prefix}_plasmidfinder.json \
       | tee -a \$log_file
 
-    python -m plasmidfinder -h
+    rm -rf plasmidfinder/${prefix}/tmp
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         plasmidfinder: \$(echo \$(python -m plasmidfinder -v))
