@@ -7,7 +7,7 @@ process SPESTIMATOR {
     tuple val(meta), file(contigs)
 
     output:
-    tuple val(meta), file("spestimator/*.tsv"), emit: results, optional: true
+    tuple val(meta), file("spestimator/*.csv"), emit: results, optional: true
     path "logs/${task.process}/*.log", emit: log
     path "versions.yml", emit: versions
 
@@ -24,7 +24,7 @@ process SPESTIMATOR {
     spestimator \
         ${args} \
         --input ${contigs} \
-        --output spestimator/${prefix}_spestimator.tsv \
+        --output spestimator/${prefix}_spestimator.csv \
         --threads ${task.cpus} \
         | tee -a \$log_file
 
