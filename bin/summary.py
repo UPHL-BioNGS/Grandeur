@@ -159,13 +159,11 @@ for file in tsv_files :
         summary_df = parse_file(summary_df, file, "\t")        
 
 
-
-
 # for specific tools
 
 # amrfinderplus : merging many rows into one with relevant information
 if exists(amrfinderplus):
-    print("Processing results for " + amrfinderplus)
+    print("Adding results for " + amrfinderplus)
     analysis = "amrfinder"
     amr_df = pd.read_table(amrfinderplus, dtype=str, index_col=False)
 
@@ -177,12 +175,13 @@ if exists(amrfinderplus):
                                      summary_prep['% Identity to reference'] + ')'
     
     # Group by Sample (Name) and make a list
-    summary_genes = summary_prep.groupby('Name', as_index=False).agg({'genes_formatted': lambda x: list(x)})
+    summary_genes = summary_prep.groupby('Name', as_index=False).agg(
+        {'genes_formatted': lambda x: ', '.join(x.dropna().astype(str))}
+    )
     summary_genes.columns = ['sample', 'amrfinder_genes_(per_cov/per_ident)']
     
     # Merge into summary_df
     summary_df = pd.merge(summary_df, summary_genes, on="sample", how='left')
-
 
     # --- 3. STANDALONE MATRIX FILE ---
     # Create the "Cov,Ident" value string for the matrix
@@ -242,6 +241,7 @@ if exists(fastqc):
     new_df = new_df.add_prefix('fastqc_')
     
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on="fastqc_sample", how='left')
+    summary_df.drop("fastqc_sample", axis=1, inplace=True)
 
 # kaptive : merging relevant rows into one
 if exists(kaptive) :
@@ -274,14 +274,19 @@ if exists(kraken2):
     tmp_df = new_df.drop_duplicates(subset=['Sample'], keep="first")[['Sample', 'Scientific name']]
     tmp_df.columns = ['Sample', 'kraken2_top_organism']
 
-    # Create a list of organisms found (e.g., "E.coli (98%), S.aureus (1%)")
-    new_df['report'] = new_df['Scientific name'] + " (" + new_df['Percentage of fragments'] + "%)"
-    grouped = new_df.groupby('Sample')['report'].apply(list).reset_index()
+    # Create the string format for the report (e.g., "E.coli (98%)")
+    new_df['kraken2_formatted'] = new_df['Scientific name'] + " (" + new_df['Percentage of fragments'] + "%)"
     
-    # Merge
+    # Group by Sample and calculate both the report list and the unique organism count
+    grouped = new_df.groupby('Sample').agg(
+        kraken2_report=('kraken2_formatted', lambda x: ', '.join(x.dropna().astype(str))),
+        kraken2_predicted_organisms=('Scientific name', 'nunique')
+    ).reset_index()
+    
+    # Merge both dataframes into the main summary_df
     summary_df = pd.merge(summary_df, tmp_df, left_on="sample", right_on="Sample", how='left').drop('Sample', axis=1)
     summary_df = pd.merge(summary_df, grouped, left_on="sample", right_on="Sample", how='left').drop('Sample', axis=1)
-    
+
 # mash dist
 if exists(mash_dist) :
     file = mash_dist
@@ -407,6 +412,7 @@ if exists(quast) or exists(quast_contig):
     new_df = pd.concat([q_df, qc_df])
 
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how='left')
+    summary_df.drop(analysis + "_sample", axis=1, inplace=True)
 
 # serotypefinder : splitting O and H groups, getting the top hit for O and H group, combining rows
 if exists(serotypefinder) :
@@ -434,14 +440,18 @@ if exists(skani):
     new_df = pd.read_table(skani, dtype=str, index_col=False)
     
     # Clean up names and split Genus_species
-    new_df['sample'] = new_df['Query_file'].str.replace('_contigs.fa', '', regex=True).replace(r'\.(fasta|fna|fa)$', '', regex=True)
     new_df['organism'] = new_df['Ref_file'].str.split('_').str[0:2].str.join('_')
+    new_df = new_df.sort_values(['sample', 'ANI'], ascending=[True, False])
+    new_df = new_df.add_prefix('skani_')
+
+    top_df = new_df.drop_duplicates(subset=['skani_sample'], keep='first').copy()
     
     # Count how many unique organisms Skani thinks are in this one "isolate"
-    counts = new_df.groupby('sample')['organism'].nunique().reset_index()
-    new_df = new_df.drop_duplicates(subset=['sample'], keep='first')
-    new_df = new_df.add_prefix('skani_')
-    summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on="skani_sample", how='left')
+    counts_df = new_df.groupby('skani_sample').agg(
+        skani_predicted_organisms=('skani_organism', 'nunique')
+    ).reset_index()
+    summary_df = pd.merge(summary_df, top_df, left_on="sample", right_on="skani_sample", how='left').drop('skani_sample', axis=1)
+    summary_df = pd.merge(summary_df, counts_df, left_on="sample", right_on="skani_sample", how='left')
 
 # spestimator : counting unique reference hits per sample
 if exists(spestimator):
@@ -471,14 +481,30 @@ if exists(spestimator):
 if exists(sylph):
     print("Adding results for " + sylph)
     new_df = pd.read_table(sylph, dtype=str, index_col=False)
-    new_df['sample'] = new_df['Sample_file'].str.replace('_fastp_R1.fastq.gz', '', regex=True)
+    
+    # Convert abundance to numeric so we can safely sort by it
     new_df['Taxonomic_abundance'] = pd.to_numeric(new_df['Taxonomic_abundance'], errors='coerce')
     
-    # Merge and Cleanup
-    new_df = new_df.drop_duplicates(subset=['sample'], keep='first')
-    new_df = new_df.add_prefix('sylph_')
-
-    summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on="sylph_sample", how='left')
+    # Sort to ensure the top hit (highest abundance) is first for every sample
+    new_df = new_df.sort_values(['sample', 'Taxonomic_abundance'], ascending=[True, False])
+    
+    # --- 1. Get the Top Hit ---
+    # Keep only the first row per sample to maintain the main dataframe columns
+    top_df = new_df.drop_duplicates(subset=['sample'], keep='first').copy()
+    top_df = top_df.add_prefix('sylph_')
+    
+    # --- 2. Count Unique Organisms ---
+    # Group by sample and count the unique Genome_files
+    counts_df = new_df.groupby('sample').agg(
+        sylph_predicted_organisms=('Genome_file', 'nunique')
+    ).reset_index()
+    
+    # --- 3. Merge ---
+    # Merge the top hit details
+    summary_df = pd.merge(summary_df, top_df, left_on="sample", right_on="sylph_sample", how='left').drop('sylph_sample', axis=1)
+    
+    # Merge the organism count
+    summary_df = pd.merge(summary_df, counts_df, on="sample", how='left')
 
 if exists(multiqc_stats) : 
     file = multiqc_stats
