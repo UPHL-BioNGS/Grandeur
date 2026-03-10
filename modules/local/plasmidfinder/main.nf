@@ -1,6 +1,6 @@
 process PLASMIDFINDER {
   tag           "${meta.id}"
-  label         "process_medium"
+  label         "process_low"
   container     'staphb/plasmidfinder:3.0.2'
 
   input:
