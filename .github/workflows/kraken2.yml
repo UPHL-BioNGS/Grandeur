@@ -1,0 +1,44 @@
+name: Test Grandeur with KRAKEN2 database
+
+on: [pull_request, workflow_dispatch]
+
+jobs:
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+            
+      - name: Clean up Disk space
+        uses: jlumbroso/free-disk-space@main
+            
+      - name: Install Nextflow
+        run: |
+          wget -qO- get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+
+          nextflow -version
+
+      - name: Download KRAKEN2 database
+        run: |
+            mkdir kraken2_db
+            cd kraken2_db
+            wget https://genome-idx.s3.amazonaws.com/kraken/k2_standard_08_GB_20251015.tar.gz
+            tar -vxf k2_standard_08_GB_20251015.tar.gz
+            cd ../
+
+      - name: Run Grandeur
+        run: |
+          nextflow run . -profile docker,test -c .github/workflows/github_actions.config --publish_dir_mode link --kraken2_db kraken2_db
+          
+      - name: Check contig files
+        run: |
+          for file in grandeur/contigs/*_contigs.fa grandeur/grandeur_summary.tsv grandeur/checkm2/checkm2_summary.tsv
+          do
+            head $file
+            wc -l $file
+          done      
+
+      - name: tree
+        run: tree grandeur*
