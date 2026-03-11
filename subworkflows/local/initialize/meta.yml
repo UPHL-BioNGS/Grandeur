@@ -1,0 +1,69 @@
+name: "initialize"
+description: >-
+  Initializes the workflow by evaluating parameters, checking inputs, and setting up channels 
+  for reference databases, Python scripts, and input files (FASTQ reads, FASTA assemblies, 
+  and accessions). Optionally runs a test subworkflow to download SRA/genome accessions.
+keywords:
+  - initialization
+  - setup
+  - parameters
+  - validation
+  - configuration
+components:
+  - test
+input: []
+output:
+  - reads:
+      type: tuple
+      description: Channel containing sample metadata and paired-end FASTQ files
+      pattern: "*.{fastq,fq,fastq.gz,fq.gz}"
+  - fastas:
+      type: tuple
+      description: Channel containing sample metadata and input FASTA files
+      pattern: "*.{fasta,fa,fna}"
+  - reference_genomes:
+      type: file
+      description: Channel containing additional reference genomes for ANI analysis
+  - versions:
+      type: file
+      description: File containing software versions (emitted if TEST subworkflow runs)
+      pattern: "versions.yml"
+  - genome_sizes:
+      type: file
+      description: Channel containing the genome sizes JSON file
+      pattern: "*.json"
+  - mash_db:
+      type: file
+      description: Channel containing the custom MASH database file
+  - kraken2_db:
+      type: directory
+      description: Channel containing the Kraken2 database directory
+  - checkm2_db:
+      type: directory
+      description: Channel containing the CheckM2 database directory
+  - sylph_db:
+      type: directory
+      description: Channel containing the SYLPH database directory
+  - dataset_script:
+      type: file
+      description: Channel containing the datasets_download.py script
+  - evaluat_script:
+      type: file
+      description: Channel containing the evaluate.py script
+  - jsoncon_script:
+      type: file
+      description: Channel containing the json_convert.py script
+  - multiqc_script:
+      type: file
+      description: Channel containing the for_multiqc.py script
+  - summary_script:
+      type: file
+      description: Channel containing the summary.py script
+  - summfle_script:
+      type: file
+      description: Channel containing the summary_file.py script
+  - version_script:
+      type: file
+      description: Channel containing the versions.py script
+authors:
+  - "@erinyoung"

@@ -1,0 +1,39 @@
+name: "test"
+description: >-
+  Downloads test data or specific samples from external databases. Uses ENA's enaDataGet 
+  to download FASTQ files from SRA accessions, and NCBI Datasets to download FASTA 
+  genome assemblies from genome accessions.
+keywords:
+  - test
+  - download
+  - ena
+  - ncbi
+  - datasets
+  - sra
+  - fastq
+  - fasta
+components:
+  - ena_download
+  - datasets_download
+input:
+  - ch_sra_accessions:
+      type: value
+      description: Channel containing a list of SRA accessions to download from the European Nucleotide Archive (ENA)
+  - ch_genome_accessions:
+      type: value
+      description: Channel containing a list of genome accessions to download from NCBI Genomes
+output:
+  - fastq:
+      type: tuple
+      description: Tuple containing sample metadata and paired-end FASTQ reads downloaded from ENA
+      pattern: "*.{fastq,fq,fastq.gz,fq.gz}"
+  - fasta:
+      type: tuple
+      description: Tuple containing sample metadata and FASTA assembly files downloaded from NCBI
+      pattern: "*.{fasta,fa,fna}"
+  - versions:
+      type: file
+      description: File containing software versions for the downloading tools
+      pattern: "versions.yml"
+authors:
+  - "@erinyoung"

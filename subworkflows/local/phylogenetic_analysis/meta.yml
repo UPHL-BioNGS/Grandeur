@@ -1,0 +1,48 @@
+name: "phylogenetic_analysis"
+description: >-
+  Runs phylogenetic analysis. Performs gene prediction (Prokka or Bakta), core genome alignment 
+  (Panaroo or Roary), evaluates core genome robustness, calculates SNP distances (snp-dists), 
+  and constructs/visualizes phylogenetic trees (Mashtree, IQ-TREE, GoTree) and clustered heatmaps.
+keywords:
+  - phylogeny
+  - core genome
+  - tree
+  - annotation
+  - snp distance
+  - msa
+components:
+  - prokka
+  - bakta
+  - panaroo
+  - roary
+  - core_genome_evaluation
+  - ksnp4
+  - mashtree
+  - ska2
+  - iqtree
+  - gotree
+  - snpdists
+  - heatcluster
+input:
+  - evaluat_script:
+      type: file
+      description: Python script (evaluate.py) used for the custom core genome evaluation process
+  - ch_org_contigs:
+      type: tuple
+      description: Tuple containing sample metadata, predicted organism, and assembled contigs
+  - ch_top_hit:
+      type: tuple
+      description: Tuple containing metadata, organism info, and the reference genome from SKANI top hits
+output:
+  - for_multiqc:
+      type: file
+      description: Combined channel of output files routed to MultiQC for reporting (e.g., Prokka, Bakta, GoTree, snp-dists, Heatcluster outputs)
+  - summary:
+      type: file
+      description: Combined channel of summary TSV/CSV files (e.g., gotree_summary.tsv)
+  - versions:
+      type: file
+      description: File containing software versions
+      pattern: "versions.yml"
+authors:
+  - "@erinyoung"
