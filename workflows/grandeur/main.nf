@@ -104,6 +104,7 @@ workflow GRANDEUR {
             AVERAGE_NUCLEOTIDE_IDENTITY.out.ch_ecoli.ifEmpty([]),
             AVERAGE_NUCLEOTIDE_IDENTITY.out.ch_vibrio.ifEmpty([]),
             AVERAGE_NUCLEOTIDE_IDENTITY.out.ch_gc.ifEmpty([]),
+            AVERAGE_NUCLEOTIDE_IDENTITY.out.ch_acinetobacter.ifEmpty([]),
             summfle_script,
             jsoncon_script)
 
