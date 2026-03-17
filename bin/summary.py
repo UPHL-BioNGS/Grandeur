@@ -8,45 +8,12 @@
 import pandas as pd
 import json
 import re
+import numpy as np
 from os.path import exists
 
 ##########################################
 # helper functions                       #
 ##########################################
-
-def add_warning(df, new_warn_col):
-    """Safely appends new warnings to the main 'warnings' column."""
-    if new_warn_col in df.columns:
-        # Fill NaNs so string concatenation doesn't result in NaN
-        df['warnings'] = df['warnings'].fillna('')
-        df[new_warn_col] = df[new_warn_col].fillna('')
-        
-        # Join with a comma only if both strings have content
-        df['warnings'] = df.apply(
-            lambda row: ", ".join(filter(None, [str(row['warnings']), str(row[new_warn_col])])), 
-            axis=1
-        )
-        # Drop the tool-specific warning column to keep the dataframe clean
-        df.drop(new_warn_col, axis=1, inplace=True)
-    return df
-
-def check_isolate_purity(group):
-    """Checks a group of taxonomic hits for contamination signs."""
-    notes = []
-    # Check secondary hits for contamination (>1% abundance)
-    secondary_hits = group.iloc[1:] 
-    significant_contam = secondary_hits[secondary_hits['Taxonomic_abundance'] > 1.0]
-    
-    if not significant_contam.empty:
-        notes.append(f"sylph detected {len(significant_contam)} secondary species >1%")
-        
-    # Check primary hit for general purity
-    if not group.empty and group.iloc[0]['Taxonomic_abundance'] < 98.0:
-        notes.append("sylph predicts low purity isolate (<98%)")
-        
-    return ", ".join(notes)
-
-
 
 def parse_concatenated_json(json_string):
     """Generator to parse concatenated JSON objects from a string."""
@@ -63,13 +30,246 @@ def parse_file(summary_df, file, delim):
     analysis = str(file).split("_")[0]
     new_df = pd.read_csv(file, dtype = str, index_col= False, delimiter=delim)
     new_df = new_df.add_prefix(analysis + "_")
-    new_df = new_df.replace('Sample', 'sample', regex=True)
+    new_df.columns = new_df.columns.str.replace('Sample', 'sample', regex=True)
     new_df.columns = [x.lower() for x in new_df.columns]
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
 
     return summary_df
 
+
+def add_quast_warnings(df):
+    """
+    Checks various QUAST metrics and appends warnings to the 'warnings' column:
+    - Low N50 (< threshold, default 30,000)
+    - High contig count (> 500)
+    - Low read mapping rate (< 90%)
+    - High ambiguous bases (> 50 N's per 100 kbp)
+    - Largest contig too small (< 100,000 bp)
+    """
+    # Helper function to smoothly append warnings with a comma separator
+    def append_warning(mask, warn_msg):
+        df.loc[mask, 'warnings'] += np.where(
+            df.loc[mask, 'warnings'] == '',
+            warn_msg,
+            ',' + warn_msg
+        )
+
+    # Check: Low N50
+    if 'quast_n50' in df.columns:
+        n50_vals = pd.to_numeric(df['quast_n50'], errors='coerce')
+        mask_low_n50 = n50_vals < 30000
+        append_warning(mask_low_n50, f"Low N50 (<30000)")
+
+    # Check: High Number of Contigs (> 500)
+    if 'quast_#_contigs' in df.columns:
+        contigs = pd.to_numeric(df['quast_#_contigs'], errors='coerce')
+        mask_high_contigs = contigs > 500
+        append_warning(mask_high_contigs, "High contig count (>500)")
+
+    # Check: Low Read Mapping Rate (< 90%)
+    if 'quast_mapped_(%)' in df.columns:
+        mapped = pd.to_numeric(df['quast_mapped_(%)'], errors='coerce')
+        mask_low_map = mapped < 90.0
+        append_warning(mask_low_map, "Low mapping rate (<90%)")
+
+    # Check: High Ambiguous Bases (> 50 N's per 100 kbp)
+    if "quast_#_n's_per_100_kbp" in df.columns:
+        ns = pd.to_numeric(df["quast_#_n's_per_100_kbp"], errors='coerce')
+        mask_high_ns = ns > 50
+        append_warning(mask_high_ns, "High ambiguous bases (>50 Ns/100kbp)")
+
+    # Check: Small Largest Contig (< 100,000 bp)
+    if 'quast_largest_contig' in df.columns:
+        largest = pd.to_numeric(df['quast_largest_contig'], errors='coerce')
+        mask_small_largest = largest < 100000
+        append_warning(mask_small_largest, "Largest contig too small (<100kb)")
+    
+    return df
+
+def add_fastqc_warnings(df, min_seqs=500000, max_flagged_pct=5.0, min_len=100):
+    """
+    Checks FastQC metrics and appends warnings to the 'warnings' column:
+    - Low total sequences (< min_seqs, default 500,000)
+    - High percent flagged sequences (> max_flagged_pct, default 5.0%)
+    - Short average read length (< min_len, default 100 bp)
+    """
+    # Helper function to smoothly append warnings with a comma separator
+    def append_warning(mask, warn_msg):
+        df.loc[mask, 'warnings'] += np.where(
+            df.loc[mask, 'warnings'] == '',
+            warn_msg,
+            ',' + warn_msg
+        )
+
+    # Check: Low Total Sequences
+    if 'fastqc_total_sequences' in df.columns:
+        total_seqs = pd.to_numeric(df['fastqc_total_sequences'], errors='coerce')
+        mask_low_seqs = total_seqs < min_seqs
+        append_warning(mask_low_seqs, f"Low total sequences (<{min_seqs})")
+
+    # Check: High Flagged Sequences
+    if 'fastqc_percent_flagged' in df.columns:
+        flagged_pct = pd.to_numeric(df['fastqc_percent_flagged'], errors='coerce')
+        mask_high_flagged = flagged_pct > max_flagged_pct
+        append_warning(mask_high_flagged, f"High flagged sequences (>{max_flagged_pct}%)")
+
+    # Check: Short Average Length
+    if 'fastqc_avg_length' in df.columns:
+        avg_len = pd.to_numeric(df['fastqc_avg_length'], errors='coerce')
+        mask_short_len = avg_len < min_len
+        append_warning(mask_short_len, f"Short avg read length (<{min_len}bp)")
+
+    return df
+
+def add_checkm2_warnings(df, min_completeness=90.0, max_contamination=5.0):
+    """
+    Checks CheckM2 metrics and appends warnings to the 'warnings' column:
+    - Low completeness (< min_completeness, default 90.0%)
+    - High contamination (> max_contamination, default 5.0%)
+    """
+    # Helper function to smoothly append warnings with a comma separator
+    def append_warning(mask, warn_msg):
+        df.loc[mask, 'warnings'] += np.where(
+            df.loc[mask, 'warnings'] == '',
+            warn_msg,
+            ',' + warn_msg
+        )
+
+    # Check: Low Completeness
+    if 'checkm2_completeness' in df.columns:
+        completeness = pd.to_numeric(df['checkm2_completeness'], errors='coerce')
+        mask_low_comp = completeness < min_completeness
+        append_warning(mask_low_comp, f"Low completeness (<{min_completeness}%)")
+
+    # Check: High Contamination
+    if 'checkm2_contamination' in df.columns:
+        contamination = pd.to_numeric(df['checkm2_contamination'], errors='coerce')
+        mask_high_contam = contamination > max_contamination
+        append_warning(mask_high_contam, f"High contamination (>{max_contamination}%)")
+    
+    return df
+
+def add_taxonomy_warnings(df):
+    """
+    Checks taxonomic classification columns and appends a warning if the 
+    number of predicted organisms exceeds the tool's specific threshold.
+    """
+
+    # Helper function to smoothly append warnings with a comma separator
+    def append_warning(mask, warn_msg):
+        df.loc[mask, 'warnings'] += np.where(
+            df.loc[mask, 'warnings'] == '',
+            warn_msg,
+            ',' + warn_msg
+        )
+
+    # A threshold of 1 means anything 2 or higher gets flagged.
+    thresholds = {
+        'kraken2_predicted_organisms': 5,
+        'mash_screen_predicted_organisms': 5,
+        'skani_predicted_organisms': 7,
+        'sylph_predicted_organisms': 5,
+        # mash_dist tends to have higher hit counts natively
+        'mash_dist_predicted_organisms': 15 
+    }
+
+    # Loop through the columns and apply the warnings
+    for col, limit in thresholds.items():
+        if col in df.columns:
+            # Convert to numeric safely
+            hits = pd.to_numeric(df[col], errors='coerce')
+            
+            # Mask where hits are greater than the allowed limit
+            mask_too_many = hits > limit
+            
+            # Create a clean, tool-specific warning message
+            tool_name = col.split('_')[0].capitalize() # e.g., 'Kraken2', 'Skani'
+            if tool_name == 'Mash':
+                tool_name = "Mash " + col.split('_')[1].capitalize() # 'Mash Dist' or 'Mash Screen'
+                
+            warn_msg = f"Multiple organisms detected by {tool_name} (>{limit})"
+            
+            append_warning(mask_too_many, warn_msg)
+    
+    return df
+
+def add_sylph_warnings(df, min_abundance=90.0, min_ani=95.0):
+    """
+    Checks Sylph metrics and appends warnings to the 'warnings' column:
+    - Low Sequence Abundance (< 90%)
+    - Low Adjusted ANI (< 95%)
+    """
+
+    # Helper function to smoothly append warnings with a comma separator
+    def append_warning(mask, warn_msg):
+        df.loc[mask, 'warnings'] += np.where(
+            df.loc[mask, 'warnings'] == '',
+            warn_msg,
+            ',' + warn_msg
+        )
+
+    # Check: Low Abundance (Using Sequence_abundance as it's the raw data metric)
+    if 'sylph_Sequence_abundance' in df.columns:
+        abundance = pd.to_numeric(df['sylph_Sequence_abundance'], errors='coerce')
+        mask_low_abund = abundance < min_abundance
+        append_warning(mask_low_abund, f"Low Sylph abundance (<{min_abundance}%)")
+
+    # Check: Low Adjusted ANI
+    if 'sylph_Adjusted_ANI' in df.columns:
+        ani = pd.to_numeric(df['sylph_Adjusted_ANI'], errors='coerce')
+        mask_low_ani = ani < min_ani
+        append_warning(mask_low_ani, f"Low Sylph ANI (<{min_ani}%)")
+    
+    return df
+
+
+def add_st_mismatch_warning(df):
+    """
+    Compares all available ST columns and adds a warning if 
+    conflicting STs are found within a single row.
+    """
+
+    st_patterns = ['mlst_st', 'elgato_st', 'kleborate_st', 'meningotype_mlst', 'seqsero2s_st', 'shigapass_mlst']
+    
+    target_cols = [c for c in df.columns if c in st_patterns]
+
+    if not target_cols:
+        return df
+
+    def standardize(val):
+        """Cleans ST values for direct comparison."""
+        if pd.isna(val): return None
+        s = str(val).strip().upper()
+        # Filter out common empty/null placeholders
+        if s in ['', '-', 'ND', 'UNKNOWN', 'NOT FOUND', 'NONE', 'NAN', '.']: return None
+        
+        # Remove 'ST' prefix and any trailing '.0' from floats
+        s = s.replace('ST', '').strip()
+        if s.endswith('.0'): s = s[:-2]
+        return s
+    
+    def has_mismatch(row):
+        # Collect all unique, cleaned ST values present in this row
+        found_values = []
+        for col in target_cols:
+            clean = standardize(row[col])
+            if clean:
+                found_values.append(clean)
+        
+        # If we have multiple unique values (e.g., {'11', '14464'}), it's a mismatch
+        return len(set(found_values)) > 1
+    
+    # 3. Identify rows with conflicts
+    mask = df.apply(has_mismatch, axis=1)
+
+    # 4. Append warning with comma handling
+    warn_msg = "ST mismatch detected"
+    df.loc[mask, 'warnings'] = df.loc[mask, 'warnings'].apply(
+        lambda x: warn_msg if x == '' else f"{x},{warn_msg}"
+    )
+
+    return df
 
 ##########################################
 # defining files                         #
@@ -87,7 +287,7 @@ emmtyper       = 'emmtyper_summary.tsv'
 skani          = 'skani_summary.tsv'
 fastqc         = 'fastqc_summary.csv'
 genome_sizes   = "genome_sizes.json"
-kaptive        = "kaptive_summary.txt"
+kaptive        = "kaptive_summary.tsv"
 kleborate      = 'kleborate_results.tsv'
 kraken2        = 'kraken2_summary.csv'
 legsta         = 'legsta_summary.csv'
@@ -120,7 +320,7 @@ extended       = 'summary/grandeur_extended_summary'
 ##########################################
 
 csv_files = [ legsta, mykrobe, ngmaster ]
-tsv_files = [ drprg, checkm2, elgato, meningotype, seqsero2, seqsero2s, shigapass, kleborate, mlst, emmtyper, pbptyper ]
+tsv_files = [ drprg, checkm2, elgato, meningotype, seqsero2, seqsero2s, shigapass, kaptive, kleborate, mlst, emmtyper, pbptyper ]
 
 ##########################################
 # exiting if no input files              #
@@ -216,6 +416,11 @@ if exists(datasets):
     summary_df['datasets_num_genomes'] = num_genomes
 
 # fastqc : merging relevant rows into one
+import pandas as pd
+from os.path import exists
+
+# (Assuming summary_df and fastqc variables are defined)
+
 if exists(fastqc):
     file = fastqc
     print("Adding results for " + file)
@@ -223,43 +428,36 @@ if exists(fastqc):
     new_df = pd.read_csv(file, dtype=str, index_col=False)
     
     # FastQC output usually has two rows per sample (R1 and R2).
-    # We split them and merge them side-by-side to get totals.
     R1_df = new_df.drop_duplicates(subset='sample', keep="first").add_prefix('R1_')
     R2_df = new_df.drop_duplicates(subset='sample', keep="last").add_prefix('R2_')
     
     new_df = pd.merge(R1_df, R2_df, left_on="R1_sample", right_on="R2_sample", how='left')
     new_df['sample'] = new_df['R1_sample']
     
-    # Calculate totals
-    new_df[['R1_Total Sequences', 'R2_Total Sequences', 'R1_Sequences flagged as poor quality', 'R2_Sequences flagged as poor quality']] = new_df[['R1_Total Sequences', 'R2_Total Sequences', 'R1_Sequences flagged as poor quality', 'R2_Sequences flagged as poor quality']].astype(int)
-    new_df['total_sequences'] = new_df['R1_Total Sequences'] + new_df['R2_Total Sequences']
-    new_df['flagged_sequences'] = new_df['R1_Sequences flagged as poor quality'] + new_df['R2_Sequences flagged as poor quality']
-    new_df['percent_flagged'] = (new_df['flagged_sequences'] / new_df['total_sequences']) * 100
-
-    # Rename and Merge
-    new_df = new_df[['sample', 'total_sequences', 'flagged_sequences', 'percent_flagged']]
-    new_df = new_df.add_prefix('fastqc_')
+    # Safely convert to integers
+    new_df['R1_Total Sequences'] = new_df['R1_Total Sequences'].astype(int)
+    new_df['R2_Total Sequences'] = new_df['R2_Total Sequences'].astype(int)
+    new_df['R1_Sequences flagged as poor quality'] = new_df['R1_Sequences flagged as poor quality'].astype(int)
+    new_df['R2_Sequences flagged as poor quality'] = new_df['R2_Sequences flagged as poor quality'].astype(int)
     
-    summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on="fastqc_sample", how='left')
-    summary_df.drop("fastqc_sample", axis=1, inplace=True)
+    # Calculate total and flagged sequences (with the fastqc_ prefix your final script expects)
+    new_df['fastqc_total_sequences'] = new_df['R1_Total Sequences'] + new_df['R2_Total Sequences']
+    new_df['fastqc_flagged_sequences'] = new_df['R1_Sequences flagged as poor quality'] + new_df['R2_Sequences flagged as poor quality']
+    new_df['fastqc_percent_flagged'] = (new_df['fastqc_flagged_sequences'] / new_df['fastqc_total_sequences']) * 100
 
-# kaptive : merging relevant rows into one
-if exists(kaptive) :
-    file = kaptive
-    print("Adding results for " + file)
-    analysis = "kaptive"
-    new_df = pd.read_table(file, dtype = str, index_col= False, sep="\t")
-    new_df = new_df.add_prefix(analysis + '_')
-    new_df.columns = [x.lower() for x in new_df.columns]
-    K_df   = new_df[new_df['kaptive_best match locus'].str.contains("K")].copy()
-    K_df   = K_df.add_suffix('_K')
-    O_df   = new_df[new_df['kaptive_best match locus'].str.contains("O")].copy()
-    O_df   = O_df.add_suffix('_O')
-
-    summary_df = pd.merge(summary_df, O_df, left_on="sample", right_on=analysis + "_assembly_O", how = 'left')
-    summary_df.drop(analysis + "_assembly_O", axis=1, inplace=True)
-    summary_df = pd.merge(summary_df, K_df, left_on="sample", right_on=analysis + "_assembly_K", how = 'left')
-    summary_df.drop(analysis + "_assembly_K", axis=1, inplace=True)
+    # Split ranges like "35-251" by '-' and grab the last item (the max length), then convert to int
+    new_df['R1_max_len'] = new_df['R1_Sequence length'].astype(str).apply(lambda x: int(x.split('-')[-1]))
+    new_df['R2_max_len'] = new_df['R2_Sequence length'].astype(str).apply(lambda x: int(x.split('-')[-1]))
+    
+    # Calculate the average read length between R1 and R2
+    new_df['fastqc_avg_length'] = (new_df['R1_max_len'] + new_df['R2_max_len']) / 2
+    
+    # Drop the intermediate R1/R2 calculation columns so they don't clutter
+    cols_to_keep = ['sample', 'fastqc_total_sequences', 'fastqc_flagged_sequences', 'fastqc_percent_flagged', 'fastqc_avg_length']
+    fastqc_final_df = new_df[cols_to_keep].copy()
+    
+    # Merge into your main summary dataframe
+    summary_df = pd.merge(summary_df, fastqc_final_df, on="sample", how='left')
 
 # kraken2 : merging relevant rows into one
 if exists(kraken2):
@@ -384,7 +582,7 @@ if exists(plasmidfinder) :
 
     new_df = pd.DataFrame(all_data)
     new_df = new_df.add_prefix(analysis + "_")
-    new_df = new_df.replace('Sample', 'sample', regex=True)
+    new_df.columns = new_df.columns.str.replace('Sample', 'sample', regex=True)
     new_df.columns = [x.lower() for x in new_df.columns]
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
@@ -415,22 +613,42 @@ if exists(quast) or exists(quast_contig):
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
 
 # serotypefinder : splitting O and H groups, getting the top hit for O and H group, combining rows
-if exists(serotypefinder) :
+if exists(serotypefinder):
     file = serotypefinder
     print("Adding results for " + file)
     analysis = "serotypefinder"
-    new_df = pd.read_table(file, dtype = str, index_col= False)
+    new_df = pd.read_table(file, dtype=str, index_col=False)
+    
+    counts_df = new_df.groupby(['sample', 'Database']).size().unstack(fill_value=0).reset_index()
+    counts_df = counts_df.rename_axis(None, axis=1) # Clean up the column grouping name
+    
+    if 'O_type' not in counts_df.columns:
+        counts_df['O_type'] = 0
+    if 'H_type' not in counts_df.columns:
+        counts_df['H_type'] = 0
+        
+    counts_df = counts_df.rename(columns={
+        'O_type': analysis + '_O_count', 
+        'H_type': analysis + '_H_count'
+    })
+
     new_df = new_df.sort_values(by='Identity', ascending=False)
     new_df = new_df.drop_duplicates(subset=['sample', 'Database'], keep="first")
     new_df = new_df.add_prefix(analysis + '_')
-    H_df   = new_df[new_df[analysis + '_Database' ] == 'H_type'].copy()
-    H_df   = H_df.add_suffix('_H')
-    O_df   = new_df[new_df[analysis + '_Database' ] == 'O_type'].copy()
-    O_df   = O_df.add_suffix('_O')
-    summary_df = pd.merge(summary_df, O_df, left_on="sample", right_on=analysis + "_sample_O", how = 'left')
+    
+    H_df = new_df[new_df[analysis + '_Database' ] == 'H_type'].copy()
+    H_df = H_df.add_suffix('_H')
+    
+    O_df = new_df[new_df[analysis + '_Database' ] == 'O_type'].copy()
+    O_df = O_df.add_suffix('_O')
+    
+    summary_df = pd.merge(summary_df, O_df, left_on="sample", right_on=analysis + "_sample_O", how='left')
     summary_df.drop(analysis + "_sample_O", axis=1, inplace=True)
-    summary_df = pd.merge(summary_df, H_df, left_on="sample", right_on=analysis + "_sample_H", how = 'left')
+    
+    summary_df = pd.merge(summary_df, H_df, left_on="sample", right_on=analysis + "_sample_H", how='left')
     summary_df.drop(analysis + "_sample_H", axis=1, inplace=True)
+    
+    summary_df = pd.merge(summary_df, counts_df[['sample', analysis + '_O_count', analysis + '_H_count']], on="sample", how="left")
 
 
 # skani
@@ -510,22 +728,13 @@ if exists(multiqc_stats) :
     file = multiqc_stats
     print("Adding analysis parsed via multiqc in " + file)
     new_df = pd.read_table(file, dtype = str, index_col= False)
-    if "FastQC_mqc-generalstats-fastqc-avg_sequence_length" in new_df.columns :
-        tmp_df = new_df[["Sample","FastQC_mqc-generalstats-fastqc-avg_sequence_length"]].copy()
-        tmp_df["fastqc_avg_length"] = tmp_df["FastQC_mqc-generalstats-fastqc-avg_sequence_length"]
-        tmp_df.drop("FastQC_mqc-generalstats-fastqc-avg_sequence_length", axis=1, inplace=True)
-        tmp_df = tmp_df.dropna(subset=['fastqc_avg_length'])
-        
-        summary_df["possible_fastqc_name"] = summary_df['file'].str.split(" ").str[0].str.split(".").str[0]
-        summary_df = pd.merge(summary_df, tmp_df, left_on="possible_fastqc_name", right_on="Sample", how = 'left')
-        summary_df.drop("Sample", axis=1, inplace=True)
-        summary_df.drop("possible_fastqc_name", axis=1, inplace=True)
+    fastp_columns = [col for col in new_df.columns if col.startswith('fastp')]
 
-    if "fastp-pct_surviving" in new_df.columns :
-        tmp_df = new_df[["Sample","fastp-pct_surviving"]].copy()
-        tmp_df["fastp_pct_passed_reads"] = tmp_df["fastp-pct_surviving"].astype(float).round(2)
-        tmp_df.drop("fastp-pct_surviving", axis=1, inplace=True)
-        tmp_df = tmp_df.dropna(subset=['fastp_pct_passed_reads'])
+    if fastp_columns:
+        tmp_df = new_df[["Sample"] + fastp_columns].copy()
+        if 'fastp-pct_surviving' in tmp_df.columns:
+            tmp_df["fastp_pct_passed_reads"] = tmp_df["fastp-pct_surviving"].astype(float).round(2)
+            tmp_df.drop("fastp-pct_surviving", axis=1, inplace=True)
         
         summary_df["possible_fastp_name"] = summary_df['file'].str.split(" ").str[0].str.split(".").str[0]
         summary_df = pd.merge(summary_df, tmp_df, left_on="possible_fastp_name", right_on="Sample", how = 'left')
@@ -551,217 +760,238 @@ if exists(core):
 
 print("Predicting organism")
 
-# 1. Start with an empty column
 summary_df['predicted_organism'] = pd.NA
 
-# 2. Priority 1: Skani (Genome-level alignment)
 if 'skani_organism' in summary_df.columns:
     summary_df['predicted_organism'] = summary_df['predicted_organism'].fillna(summary_df['skani_organism'])
 
-# 3. Priority 2: Kraken2 (Read-level k-mer analysis)
 if 'kraken2_top_organism' in summary_df.columns:
     summary_df['predicted_organism'] = summary_df['predicted_organism'].fillna(summary_df['kraken2_top_organism'])
 
-# 4. Priority 3: Mash Dist (Fast k-mer sketching)
+if 'mash_screen_organism' in summary_df.columns:
+    summary_df['predicted_organism'] = summary_df['predicted_organism'].fillna(summary_df['mash_screen_organism'])
+
 if 'mash_dist_organism' in summary_df.columns:
     summary_df['predicted_organism'] = summary_df['predicted_organism'].fillna(summary_df['mash_dist_organism'])
 
-# 5. Final Cleanup
 summary_df['predicted_organism'] = summary_df['predicted_organism'].fillna("Unknown")
 
-# TODO : coverage estimates
-# TODO : warnings
-# TODO : E. coli / Shigella differentiation (add shigapass results)
+summary_df['predicted_organism'] = summary_df['predicted_organism'].str.strip()
 
-# ##########################################
-# # size and coverage estimates            #
-# ##########################################
-
-# if "fastqc_total_sequences" in summary_df.columns and 'fastqc_avg_length' in summary_df.columns:
-#     print("Estimating coverage")
-
-#     # 1. Calculate Total Raw Bases
-#     summary_df['total_bases'] = summary_df['fastqc_total_sequences'].astype(float) * summary_df['fastqc_avg_length'].astype(float)
+# Adjusting shigellas
+if 'shigapass_predicted_serotype' in summary_df.columns:
+    print("Refining E. coli and Shigella predictions using ShigaPass")
     
-#     # 2. Reference-based Coverage (Priority 1)
-#     if exists(genome_sizes):
-#         # Load your JSON mapping: {"Escherichia coli": 5000000, ...}
-#         with open(genome_sizes, 'r') as f:
-#             size_dict = json.load(f)
+    def refine_shigella_ecoli(row):
+        org = str(row.get('predicted_organism', ''))
+        shiga_pred = str(row.get('shigapass_predicted_serotype', ''))
         
-#         # Map the predicted organism to its expected size
-#         summary_df['expected_size'] = summary_df['predicted_organism'].map(size_dict)
-#         summary_df['rep_estimated_coverage'] = summary_df['total_bases'] / summary_df['expected_size'].astype(float)
+        if 'escherichia' in org.lower() or 'shigella' in org.lower():
+            
+            if pd.notna(shiga_pred) and shiga_pred.strip() != '' and shiga_pred.lower() != 'nan':
+                shiga_pred_clean = shiga_pred.strip().upper()
+                new_org = None
+                
+                if shiga_pred_clean.startswith('SS'):
+                    new_org = 'Shigella sonnei'
+                elif shiga_pred_clean.startswith('SF'):
+                    new_org = 'Shigella flexneri'
+                elif shiga_pred_clean.startswith('SB'):
+                    new_org = 'Shigella boydii'
+                elif shiga_pred_clean.startswith('SD'):
+                    new_org = 'Shigella dysenteriae'
+                elif 'NOT SHIGELLA' in shiga_pred_clean or 'EIEC' in shiga_pred_clean:
+                    if 'shigella' in org.lower():
+                        new_org = 'Escherichia coli'
+                    else:
+                        return org
+                
+                if new_org:
+                    if '_' in org:
+                        return new_org.replace(' ', '_')
+                    else:
+                        return new_org
+                        
+        return org
 
-#     # 3. QUAST-based Coverage (Priority 2)
-#     # Using 'total_length' because it's the actual size of your specific assembly
-#     if 'quast_total_length' in summary_df.columns:
-#         summary_df['quast_total_length'] = pd.to_numeric(summary_df['quast_total_length'], errors='coerce')
-#         summary_df['quast_estimated_coverage'] = summary_df['total_bases'] / summary_df['quast_total_length']
+    summary_df['predicted_organism'] = summary_df.apply(refine_shigella_ecoli, axis=1)
 
-#     # 4. Final Coverage Waterfall
-#     # We start with Reference-based, then fill gaps with QUAST, then Mash
-#     summary_df['final_coverage'] = pd.NA
+##########################################
+# size and coverage estimates            #
+##########################################
 
-#     if 'rep_estimated_coverage' in summary_df:
-#         summary_df['final_coverage'] = summary_df['final_coverage'].fillna(summary_df['rep_estimated_coverage'])
+# 1. Initialize final_coverage
+summary_df['final_coverage'] = np.nan
 
-#     if 'quast_estimated_coverage' in summary_df:
-#         summary_df['final_coverage'] = summary_df['final_coverage'].fillna(summary_df['quast_estimated_coverage'])
+# 2. Identify paired-end / fastq rows
+if 'file_2' in summary_df.columns:
+    is_paired_end = summary_df['file_2'].notna() & (summary_df['file_2'] != '')
+else:
+    # Failsafe: if the column is entirely missing, treat as False
+    is_paired_end = pd.Series(False, index=summary_df.index) 
 
-#     if 'mash_err_mash_estimated_coverage' in summary_df:
-#         summary_df['final_coverage'] = summary_df['final_coverage'].fillna(summary_df['mash_err_mash_estimated_coverage'].astype(float))
-
-#     # Round for the final report
-#     summary_df['final_coverage'] = pd.to_numeric(summary_df['final_coverage'], errors='coerce').round(2)
-
-
-
-# if 'expected_size' in summary_df and 'quast_total_length' in summary_df:
-#     summary_df['size_diff_ratio'] = (summary_df['quast_total_length'] / summary_df['expected_size']).astype(float)
+# 3. Calculate Coverage
+if "fastqc_total_sequences" in summary_df.columns and 'fastqc_avg_length' in summary_df.columns:
+    print("Estimating coverage")
     
-#     # Flag if assembly is >20% different than expected
-#     summary_df['size_warnings'] = summary_df['size_diff_ratio'].apply(
-#         lambda x: "Assembly size differs from expected" if (x > 1.2 or x < 0.8) else ""
-#     )
-#     summary_df = add_warning(summary_df, 'size_warnings')
-
-# # replacing Shigella with E. coli if ipaH+
-# if 'predicted_organism' and 'shigatyper_hit' in summary_df.columns:
-#     summary_df.loc[(summary_df['predicted_organism'].str.contains('Shigella')) & (~summary_df['shigatyper_hit'].str.contains('ipaH').notna()), 'predicted_organism'] = 'Escherichia coli'
-
-# # genome size columns : checkm2_genome_size, quast_total_length_(>=_0_bp)
-
-
-
-# # adding warnings for end user
-
-#     amrfinder: for when big five are found
-
-#     drprg?
-
-#     el gato?
-
-#     emmtyper?
-
-#     fastp:
-
-#     fastqc : 
-
-#     kaptive?
-
-#     kleborate:
-
-#     kraken2:
-
-#     menintotype?
-
-#     mlst?
-
-#     mykrobe?
-
-#     ngmaster?
-
-#     pbptyper?
-
-#     plasmidfinder?
-
-#     serotypefinder?
-
-#     shigapass?
-
-
-
-#     checkm2 : checkm2_completeness	checkm2_contamination
-
-#     seqsero2 and seqsero2s: seqsero2_predicted_antigenic_profile	seqsero2_predicted_serotype
-
-#     seqsero2 ST isn't the same as MLST ST
-
-#     fastqc : fastqc_flagged_sequences	fastqc_percent_flagged
-
-
-#     # Logic for warnings
-#     def check_fastqc_warnings(row):
-#         notes = []
-#         if row['total_sequences'] < 10000: notes.append("Low read count (<10k)")
-#         if row['percent_flagged'] > 1: notes.append("High % flagged sequences (>1%)")
-#         return ", ".join(notes)
-
-#     new_df['fastqc_warnings'] = new_df.apply(check_fastqc_warnings, axis=1)
+    total_seqs = pd.to_numeric(summary_df['fastqc_total_sequences'], errors='coerce')
+    avg_len = pd.to_numeric(summary_df['fastqc_avg_length'], errors='coerce')
+    summary_df['total_bases'] = total_seqs * avg_len
     
-#     # 5. Coverage Warnings
-#     summary_df['coverage_warnings'] = summary_df['final_coverage'].apply(
-#         lambda x: "Low coverage (<20x)" if x < 20 else ""
-#     )
-#     summary_df = add_warning(summary_df, 'coverage_warnings')
-
-
-#         # --- 2. WARNING LOGIC ---
-#     # Look for Carbapenemases specifically based on the Subclass column
-#     carb_mask = amr_df['Subclass'].str.contains('CARBAPENEM', na=False, case=False)
-#     amr_df['amr_warnings'] = ''
-#     amr_df.loc[carb_mask, 'amr_warnings'] = amr_df.loc[carb_mask, 'Element symbol'].apply(
-#         lambda x: f"Carbapenemase ({x})"
-#     )
-
-#     # Group warnings by Sample
-#     amr_warn_summary = amr_df.groupby('Name')['amr_warnings'].apply(
-#         lambda x: ", ".join(filter(None, x.unique()))
-#     ).reset_index()
-#     amr_warn_summary.columns = ['sample', 'amr_summary_warnings']
-
-#     # Merge warnings into summary_df and use helper
-#     summary_df = pd.merge(summary_df, amr_warn_summary, on='sample', how='left')
-#     summary_df = add_warning(summary_df, 'amr_summary_warnings')
-#     #print(summary_df)
-# # to do, fix this
-# # summary_df['warnings'] = summary_df['warnings'] + summary_df['kleborate_qc_warnings']
-
-#     # adding warning logic
-
-#     counts['warnings'] = counts['predicted_organisms'].apply(
-#         lambda x: "mash dist predicted >10 organisms" if x > 10 else ""
-#     )
-
-#         counts['warnings'] = counts['predicted_organisms'].apply(
-#         lambda x: "mash screen predicted >10 organisms" if x > 10 else ""
-#     )
-#     # Warning if more than 2 organisms are found at significant levels
-#     grouped['kraken2_warnings'] = grouped['report'].apply(lambda x: "Kraken2 detects multiple species" if len(x) > 2 else "")
-
-#     new_df['quast_warnings'] = ''
-
-#     checks = {
-#         'quast_n50': (25000, 'low N50', '<'),
-#         'quast_l50': (100, 'high L50', '>'),
-#         'quast_avg. coverage depth': (30, 'low coverage', '<'),
-#         "quast_# n's per 100 kbp": (500, 'high gap content (>500 Ns/100kbp)', '>')
-#     }
-
-#     for col, (thresh, msg, op) in checks.items():
-#         if col in new_df.columns:
-#             new_df[col] = pd.to_numeric(new_df[col], errors='coerce')
-#             mask = (new_df[col] < thresh) if op == '<' else (new_df[col] > thresh)
-#             new_df.loc[mask, 'quast_warnings'] = new_df.loc[mask, 'quast_warnings'].apply(
-#                 lambda x: f"{x}, {msg}" if x else msg
-#             )
-#     counts['skani_warnings'] = counts['organism'].apply(lambda x: "Skani predicted >10 organisms" if x > 10 else "")
-
-#     # Sort and create report
-#     purity_warnings = new_df.sort_values(['sample', 'Taxonomic_abundance'], ascending=[True, False])
+    if 'genome_sizes' in locals() and exists(genome_sizes):
+        with open(genome_sizes, 'r') as f:
+            data = json.load(f)
+            size_dict = data.get("genome_sizes", {})
+        summary_df['expected_size'] = summary_df['predicted_organism'].map(size_dict)
+    else:
+        summary_df['expected_size'] = np.nan
+        
+    expected_size_num = pd.to_numeric(summary_df['expected_size'], errors='coerce')
+    summary_df['cov_expected'] = summary_df['total_bases'] / expected_size_num
     
-#     # Now this line will work because 'check_isolate_purity' is defined at the top!
-#     purity_report = purity_warnings.groupby('sample').apply(check_isolate_purity).reset_index()
-#     purity_report.columns = ['sample', 'sylph_warnings']
+    quast_len = pd.to_numeric(summary_df.get('quast_total_length'), errors='coerce')
+    summary_df['cov_quast_len'] = summary_df['total_bases'] / quast_len
 
-#     summary_df['core_genome_warnings'] = summary_df['per_core_genome_genes'].apply(lambda x: "Low core genes," if x <= 85 else "")
-#     summary_df['warnings']            = summary_df['warnings'] + summary_df['core_genome_warnings']
+    summary_df['cov_quast_depth'] = pd.to_numeric(summary_df.get('quast_avg._coverage_depth'), errors='coerce')
+
+    mash_len = pd.to_numeric(summary_df.get('mash_err_genome_size'), errors='coerce')
+    summary_df['cov_mash_len'] = summary_df['total_bases'] / mash_len
+
+    # 1. Start with Preferred: Expected Size
+    summary_df['final_coverage'] = summary_df['cov_expected']
+    # 2. Fallback 1: Quast Genome Size
+    summary_df['final_coverage'] = summary_df['final_coverage'].fillna(summary_df['cov_quast_len'])
+    # Fallback 2: Quast Avg Coverage Depth
+    summary_df['final_coverage'] = summary_df['final_coverage'].fillna(summary_df['cov_quast_depth'])
+    # Fallback 3: Mash Estimates
+    summary_df['final_coverage'] = summary_df['final_coverage'].fillna(summary_df['cov_mash_len'])    
+    summary_df['final_coverage'] = summary_df['final_coverage'].where(is_paired_end, np.nan)
+    temp_cols = ['cov_expected', 'cov_quast_len', 'cov_quast_depth', 'cov_mash_len']
+    summary_df = summary_df.drop(columns=[c for c in temp_cols if c in summary_df.columns])
+
+summary_df['coverage'] = pd.to_numeric(summary_df['final_coverage'], errors='coerce').round(2)
+
+##########################################
+# warnings and flags                     #
+##########################################
+
+print("Adding warnings for QC")
+
+# coverage flags
+mask_under_30 = summary_df['coverage'] < 30
+mask_under_40 = (summary_df['coverage'] >= 30) & (summary_df['coverage'] < 40)
+
+# Define the warning messages
+warn_30 = "Low coverage (<30x)"
+warn_40 = "Low coverage (<40x)"
+
+# Apply the warnings using numpy to conditionally add a semicolon separator if needed
+summary_df.loc[mask_under_30, 'warnings'] += np.where(
+    summary_df.loc[mask_under_30, 'warnings'] == '', 
+    warn_30, 
+    ', ' + warn_30
+)
+
+summary_df.loc[mask_under_40, 'warnings'] += np.where(
+    summary_df.loc[mask_under_40, 'warnings'] == '', 
+    warn_40, 
+    ', ' + warn_40
+)
+
+size_cols = [
+    'checkm2_genome_size',
+    'kleborate_total_size',
+    'mash_err_genome_size',
+    'quast_total_length',
+    'expected_size'
+]
+
+# Keep only the columns that actually exist in the dataframe right now
+existing_cols = [col for col in size_cols if col in summary_df.columns]
+
+# If we don't have at least 2 columns to compare, we can skip the check
+if len(existing_cols) >= 2:
+
+    # Extract the sizes and safely convert to numeric (blanks/errors become NaN)
+    temp_sizes = summary_df[existing_cols].apply(pd.to_numeric, errors='coerce')
+
+    # Count how many valid, non-NaN values exist per row
+    valid_counts = temp_sizes.notna().sum(axis=1)
+
+    # Get the minimum and maximum size estimates for each row
+    max_size = temp_sizes.max(axis=1)
+    min_size = temp_sizes.min(axis=1)
+
+    # Create the boolean mask: Needs at least 2 values, min_size > 0 to avoid division by zero,
+    # and the difference between max and min must be greater than our threshold.
+    mask_disparity = (
+        (valid_counts >= 2) & 
+        (min_size > 0) & 
+        ((max_size - min_size) / min_size > 0.20)
+    )
+
+    # Define the warning message
+    warn_msg = f"Genome size disparity (>{int(0.20 * 100)}%)"
+
+    # Apply the warning, separated by a comma if other warnings already exist
+    summary_df.loc[mask_disparity, 'warnings'] += np.where(
+        summary_df.loc[mask_disparity, 'warnings'] == '',
+        warn_msg,
+        ',' + warn_msg
+    )
+
+summary_df = add_quast_warnings(summary_df)
+
+summary_df = add_fastqc_warnings(summary_df, min_seqs=500000, max_flagged_pct=5.0, min_len=100)
+
+summary_df = add_checkm2_warnings(summary_df, min_completeness=90.0, max_contamination=5.0)
+
+summary_df = add_taxonomy_warnings(summary_df)
+
+summary_df = add_sylph_warnings(summary_df, min_abundance=85.0, min_ani=95.0)
+
+summary_df = add_st_mismatch_warning(summary_df)
+
+
+# Identify existing SeqSero note columns
+note_cols = ['seqsero_note', 'seqsero2_note', 'seqsero2s_note']
+existing_note_cols = [c for c in note_cols if c in summary_df.columns]
+
+if existing_note_cols:
+    def has_note_text(row):
+        for col in existing_note_cols:
+            val = str(row[col]).strip()
+            # Ignore NaNs and common empty string indicators
+            if val and val.lower() not in ['nan', 'none', '-', '', '.']:
+                return True
+        return False
+
+    # Create the mask for rows containing notes
+    mask_has_note = summary_df.apply(has_note_text, axis=1)
+
+    # Define and apply the warning message
+    warn_msg = "SeqSero note detected"
+    
+    summary_df.loc[mask_has_note, 'warnings'] = summary_df.loc[mask_has_note, 'warnings'].apply(
+        lambda x: warn_msg if x == '' else f"{x},{warn_msg}"
+    )
+
+
+if 'kleborate_qc' in summary_df.columns:
+    mask_bad_qc = summary_df['kleborate_qc'].str.contains('fail|unreliable', case=False, na=False)
+        
+    warn_msg = "Kleborate QC Unreliable"
+        
+    summary_df.loc[mask_bad_qc, 'warnings'] = summary_df.loc[mask_bad_qc, 'warnings'].apply(
+            lambda x: warn_msg if x == '' else f"{x},{warn_msg}"
+        )
 
 
 ##########################################
 # creating files                         #
 ##########################################
+
+print("Creating final files")
 
 summary_df = summary_df.sort_values(by='sample')
 summary_df = summary_df.fillna("")
@@ -770,6 +1000,15 @@ summary_df.columns = summary_df.columns.str.replace(' ', '_')
 
 summary_df.to_csv(extended + '.tsv', index=False, sep="\t")
 summary_df.to_csv(extended + '.txt', index=False, sep=";")
+
+transposed_df = summary_df.set_index('sample').T
+transposed_df = transposed_df.reset_index().rename(columns={'index': 'metric'})
+transposed_df.to_csv(extended + '_transposed.tsv', index=False, sep="\t")
+transposed_df.to_csv(extended + '_transposed.txt', index=False, sep=";")
+
+# TODO : spestimator
+# TODO : datasets summary or download
+# TODO : MSA
 
 # reducing to the top 1 or 2 results for each analysis
 final_columns = [
@@ -781,7 +1020,10 @@ final_columns = [
     'fastqc_avg_length',
     'fastp_pct_passed_reads',
     'quast_#_contigs',
+    'quast_mapped_(%)',
     'quast_gc_(%)',
+    'checkm2_completeness',
+    'checkm2_contamination',
     'warnings',
     'amrfinder_genes_(per_cov/per_ident)',
 
@@ -789,21 +1031,22 @@ final_columns = [
     'predicted_organism',
     'mlst_matching_pubmlst_scheme',
     'mlst_st',
-    'fastani_top_organism',
-    'fastani_top_reference',
-    'fastani_top_ani_estimate',
-    'fastani_top_total_query_sequence_fragments',
-    'fastani_top_fragments_aligned_as_orthologous_matches',
-    'mash_reference',
-    'mash_mash-distance',
-    'mash_p-value',
-    'mash_matching-hashes',
-    'mash_organism',
+    'skani_ANI',
+    'skani_organism',
+    'sylph_Adjusted_ANI',
+    'sylph_Taxonomic_abundance',
+    'mash_dist_organism',
+    'mash_dist_mash-distance',
+    'mash_dist_p-value',
+    'mash_screen_organism',
+    'mash_screen_identity',
+    'mash_screen_shared-hashes',
+    'mash_screen_p-value',
     'plasmidfinder_plasmid_(identity)',
 
     # contamination
     # add sylph
-    'kraken2_organism_(per_fragment)',
+    'kraken2_report',
 
     # species specific information
     'seqsero2_predicted_antigenic_profile',
@@ -811,17 +1054,25 @@ final_columns = [
     'emmtyper_predicted_emm-type',
     'kleborate_virulence_score',
     'kleborate_resistance_score',
-    'kaptive_best_match_locus_O',
-    'kaptive_best_match_locus_K',
+    'kaptive_acinetobacter_baumannii_oc_locus_primary_reference_best_match_locus',
+    'kaptive_acinetobacter_baumannii_k_locus_primary_reference_best_match_locus',
+    'kaptive_klebsiella_k_locus_primary_reference_best_match_locus',
+    'kaptive_klebsiella_o_locus_primary_reference_best_match_locus',
+    'kaptive_vibriopara_kaptivedb_k_best_match_locus',
+    'kaptive_vibriopara_kaptivedb_o_best_match_locus',
     'elgato_st',
     'meningotype_serogroup',
+    'ngmaster_ng-mast/ng-star',
     'mykrobe_phylo_group',
     'mykrobe_species',
     'mykrobe_lineage',
     'drprg_susceptibility',
     'pbptyper_pbptype',
     'serotypefinder_Serotype_O',
-    'serotypefinder_Serotype_H'
+    'serotypefinder_Serotype_H',
+    'shigapass_ipah',
+    'shigapass_predicted_serotype'
+
     ]
 
 set_columns = []
