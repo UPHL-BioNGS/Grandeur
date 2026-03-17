@@ -157,8 +157,8 @@ Initializing Sample Input Files
 ┃ reads             ┃ dir   ┃ ${params.reads}
 ┃ fasta_list        ┃ file  ┃ ${params.fasta_list}
 ┃ fastas            ┃ dir   ┃ ${params.fastas}
-┃ sra_accessions    ┃ list  ┃ ${params.sra_accessions}
-┃ genome_accessions ┃ list  ┃ ${params.sra_accessions}
+┃ sra_accessions    ┃ array ┃ ${params.sra_accessions}
+┃ genome_accessions ┃ array ┃ ${params.genome_accessions}
 ┗━━━━━━━━━━━━━━━━━━━┻━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ------------------------------------------------------
@@ -171,7 +171,7 @@ Initializing Sample Input Files
     // using a sample sheet with the column header of 'sample,fastq_1,fastq_2'
     channel
       .fromPath("${params.sample_sheet}", type: "file")
-      .view { "Sample sheet found : ${it}" }
+      .view { it ->  "Sample sheet found : ${it}" }
       .splitCsv( header: true, sep: ',' )
       .map { row ->
         def meta = [id:row.sample]
@@ -200,7 +200,7 @@ Initializing Sample Input Files
               file(it[1][1], checkIfExists: true)])
           }
           .unique()
-          .view { "Paired-end FASTQ files found : ${it[0].id}" }
+          .view { it ->  "Paired-end FASTQ files found : ${it[0].id}" }
           .ifEmpty{
             log.fatal "The 'params.reads' was set, but no input files were found!"
             exit 1}
@@ -216,7 +216,7 @@ Initializing Sample Input Files
     // getting FASTAs from a file
     channel
       .fromPath("${params.fasta_list}", type: "file", checkIfExists : true)
-      .view { "FASTA list found : ${it}" }
+      .view { it ->  "FASTA list found : ${it}" }
       .splitText()
       .map{ it -> it.trim()}
       .map{ it -> file(it) }
@@ -237,7 +237,7 @@ Initializing Sample Input Files
       log.info "\t- The base name of each FASTA file is used as the \"meta.id\" value, and is used when generating output files and summarizing results."
       channel
         .fromPath("${params.fastas}/*{.fa,.fasta,.fna}")
-        .view { "FASTA file found : ${it.baseName}" }
+        .view { it ->  "FASTA file found : ${it.baseName}" }
         .map { it ->
           def meta = [id: it.baseName]
           tuple( meta, file(it, checkIfExists: true))
@@ -262,7 +262,7 @@ Initializing Sample Input Files
       .from(params.sra_accessions)
       .filter{ it -> it }
       .unique()
-      .view { "Using SRA accession : ${it}" }
+      .view { it ->  "Using SRA accession : ${it}" }
       .ifEmpty{
         log.fatal "The 'params.sra_accessions' was set, but no value was given!"
         exit 1}
@@ -278,7 +278,7 @@ Initializing Sample Input Files
       .from(params.genome_accessions)
       .filter{ it -> it }
       .unique()
-      .view { "Using Genome accession : ${it}" }
+      .view { it ->  "Using Genome accession : ${it}" }
       .ifEmpty{
         log.fatal "The 'params.genome_accessions' was set, but no value was given!"
         exit 1}
@@ -342,7 +342,7 @@ Initializing Databases and References
         log.info "Set 'params.kraken2_db' to **directory** with KRAKEN2 database"
         exit 1
         }
-        .view { "Using KRAKEN2 database : $it" }
+        .view { it ->  "Using KRAKEN2 database : $it" }
         .set { ch_kraken2_db }
   } else {
     log.info "FYI: A KRAKEN2 database can be loaded into Grandeur with 'params.kraken2_db', more information can be found at https://github.com/UPHL-BioNGS/Grandeur/wiki/kraken2_ref"
@@ -359,7 +359,7 @@ Initializing Databases and References
         log.info "Set 'params.mash_db' to file of pre-sketched MASH reference"
         exit 1
         }
-        .view { "Using MASH reference : $it" }
+        .view { it ->  "Using MASH reference : $it" }
         .set { ch_mash_db }
   } else {
     log.info "Using default MASH database located in STaPH-B/mash container (RefSeqSketchesDefaults.msh)."
@@ -377,7 +377,7 @@ Initializing Databases and References
         log.info "Set 'params.checkm2_db' to **directory** with CHECKM2 database"
         exit 1
         }
-        .view { "Using CHECKM2 database : $it" }
+        .view { it ->  "Using CHECKM2 database : $it" }
         .set { ch_checkm2_db }
   } else {
     log.info "FYI: A CHECKM2 database can be loaded into Grandeur with 'params.checkm2_db'."
@@ -395,7 +395,7 @@ Initializing Databases and References
         log.info "Set 'params.sylph_db' to **directory** with SYLPH database"
         exit 1
         }
-        .view { "Using SYLPH database : $it" }
+        .view { it ->  "Using SYLPH database : $it" }
         .set { ch_sylph_db }
   } else {
     log.info "FYI: A SYLPH database can be loaded into Grandeur with 'params.sylph_db'."
@@ -412,7 +412,7 @@ Initializing Databases and References
       .map{ it -> it.trim()}
       .map{ it -> file(it) }
       .unique()
-      .view{ "Additional reference genome from file : $it" }
+      .view{ it ->  "Additional reference genome from file : $it" }
       .set{ ch_reference_genomes }
   } else {
     log.info "FYI: Additional reference genomes can be loaded into Grandeur for ANI analysis with 'params.reference_genomes'."
@@ -459,7 +459,7 @@ Initializing Workflow Options
   }
 
 
-  if ( ! params.reads && ! params.fastas && ! params.input && ! params.sample_sheet && ! params.fasta_list ) { 
+  if ( ! params.reads && ! params.fastas && ! params.input && ! params.sample_sheet && ! params.fasta_list && params.sra_accessions.isEmpty() && params.genome_accessions.isEmpty() ) { 
     log.fatal "No input files were detected. Exiting."
     exit 0
   }
