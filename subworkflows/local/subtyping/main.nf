@@ -102,7 +102,7 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
     ch_summary  = ch_summary.mix(emmtyper_summary)
     ch_versions = ch_versions.mix(EMMTYPER.out.versions.first())
 
-    KAPTIVE(ch_vibrio.filter{it})      
+    KAPTIVE(ch_vibrio.mix(ch_acinetobacter).filter{it})      
 
     KAPTIVE.out.collect
       .collectFile(name: 'kaptive_summary.tsv',
@@ -114,7 +114,7 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
     ch_summary  = ch_summary.mix(kaptive_summary)
     ch_versions = ch_versions.mix(KAPTIVE.out.versions.first())
 
-    KLEBORATE(ch_kleb.filter{it}.combine(summfle_script))
+    KLEBORATE(ch_kleb.mix(ch_ecoli).filter{it}.combine(summfle_script))
 
     KLEBORATE.out.collect
       .collectFile(name: 'kleborate_results.tsv',
