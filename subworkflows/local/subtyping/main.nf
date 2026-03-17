@@ -25,6 +25,7 @@ workflow SUBTYPING {
     ch_ecoli
     ch_vibrio
     ch_gc
+    ch_acinetobacter
     summfle_script
     jsoncon_script
 
@@ -104,7 +105,7 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
     KAPTIVE(ch_vibrio.filter{it})      
 
     KAPTIVE.out.collect
-      .collectFile(name: 'kaptive_summary.txt',
+      .collectFile(name: 'kaptive_summary.tsv',
         keepHeader: true,
         sort: { file -> file.text },
         storeDir: "${params.outdir}/kaptive")
