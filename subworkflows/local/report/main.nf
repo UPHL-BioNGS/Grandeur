@@ -47,8 +47,9 @@ More information can be found at https://github.com/UPHL-BioNGS/Grandeur/wiki/re
             .mix(ch_fastas)
             .map { meta, files -> 
                 def sample = meta.id
-                def file1 = files[0].name
-                def file2 = files[1] ? files[1].name : null
+                def fileList = files instanceof Collection ? files : [files]
+                def file1 = fileList[0].name
+                def file2 = fileList.size() > 1 ? fileList[1].name : null
                 def version = "${workflow.manifest.version}"
                 return "${sample},${file1},${file2},${version}"
             }
