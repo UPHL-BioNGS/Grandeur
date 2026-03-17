@@ -22,11 +22,13 @@ process NGMASTER {
     mkdir -p ngmaster logs/${task.process}
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
+    cat ${contigs} > input_${prefix}.fasta
+
     ngmaster \
-      ${args} \
-      ${contigs} \
-      > ngmaster/${prefix}_ngmaster.csv \
-      2>> \$log_file
+        ${args} \
+        input_${prefix}.fasta \
+        > ngmaster/${prefix}_ngmaster.csv \
+        2>> \$log_file
 
         # ensure prefix is in summary file
     head -n 1  ngmaster/${prefix}_ngmaster.csv | awk '{print "sample,"    \$0 }' >  ${prefix}_ngmaster.csv
