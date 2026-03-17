@@ -46,8 +46,8 @@ process KAPTIVE {
       new_result="\\t\\t\\t\\t\\t\\t\\t\\t\\t\\t\\t\\t\\t\\t\\t\\t\\t\\t"
     fi
 
-    header="\$header\tGBK\t\$new_header"
-    result="\$result\t\${ref}.gbk\t\$new_result"
+    header="\$header\\tGBK\\t\$new_header"
+    result="\$result\\t\${ref}.gbk\\t\$new_result"
   done
 
   # combining all files into one
