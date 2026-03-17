@@ -24,6 +24,7 @@ process SEQSERO2S {
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
     SeqSero2S.py \
+      ${args} \
       -i ${file} \
       -t 4 \
       -m k \
