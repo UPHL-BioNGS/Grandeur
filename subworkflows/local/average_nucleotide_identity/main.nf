@@ -128,7 +128,7 @@ Relevant params and their values:
                 tuple(file.name, file)
             }
             .groupTuple()
-            .map { acc, files ->
+            .map { _acc, files ->
                 files[0]
             }
             .collect()
@@ -164,7 +164,7 @@ Relevant params and their values:
                     return tuple( meta , ["Unknown", "Unknown"] , contigs )
                 }
             }
-            .view { meta, organism, _ -> 
+            .view { meta, organism, _whatever -> 
                 "Sample ${meta.id} is predicted to be a ${organism[0]} ${organism[1]}" 
             }
             .set {ch_org_contigs }
@@ -174,8 +174,8 @@ Relevant params and their values:
             SKANI_DIST.out.top_hit
                 .collectFile(name: 'top_hits.txt', newLine: true)
                 .splitText()
-                .map { it.trim() }
-                .filter { it }
+                .map { it -> it.trim() }
+                .filter { it -> it }
                 .toList()
                 .map { list -> [filterList: list] }
                 .set{ ch_skani_top_hits }
@@ -186,8 +186,8 @@ Relevant params and their values:
                 .filter { file, meta ->
                     meta.filterList.any { id -> file.name.contains(id) }
                 }
-                .map { file, meta -> file }
-                .view { "Adding SKANI top hit ${it.name} to analysis." }
+                .map { file, _meta -> file }
+                .view { it ->  "Adding SKANI top hit ${it.name} to analysis." }
                 .map { it ->
                     def meta = [id:it.baseName]
                     def species = it.name.split("_")[0]

@@ -8,19 +8,19 @@ include { QUAST }          from '../../../modules/local/quast'
 workflow QUALITY_ASSESSMENT {
     take:
     ch_raw_reads
-    ch_clean_reads
-    ch_fastas_without_reads
+    _ch_clean_reads
+    _ch_fastas_without_reads
     ch_all_fastas
     ch_reads_contigs
     ch_contigs_org
     ch_checkm2_db
-    summfle_script
+    _summfle_script
 
     main:
     ch_for_multiqc = channel.empty()
     ch_versions    = channel.empty()
     ch_summary     = channel.empty()
-    ch_bams        = channel.empty()
+    _ch_bams        = channel.empty()
 
 
     log.info """
@@ -80,7 +80,7 @@ Relevant params and their values:
 
     }
 
-    AMRFINDER(ch_contigs_org.filter{it})
+    AMRFINDER(ch_contigs_org.filter{ it -> it })
 
     AMRFINDER.out.collect
         .collectFile(name: 'amrfinderplus.txt',
@@ -92,7 +92,7 @@ Relevant params and their values:
     ch_summary  = ch_summary.mix(amrfinderplus_summary)
     ch_versions = ch_versions.mix(AMRFINDER.out.versions.first())
 
-    QUAST(ch_reads_contigs.filter{it})
+    QUAST(ch_reads_contigs.filter{ it -> it })
     ch_versions = ch_versions.mix(QUAST.out.versions.first())
 
     QUAST.out.collect
@@ -113,7 +113,7 @@ Relevant params and their values:
         .set{ quast_contig_summary }
     ch_summary = ch_summary.mix(quast_contig_summary)
 
-    MLST(ch_all_fastas.filter{it})
+    MLST(ch_all_fastas.filter{ it -> it })
     ch_versions = ch_versions.mix(MLST.out.versions.first())
 
     MLST.out.collect
@@ -124,7 +124,7 @@ Relevant params and their values:
         .set{ mlst_summary }
     ch_summary = ch_summary.mix(mlst_summary)
 
-    PLASMIDFINDER(ch_all_fastas.filter{it})
+    PLASMIDFINDER(ch_all_fastas.filter{ it -> it })
     ch_versions = ch_versions.mix(PLASMIDFINDER.out.versions.first())
 
     PLASMIDFINDER.out.collect
@@ -137,7 +137,7 @@ Relevant params and their values:
 
 
     if (params.checkm2_db) {    
-        CHECKM2(ch_all_fastas.filter{it}.combine(ch_checkm2_db))
+        CHECKM2(ch_all_fastas.filter{ it -> it }.combine(ch_checkm2_db))
         ch_versions = ch_versions.mix(CHECKM2.out.versions.first())
 
         CHECKM2.out.report

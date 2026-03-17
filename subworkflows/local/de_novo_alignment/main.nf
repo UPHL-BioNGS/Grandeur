@@ -37,7 +37,7 @@ Relevant params and their values:
     // for downstream analyses
     reads_contigs = SPADES.out.reads_contigs
     clean_reads   = FASTP.out.fastq
-    contigs       = SPADES.out.contigs.filter{it[1] != null}
+    contigs       = SPADES.out.contigs.filter{it -> it[1] != null}
 
     // for multiqc
     for_multiqc = FASTP.out.fastp_files
