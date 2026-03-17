@@ -7,8 +7,8 @@ process KAPTIVE {
   tuple val(meta), file(contigs)
 
   output:
-  path "kaptive/${meta.id}_table.txt", emit: collect, optional: true
-  path "kaptive/*", emit: files
+  tuple val(meta), file("kaptive/*.txt"), emit: files, optional: true
+  path "kaptive/*_kaptive.tsv", emit: collect, optional: true
   path "logs/${task.process}/*.log", emit: log
   path "versions.yml", emit: versions
 
@@ -19,34 +19,44 @@ process KAPTIVE {
   def args   = task.ext.args   ?: ''
   def prefix = task.ext.prefix ?: "${meta.id}"
   """
-    mkdir -p kaptive logs/${task.process}
-    log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
+  mkdir -p kaptive logs/${task.process}
+  log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
-    kaptive\
-      assembly \
-      ${args} \
-      /kaptive/reference_database/VibrioPara_Kaptivedb_K.gbk \
-      ${contigs} \
-      --threads ${task.cpus} \
-      --out kaptive/${prefix}_VibrioPara_Kaptivedb_K.txt \
-      | tee -a \$log_file
+  header="sample"
+  result="${prefix}"
 
+  for ref in \$(ls /kaptive/reference_database/*.gbk | cut -f 4 -d "/" | sed 's/.gbk//g')
+  do
+    echo "Running kaptive against \${ref}.gbk " | tee -a \$log_file
     kaptive \
-      assembly \
       ${args} \
-      /kaptive/reference_database/VibrioPara_Kaptivedb_O.gbk \
+      assembly \
+      /kaptive/reference_database/\${ref}.gbk \
       ${contigs} \
-      --threads ${task.cpus} \
-      --out kaptive/${prefix}_VibrioPara_Kaptivedb_O.txt \
+      --threads 6 \
+      --out kaptive/${prefix}_\${ref}.txt  \
       | tee -a \$log_file
 
-    grep -h "Other genes" kaptive/${prefix}* | head -n 1 > ${prefix}_table.txt
-    grep -h ${prefix} kaptive/${prefix}* >> ${prefix}_table.txt
-    mv ${prefix}_table.txt kaptive/${prefix}_table.txt
+    new_header=\$(head -n 1 kaptive/${prefix}_\${ref}.txt | sed "s/\t/\t\${ref}_/g")
+    line_count=\$(wc -l < kaptive/${prefix}_\${ref}.txt)
+    if [ "\$line_count" -gt 1 ]
+    then
+      new_result=\$(tail -n +2 kaptive/${prefix}_\${ref}.txt)
+    else
+      new_result="\\t\\t\\t\\t\\t\\t\\t\\t\\t\\t\\t\\t\\t\\t\\t\\t\\t\\t"
+    fi
 
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-      kaptive: \$( echo \$(kaptive --version | sed 's/Kaptive v//;'))
-    END_VERSIONS
+    header="\$header\tGBK\t\$new_header"
+    result="\$result\t\${ref}.gbk\t\$new_result"
+  done
+
+  # combining all files into one
+  echo -e "\$header" >  kaptive/${prefix}_kaptive.tsv
+  echo -e "\$result" >> kaptive/${prefix}_kaptive.tsv
+
+  cat <<-END_VERSIONS > versions.yml
+  "GRANDEUR:SUBTYPING:KAPTIVE":
+    kaptive: \$( echo \$(kaptive --version | sed 's/Kaptive v//;'))
+  END_VERSIONS
   """
 }
