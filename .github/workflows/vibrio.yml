@@ -42,7 +42,7 @@ jobs:
       - name: Check Vibrio species
         run: |
           grep -i vibrio grandeur/skani/skani_summary.tsv || { echo "Error: No Vibrio records found."; exit 1; }
-          for file in grandeur/grandeur_summary.tsv grandeur/summary/software_versions.yml grandeur/multiqc/multiqc_report.html grandeur/kaptive/kaptive_summary.txt
+          for file in grandeur/grandeur_summary.tsv grandeur/summary/software_versions.yml grandeur/multiqc/multiqc_report.html grandeur/kaptive/kaptive_summary.tsv
           do
             head $file
             wc -l $file
