@@ -74,14 +74,14 @@ Exit status  : ${workflow.exitStatus ?: 'N/A'}
 ┃ Pipeline Completed Successfully                                    ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
 │ All results have been saved to:                                    │
-│  📁 ${params.outdir}                                               │
+│  ${params.outdir}                                               │
 """
         // Only point out the summary and MultiQC if they were actually generated
         if ( ! params.skip_extras ) {
             log.info """│                                                                    │
 │ Key consolidated reports to check:                                 │
-│  📄 ${params.outdir}/grandeur_summary.tsv                          │
-│  📊 ${params.outdir}/multiqc/multiqc_report.html                   │"""
+│  ${params.outdir}/grandeur_summary.tsv                          │
+│  ${params.outdir}/multiqc/multiqc_report.html                   │"""
         }
         
         log.info """└────────────────────────────────────────────────────────────────────┘
