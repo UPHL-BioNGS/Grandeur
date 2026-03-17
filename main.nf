@@ -55,17 +55,54 @@ workflow {
 
 }
 
-if ( ! params.skip_extras ) {
-  workflow.onComplete {
-    log.info """------------------------------------------------------
+workflow.onComplete {
+    
+    log.info """
+------------------------------------------------------------------------------------------------------------
 
-GRANDEUR workflow completed at: $workflow.complete
-
-Execution status: ${ workflow.success ? 'OK' : 'failed' }
-
-------------------------------------------------------
+GRANDEUR pipeline execution summary
+-----------------------------------
+Completed at : ${workflow.complete}
+Duration     : ${workflow.duration}
+Status       : ${workflow.success ? 'SUCCESS' : 'FAILED'}
+Exit status  : ${workflow.exitStatus ?: 'N/A'}
 """
-  }
+
+    if (workflow.success) {
+        log.info """
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Pipeline Completed Successfully                                    ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ All results have been saved to:                                    │
+│  📁 ${params.outdir}                                               │
+"""
+        // Only point out the summary and MultiQC if they were actually generated
+        if ( ! params.skip_extras ) {
+            log.info """│                                                                    │
+│ Key consolidated reports to check:                                 │
+│  📄 ${params.outdir}/grandeur_summary.tsv                          │
+│  📊 ${params.outdir}/multiqc/multiqc_report.html                   │"""
+        }
+        
+        log.info """└────────────────────────────────────────────────────────────────────┘
+
+Thanks for using Grandeur! The view really is great from up here.
+------------------------------------------------------------------------------------------------------------
+"""
+    } else {
+        log.info """
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Pipeline Failed                                                    ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ Error message:                                                     │
+│ ${workflow.errorMessage ?: 'No specific error message provided.'}
+│                                                                    │
+│ Please check the .nextflow.log file for more detailed information. │
+└────────────────────────────────────────────────────────────────────┘
+
+------------------------------------------------------------------------------------------------------------
+"""
+    }
 }
 
 /*
