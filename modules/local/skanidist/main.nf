@@ -20,7 +20,7 @@ process SKANI_DIST {
     tuple val(meta), file("Escherichia/*"), emit: ecoli, optional: true
     tuple val(meta), file("Vibrio/*"), emit: vibrio, optional: true
     tuple val(meta), file("Neisseria/*"), emit: gc, optional: true
-    path "skani/*txt", emit: skani, optional: true
+    path "skani/*skani.txt", emit: skani, optional: true
     path "top_hit/*", emit: top_hit, optional: true
     path "logs/${task.process}/*.log", emit: log
     path "versions.yml", emit: versions
@@ -30,6 +30,7 @@ process SKANI_DIST {
 
     script:
     def args   = task.ext.args   ?: '--short-header -s 90'
+    def argss  = task.ext.argss  ?: '--short-header'
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     mkdir -p skani top_hit logs/${task.process}
@@ -42,8 +43,22 @@ process SKANI_DIST {
         -o skani/${prefix}_skani.tsv \
         | tee -a \$log_file
 
+    line_count=\$(wc -l < skani/${prefix}_skani.tsv)
+    if [ "\$line_count" -eq 1 ]
+    then
+        echo "No results using args \"${args}\". Will use argss \"${argss}\"" | tee -a \$log_file
+        skani \
+            dist \
+            ${argss} \
+            -q ${prefix}.fasta \
+            -r skani_db/* \
+            -t ${task.cpus} \
+            -o skani/${prefix}_skani.tsv \
+            | tee -a \$log_file
+    fi
+
     # ensure prefix is in summary file
-    head -n 1 skani/${prefix}_skani.tsv | awk '{print "sample\\t" \$0}' > skani/${prefix}_skani.txt
+    head -n  1 skani/${prefix}_skani.tsv | awk '{print "sample\\t"    \$0}' >  skani/${prefix}_skani.txt
     tail -n +2 skani/${prefix}_skani.tsv | awk '{print "${prefix}\\t" \$0}' >> skani/${prefix}_skani.txt
 
     cat <<-END_VERSIONS > versions.yml
