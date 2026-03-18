@@ -9,6 +9,7 @@ import pandas as pd
 import json
 import re
 import numpy as np
+import os
 from os.path import exists
 
 ##########################################
@@ -271,6 +272,166 @@ def add_st_mismatch_warning(df):
 
     return df
 
+
+def create_node(parent=None):
+    """Creates a basic dictionary representing a node."""
+    return {
+        'parent': parent,
+        'children': [],
+        'name': "",
+        'length': 0.0
+    }
+
+def parse_newick(newick_str):
+    """Parses a newick string into linked dictionaries."""
+    newick_str = newick_str.strip().replace('\n', '').replace('\r', '')
+    root = create_node()
+    current_node = root
+    state = 'name'
+    buffer = ""
+
+    for char in newick_str:
+        if char == '(':
+            new_node = create_node(parent=current_node)
+            current_node['children'].append(new_node)
+            current_node = new_node
+            state = 'name'
+            buffer = ""
+        elif char == ',':
+            if state == 'name':
+                current_node['name'] = buffer.strip()
+            else:
+                if buffer.strip(): current_node['length'] = float(buffer)
+            
+            new_node = create_node(parent=current_node['parent'])
+            current_node['parent']['children'].append(new_node)
+            current_node = new_node
+            state = 'name'
+            buffer = ""
+        elif char == ')':
+            if state == 'name':
+                current_node['name'] = buffer.strip()
+            else:
+                if buffer.strip(): current_node['length'] = float(buffer)
+            
+            current_node = current_node['parent']
+            state = 'name'
+            buffer = ""
+        elif char == ':':
+            if state == 'name':
+                current_node['name'] = buffer.strip()
+            state = 'length'
+            buffer = ""
+        elif char == ';':
+            if state == 'name':
+                current_node['name'] = buffer.strip()
+            elif state == 'length':
+                if buffer.strip(): current_node['length'] = float(buffer)
+            break
+        else:
+            buffer += char
+
+    return root
+
+def get_tip_distance_stats(newick):
+    """Calculates the average, min, and max distances using dictionaries."""
+
+    with open(newick, 'r') as f:
+        newick_str = f.read()
+
+    file_basename = os.path.basename(newick)
+
+    root = parse_newick(newick_str)
+    
+    tips = []
+    def find_tips(node):
+        if len(node['children']) == 0 and node['name']: 
+            tips.append(node)
+        for child in node['children']:
+            find_tips(child)
+            
+    find_tips(root)
+    
+    if len(tips) < 2:
+        return pd.DataFrame()
+        
+    results = {}
+    
+    for start_tip in tips:
+        distances = {}
+        visited = set()
+        queue = [(start_tip, 0.0)]
+        visited.add(id(start_tip))
+        
+        while queue:
+            current, dist = queue.pop(0)
+            is_tip = len(current['children']) == 0
+            
+            if is_tip and id(current) != id(start_tip):
+                distances[current['name']] = dist
+                
+            parent = current['parent']
+            if parent and id(parent) not in visited:
+                visited.add(id(parent))
+                queue.append((parent, dist + current['length']))
+                
+            for child in current['children']:
+                if id(child) not in visited:
+                    visited.add(id(child))
+                    queue.append((child, dist + child['length']))
+                    
+        dist_values = list(distances.values())
+        results[start_tip['name']] = {
+            'average': sum(dist_values) / len(dist_values),
+            'min': min(dist_values),
+            'max': max(dist_values)
+        }
+    
+    # 3. Add the basename to the dictionary comprehensions
+    df_data = [{'file': file_basename, 'sample': tip, **metrics} for tip, metrics in results.items()]
+    
+    # 4. Convert to a Pandas DataFrame
+    df = pd.DataFrame(df_data)
+    df = df.add_prefix(file_basename + "_")
+    df['sample'] = df[file_basename + "_sample"]
+
+    return df
+
+
+def get_snp_distance_stats(filepath):
+    """Calculates the average, min, and max distances from a snp-dists matrix."""
+    
+    # 1. Read the matrix. 
+    # index_col=0 tells pandas to use the first column (sample names) as the row labels.
+    df_matrix = pd.read_csv(filepath, index_col=0)
+    
+    # 2. Extract the basename of the file
+    file_basename = os.path.basename(filepath)
+    
+    results = []
+    
+    # 3. Loop through each sample in the index
+    for sample in df_matrix.index:
+        # Get the distances for this sample, and drop the distance to itself
+        # We ensure 'sample' is treated as a string to match pandas column names
+        distances = df_matrix.loc[sample].drop(str(sample))
+        
+        # Calculate the stats and append to our results list
+        results.append({
+            'file': file_basename,
+            'sample': sample,
+            'average': distances.mean(),
+            'min': distances.min(),
+            'max': distances.max()
+        })
+        
+    # 4. Convert to a Pandas DataFrame
+    df = pd.DataFrame(results)
+    df = df.add_prefix(file_basename + "_")
+    df['sample'] = df[file_basename + "_sample"]
+    
+    return df
+
 ##########################################
 # defining files                         #
 ##########################################
@@ -279,7 +440,7 @@ def add_st_mismatch_warning(df):
 names          = 'input_files.txt'
 amrfinderplus  = 'amrfinderplus.txt'
 checkm2        = 'checkm2_summary.tsv'
-core           = 'multiqc_core_genome_evaluation-plot.txt'
+core           = 'multiqc_core_genome_evaluation.txt'
 datasets       = 'datasets_summary.csv'
 drprg          = 'drprg_summary.tsv'
 elgato         = 'elgato_summary.tsv'
@@ -306,10 +467,14 @@ seqsero2       = 'seqsero2_results.txt'
 seqsero2s      = 'seqsero2s_results.txt'
 serotypefinder = 'serotypefinder_results.txt'
 shigapass      = 'shigapass_summary.tsv'
-spestimator    = 'spestimator_summary.tsv'
+spestimator    = 'spestimator_summary.csv'
 sylph          = 'sylph_summary.tsv'
 multiqc_json   = 'multiqc_data.json'
 multiqc_stats  = 'multiqc_general_stats.txt'
+
+gotree = 'gotree_summary.tsv'
+snpdist_matrices = ['snpdists_core_gene_alignment.txt', 'snpdists_ska_alignment.txt']
+newick_files = ['iqtree_core_gene_alignment.treefile.nwk', 'iqtree_ska_alignment.treefile.nwk', 'mashtree.nwk']
 
 # final files
 final          = 'grandeur_summary'
@@ -344,7 +509,7 @@ if not exists(names) :
 
 input_cols = ['sample', 'file', 'file_2', 'version']
 
-summary_df = pd.read_csv(names, dtype = str, names=input_cols, index_col=None, header=0, delimiter=",")
+summary_df = pd.read_csv(names, dtype = str, names=input_cols, delimiter=",")
 summary_df['warnings'] = ''
 columns = list(summary_df.columns)
 
@@ -357,7 +522,6 @@ for file in csv_files :
 for file in tsv_files :
     if exists(file) :
         summary_df = parse_file(summary_df, file, "\t")        
-
 
 # for specific tools
 
@@ -415,12 +579,8 @@ if exists(datasets):
     # Assign this constant value to a new column in the main summary
     summary_df['datasets_num_genomes'] = num_genomes
 
-# fastqc : merging relevant rows into one
-import pandas as pd
-from os.path import exists
 
 # (Assuming summary_df and fastqc variables are defined)
-
 if exists(fastqc):
     file = fastqc
     print("Adding results for " + file)
@@ -872,6 +1032,39 @@ if "fastqc_total_sequences" in summary_df.columns and 'fastqc_avg_length' in sum
 summary_df['coverage'] = pd.to_numeric(summary_df['final_coverage'], errors='coerce').round(2)
 
 ##########################################
+# summarizing phylogenetics              #
+##########################################
+
+for nwk in newick_files:
+    if exists(nwk) :
+        print("Adding results for " + nwk)
+        new_df = get_tip_distance_stats(nwk)
+        summary_df = pd.merge(summary_df, new_df, on="sample", how = 'left')
+
+for snp_matrix in snpdist_matrices:
+    if exists(snp_matrix) :
+        print("Adding results for " + snp_matrix)
+        new_df = get_snp_distance_stats(snp_matrix)
+        summary_df = pd.merge(summary_df, new_df, on="sample", how = 'left')
+
+if exists(gotree):
+    print("Adding average values from gotree")
+    new_df = pd.read_csv(gotree, sep='\t')
+    for index, row in new_df.iterrows():
+        analysis_name = row['sample']
+        
+        prefix = analysis_name.replace('gotree_', '').replace('.treefile', '')
+        
+        # 3. Create the new column names
+        mean_col = f"{prefix}_meanbrlen"
+        sum_col = f"{prefix}_sumbrlen"
+        
+        # 4. Assign the values to the main DataFrame
+        # Pandas will automatically broadcast this single value to every row
+        summary_df[mean_col] = row['meanbrlen']
+        summary_df[sum_col]  = row['sumbrlen']
+
+##########################################
 # warnings and flags                     #
 ##########################################
 
@@ -1006,9 +1199,6 @@ transposed_df = transposed_df.reset_index().rename(columns={'index': 'metric'})
 transposed_df.to_csv(extended + '_transposed.tsv', index=False, sep="\t")
 transposed_df.to_csv(extended + '_transposed.txt', index=False, sep=";")
 
-# TODO : spestimator
-# TODO : datasets summary or download
-# TODO : MSA
 
 # reducing to the top 1 or 2 results for each analysis
 final_columns = [
@@ -1033,6 +1223,8 @@ final_columns = [
     'mlst_st',
     'skani_ANI',
     'skani_organism',
+    'spestimator_num_refs',
+    'datasets_num_genomes',
     'sylph_Adjusted_ANI',
     'sylph_Taxonomic_abundance',
     'mash_dist_organism',
@@ -1045,7 +1237,6 @@ final_columns = [
     'plasmidfinder_plasmid_(identity)',
 
     # contamination
-    # add sylph
     'kraken2_report',
 
     # species specific information
@@ -1071,7 +1262,30 @@ final_columns = [
     'serotypefinder_Serotype_O',
     'serotypefinder_Serotype_H',
     'shigapass_ipah',
-    'shigapass_predicted_serotype'
+    'shigapass_predicted_serotype',
+
+    # phylogenetic analysis results
+    'snpdists_core_gene_alignment.txt_average',
+    'snpdists_core_gene_alignment.txt_min',
+    'snpdists_core_gene_alignment.txt_max',
+    'iqtree_core_gene_alignment.treefile.nwk_average',
+    'iqtree_core_gene_alignment.treefile.nwk_min',
+    'iqtree_core_gene_alignment.treefile.nwk_max',
+    'iqtree_core_gene_alignment_meanbrlen',
+    'iqtree_core_gene_alignment_sumbrlen',
+    'snpdists_ska_alignment.txt_average',
+    'snpdists_ska_alignment.txt_min',
+    'snpdists_ska_alignment.txt_max',
+    'iqtree_ska_alignment.treefile.nwk_average',
+    'iqtree_ska_alignment.treefile.nwk_min',
+    'iqtree_ska_alignment.treefile.nwk_max',
+    'iqtree_ska_alignment_meanbrlen',
+    'iqtree_ska_alignment_sumbrlen',
+    'mashtree.nwk_average',
+    'mashtree.nwk_min',
+    'mashtree.nwk_max',
+    'mashtree_meanbrlen',
+    'mashtree_sumbrlen'
 
     ]
 
