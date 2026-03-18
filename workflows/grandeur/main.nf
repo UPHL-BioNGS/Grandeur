@@ -123,6 +123,7 @@ workflow GRANDEUR {
             ch_top_hit.ifEmpty([]))
             
         ch_for_multiqc = ch_for_multiqc.mix(PHYLOGENETIC_ANALYSIS.out.for_multiqc)
+        ch_for_summary = ch_for_summary.mix(PHYLOGENETIC_ANALYSIS.out.for_summary)
         ch_versions    = ch_versions.mix(PHYLOGENETIC_ANALYSIS.out.versions)
     }
 
