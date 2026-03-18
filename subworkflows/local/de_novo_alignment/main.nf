@@ -53,7 +53,7 @@ DE NOVO ASSEMBLY subworkflow completed at: $workflow.complete
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Subworkflow Output Files                              ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│   'params.outdir'                                     │
+│   ${params.outdir.padRight(52)}│
 │    └── contigs                                        │
 │        └── *_contigs.fa                               │
 └───────────────────────────────────────────────────────┘

@@ -75,7 +75,7 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
 """
 
 
-    DRPRG(ch_myco.filter{it})
+    DRPRG(ch_myco.filter{it -> it})
 
     JSON_CONVERT(DRPRG.out.json.combine(jsoncon_script))
 
@@ -90,7 +90,7 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
     ch_summary  = ch_summary.mix(drprg_summary)
     ch_versions = ch_versions.mix(DRPRG.out.versions.first())
 
-    EMMTYPER(ch_gas.filter{it}.combine(summfle_script)) 
+    EMMTYPER(ch_gas.filter{it -> it}.combine(summfle_script)) 
 
     EMMTYPER.out.collect
       .collectFile(name: 'emmtyper_summary.tsv',
@@ -102,7 +102,7 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
     ch_summary  = ch_summary.mix(emmtyper_summary)
     ch_versions = ch_versions.mix(EMMTYPER.out.versions.first())
 
-    KAPTIVE(ch_vibrio.mix(ch_acinetobacter).filter{it})      
+    KAPTIVE(ch_vibrio.mix(ch_acinetobacter).filter{it -> it})      
 
     KAPTIVE.out.collect
       .collectFile(name: 'kaptive_summary.tsv',
@@ -114,7 +114,7 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
     ch_summary  = ch_summary.mix(kaptive_summary)
     ch_versions = ch_versions.mix(KAPTIVE.out.versions.first())
 
-    KLEBORATE(ch_kleb.mix(ch_ecoli).filter{it}.combine(summfle_script))
+    KLEBORATE(ch_kleb.mix(ch_ecoli).filter{it -> it}.combine(summfle_script))
 
     KLEBORATE.out.collect
       .collectFile(name: 'kleborate_results.tsv',
@@ -126,7 +126,7 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
     ch_summary  = ch_summary.mix(kleborate_summary)
     ch_versions = ch_versions.mix(KLEBORATE.out.versions.first())
 
-    ELGATO(ch_legionella.filter{it})
+    ELGATO(ch_legionella.filter{it -> it})
 
     ELGATO.out.collect
       .collectFile(name: 'elgato_summary.tsv',
@@ -138,7 +138,7 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
     ch_summary = ch_summary.mix(elgato_summary)
     ch_versions = ch_versions.mix(ELGATO.out.versions.first())
 
-    MYKROBE(ch_myco.filter{it})
+    MYKROBE(ch_myco.filter{it -> it})
 
     MYKROBE.out.collect
       .collectFile(name: 'mykrobe_summary.csv',
@@ -150,7 +150,7 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
     ch_summary  = ch_summary.mix(mykrobe_summary)
     ch_versions = ch_versions.mix(MYKROBE.out.versions.first())
 
-    MENINGOTYPE(ch_gc.filter{it})
+    MENINGOTYPE(ch_gc.filter{it -> it})
 
     MENINGOTYPE.out.summary
       .collectFile(name: 'meningotype_summary.tsv',
@@ -162,7 +162,7 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
     ch_summary  = ch_summary.mix(meningotype_summary)
     ch_versions = ch_versions.mix(MENINGOTYPE.out.versions.first())
 
-    NGMASTER(ch_gc.filter{it})
+    NGMASTER(ch_gc.filter{it -> it})
 
     NGMASTER.out.collect
       .collectFile(name: 'ngmaster_summary.csv',
@@ -174,7 +174,7 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
     ch_summary  = ch_summary.mix(ngmaster_summary)
     ch_versions = ch_versions.mix(NGMASTER.out.versions.first())
 
-    PBPTYPER(ch_strep.filter{it})
+    PBPTYPER(ch_strep.filter{it -> it})
 
     PBPTYPER.out.collect
       .collectFile(name: 'pbptyper_summary.tsv',
@@ -186,7 +186,7 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
     ch_summary  = ch_summary.mix(pbptyper_summary)
     ch_versions = ch_versions.mix(PBPTYPER.out.versions.first())
 
-    SEQSERO2(ch_salmonella.filter{it})
+    SEQSERO2(ch_salmonella.filter{it -> it})
 
     SEQSERO2.out.collect
       .collectFile(name: 'seqsero2_results.txt',
@@ -198,7 +198,7 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
     ch_summary  = ch_summary.mix(seqsero2_summary)
     ch_versions = ch_versions.mix(SEQSERO2.out.versions.first())
 
-    SEQSERO2S(ch_salmonella.filter{it})
+    SEQSERO2S(ch_salmonella.filter{it -> it})
 
     SEQSERO2S.out.collect
       .collectFile(name: 'seqsero2s_results.txt',
@@ -211,7 +211,7 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
     ch_versions = ch_versions.mix(SEQSERO2S.out.versions.first())
 
 
-    SEROTYPEFINDER(ch_ecoli.filter{it}.combine(summfle_script))
+    SEROTYPEFINDER(ch_ecoli.filter{it -> it}.combine(summfle_script))
 
     SEROTYPEFINDER.out.collect
       .collectFile(name: 'serotypefinder_results.txt',
@@ -223,7 +223,7 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
     ch_summary  = ch_summary.mix(serotypefinder_summary)
     ch_versions = ch_versions.mix(SEROTYPEFINDER.out.versions.first())
 
-    SHIGAPASS(ch_ecoli.filter{it})
+    SHIGAPASS(ch_ecoli.filter{it -> it})
 
     SHIGAPASS.out.summary
       .collectFile(name: 'shigapass_summary.tsv',
@@ -251,7 +251,7 @@ SUBTYPING subworkflow completed at: $workflow.complete
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Subworkflow Output Files                              ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│   'params.outdir'                                     │
+│   ${params.outdir.padRight(52)}│
 │    ├── drprg                                          │
 │    │   └── drprg_summary.tsv                          │
 │    ├── emmtyper                                       │

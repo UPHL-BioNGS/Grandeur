@@ -39,9 +39,9 @@ More information can be found at https://github.com/UPHL-BioNGS/Grandeur/wiki/re
 
         VERSIONS(ch_collated_versions, version_script)
 
-        MQC_PREP(for_multiqc.mix(for_summary).collect(), multiqc_script)
+        MQC_PREP(for_multiqc.mix(for_summary).flatten().unique().collect(), multiqc_script)
 
-        MULTIQC(for_multiqc.mix(for_summary).mix(MQC_PREP.out.for_multiqc).mix(VERSIONS.out.for_multiqc).collect())
+        MULTIQC(for_multiqc.mix(for_summary).mix(MQC_PREP.out.for_multiqc).mix(VERSIONS.out.for_multiqc).flatten().unique().collect())
 
         ch_reads
             .mix(ch_fastas)
@@ -59,7 +59,7 @@ More information can be found at https://github.com/UPHL-BioNGS/Grandeur/wiki/re
                 )
             .set { ch_names }
 
-        SUMMARY(for_summary.mix(ch_names).mix(MULTIQC.out.data_folder).collect())
+        SUMMARY(for_summary.mix(ch_names).mix(MULTIQC.out.data_folder).flatten().unique().collect())
 
     emit:
         //summary  = SUMMARY.out.extended_tsv
@@ -76,7 +76,7 @@ REPORT subworkflow completed at: $workflow.complete
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Subworkflow Output Files                              ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│   'params.outdir'                                     │
+│   ${params.outdir.padRight(52)}│
 │    ├── multiqc                                        │
 │    │   └── multiqc_report.html                        │
 │    └── grandeur_summary.tsv                           │

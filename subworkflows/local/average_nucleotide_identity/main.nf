@@ -226,7 +226,7 @@ AVERAGE NUCLEOTIDE IDENTITY subworkflow completed at: $workflow.complete
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Subworkflow Output Files                              ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│   'params.outdir'                                     │"""
+│   ${params.outdir.padRight(52)}│"""
         if ( params.current_datasets ) {
     log.info """│    ├── spestimator                                    │
 │    │   └── spestimator_summary.csv                    │

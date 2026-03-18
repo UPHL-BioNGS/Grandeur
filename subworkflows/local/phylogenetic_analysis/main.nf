@@ -59,7 +59,6 @@ Relevant params and their values:
 ┃ CORE_GENOME_EV... ┃ Custom process to identify number of core genes identified and the ┃
 ┃                   ┃ percentage of how many identified genes are in this core for each  ┃
 ┃                   ┃ input.                                                             ┃
-┃ KSNP4             ┃ Uses a k-mer based approach to identify core SNPs.                 ┃
 ┃ MASHTREE          ┃ Uses a k-mer based approach to calculate distances between genomes ┃
 ┃                   ┃ and construct a tree.                                              ┃
 ┃ SKA2              ┃ Uses a k-mer based approach to align core genes.                   ┃
@@ -71,6 +70,7 @@ Relevant params and their values:
 ┗━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 """
+//┃ KSNP4             ┃ Uses a k-mer based approach to identify core SNPs.                 ┃
 
   ch_versions = channel.empty()
   ch_summary  = channel.empty()
@@ -79,13 +79,13 @@ Relevant params and their values:
   ch_contigs  = ch_org_contigs.mix(ch_top_hit).map{it -> tuple(it[0], it[2])}
 
   if (params.annotator == 'prokka' ) {
-    PROKKA(ch_org_contigs.mix(ch_top_hit).filter{it}.unique())
+    PROKKA(ch_org_contigs.mix(ch_top_hit).filter{it -> it}.unique())
     
     ch_versions = ch_versions.mix(PROKKA.out.versions.first())
     ch_multiqc  = ch_multiqc.mix(PROKKA.out.for_multiqc)
     ch_gff      = PROKKA.out.gff
   } else if (params.annotator == 'bakta') {
-    BAKTA(ch_org_contigs.mix(ch_top_hit).filter{it}.unique())
+    BAKTA(ch_org_contigs.mix(ch_top_hit).filter{it -> it}.unique())
     
     ch_versions = ch_versions.mix(BAKTA.out.versions.first())
     ch_multiqc  = ch_multiqc.mix(BAKTA.out.for_multiqc)
@@ -116,8 +116,8 @@ Relevant params and their values:
   CORE_GENOME_EVALUATION.out.evaluation
     .splitText()
     .first()
-    .filter { it }
-    .map { it.trim().split(',') }
+    .filter { it ->  it }
+    .map { it -> it.trim().split(',') }
     .view { it ->
         "Core Genome Evaluation Complete: Found ${it[1]} core genes (Core Percentage: ${String.format("%.2f", it[2] as float * 100)}%)"
     }
@@ -136,19 +136,20 @@ Relevant params and their values:
     .set { ch_core_genome }
 
   ch_multiqc = ch_multiqc.mix(CORE_GENOME_EVALUATION.out.for_multiqc)
+  ch_summary = ch_summary.mix(CORE_GENOME_EVALUATION.out.for_multiqc)
 
-  // KSNP4(ch_contigs.combine(ch_top_hit))
+  // KSNP4(ch_contigs.collect())
   // ch_nwk = ch_nwk.mix(KSNP4.out.newick)
-  // ch_versions = ch_versions.mix(KSNP4.out.versions.first())
+  // ch_versions = ch_versions.mix(KSNP4.out.versions)
 
   MASHTREE(ch_contigs.map{it -> it[1]}.collect())
   ch_nwk = ch_nwk.mix(MASHTREE.out.newick)
   ch_versions = ch_versions.mix(MASHTREE.out.versions)
 
-  // SKA2(ch_contigs.combine(ch_top_hit))
-  // ch_versions = ch_versions.mix(SKA2.out.versions.first())
+  SKA2(ch_contigs.map{it -> it[1]}.collect())
+  ch_versions = ch_versions.mix(SKA2.out.versions)
     
-  IQTREE(ch_core_genome)
+  IQTREE(ch_core_genome.mix(SKA2.out.aln))
   ch_nwk = ch_nwk.mix(IQTREE.out.newick)
   ch_versions = ch_versions.mix(IQTREE.out.versions.first())
 
@@ -166,9 +167,10 @@ Relevant params and their values:
   ch_multiqc  = ch_multiqc.mix(GOTREE.out.for_multiqc)
   ch_summary  = ch_summary.mix(ch_gotree_summary)
 
-  SNPDISTS(ch_core_genome)
+  SNPDISTS(ch_core_genome.mix(SKA2.out.aln))
   ch_versions = ch_versions.mix(SNPDISTS.out.versions)
   ch_multiqc  = ch_multiqc.mix(SNPDISTS.out.snp_matrix)
+  ch_summary  = ch_summary.mix(SNPDISTS.out.snp_matrix)
 
   HEATCLUSTER(SNPDISTS.out.snp_matrix)
   ch_versions = ch_versions.mix(HEATCLUSTER.out.versions)
@@ -176,7 +178,7 @@ Relevant params and their values:
 
   emit:
   for_multiqc = ch_multiqc
-  summary     = ch_summary
+  for_summary = ch_summary.mix(ch_nwk)
   versions    = ch_versions
 }
 
@@ -189,31 +191,31 @@ PHYLOGENETIC ANALYSIS subworkflow completed at: $workflow.complete
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Subworkflow Output Files                              ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│   'params.outdir'                                     │
+│   ${params.outdir.padRight(52)}│
 │    ├── gff                                            │
 │    │   └── *gff                                       │
-│    ├── 'params.annotator'                             │
+│    ├── ${params.annotator.padRight(47)}│
 │    │   ├── *gbff                                      │
 │    │   └── *gff3                                      │
-│    ├── 'params.aligner'                               │
+│    ├── ${params.aligner.padRight(47)}│
 │    │   └── core_gene_alignment.aln                    │
-│    ├── 'iqtree'                                       │
-│    │   └── iqtree.treefile                            │
-│    ├── 'mashtree'                                     │
+│    ├── iqtree                                         │
+│    │   ├── iqtree_core_gene_alignment.treefile.nwk    │
+│    │   └── iqtree_ska_alignment.treefile.nwk          │
+│    ├── mashtree                                       │
 │    │   ├── mashtree.nwk                               │
 │    │   └── mashtree.txt                               │
-│    ├── ksnp4                                          │
-│    │   └── TBA                                        │
-│    ├── ska2                                           │
-│    │   └── TBA                                        │
+│    ├── ska                                            │
+│    │   ├── ska_alignment.aln                          │
+│    │   └── ska_index.skf                              │
 │    ├── gotree                                         │
 │    │   ├── gotree_summary.tsv                         │
 │    │   └── *png                                       │
 │    ├── snp-dists                                      │
-│    │   └── snp_matrix.txt                             │
+│    │   └── snpdists_*.txt                             │
 │    └── heatcluster                                    │
-│        ├── heatcluster_sorted.csv                     │
-│        └── heatcluster.png                            │
+│        ├── heatcluster*_sorted.csv                    │
+│        └── heatcluster*.png                           │
 └───────────────────────────────────────────────────────┘
 
 ------------------------------------------------------

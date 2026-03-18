@@ -9,7 +9,7 @@ workflow TAXONOMIC_PROFILING {
     take:
     ch_reads
     ch_fastas
-    ch_assemblies
+    _ch_assemblies
     ch_kraken2_db
     ch_mash_db
     ch_sylph_db
@@ -70,11 +70,11 @@ Relevant params and their values:
     }
 
     if (params.mash_db) {
-        MASH_DIST(ch_reads.mix(ch_fastas).filter { it }.combine(ch_mash_db))
-        MASH_SCREEN(ch_reads.mix(ch_fastas).filter { it }.combine(ch_mash_db))
+        MASH_DIST(ch_reads.mix(ch_fastas).filter{ it -> it }.combine(ch_mash_db))
+        MASH_SCREEN(ch_reads.mix(ch_fastas).filter{ it -> it }.combine(ch_mash_db))
     } else {
-        MASH_DIST(ch_reads.mix(ch_fastas).filter { it }.map{it -> tuple(it[0], it[1], null)})
-        MASH_SCREEN(ch_reads.mix(ch_fastas).filter { it }.map{it -> tuple(it[0], it[1], null)})
+        MASH_DIST(ch_reads.mix(ch_fastas).filter{ it -> it }.map{it -> tuple(it[0], it[1], null)})
+        MASH_SCREEN(ch_reads.mix(ch_fastas).filter{ it -> it }.map{it -> tuple(it[0], it[1], null)})
     }
 
     MASH_DIST.out.results
@@ -104,7 +104,7 @@ Relevant params and their values:
     ch_species  = ch_species.mix(ch_mashdist_summary).mix(ch_mashscreen_summary)
 
     if (params.sylph_db) {
-        SYLPH(ch_reads.mix(ch_fastas).filter { it }.combine(ch_sylph_db))
+        SYLPH(ch_reads.mix(ch_fastas).filter{ it -> it }.combine(ch_sylph_db))
 
         SYLPH.out.results
             .collectFile(
@@ -144,7 +144,7 @@ TAXONOMIC PROFILING subworkflow completed at: $workflow.complete
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Subworkflow Output Files                              ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│   'params.outdir'                                     │"""
+│   ${params.outdir.padRight(52)}│"""
     if ( params.kraken2_db && ( params.sample_sheet || params.reads || params.sra_accessions )) {
         log.info """│    ├── kraken2                                        │
 │    │   └── kraken2_summary.csv                        │"""

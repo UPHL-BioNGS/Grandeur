@@ -164,7 +164,7 @@ QUALITY ASSESSMENT subworkflow completed at: $workflow.complete
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Subworkflow Output Files                              ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│   'params.outdir'                                     │
+│   ${params.outdir.padRight(52)}│
 │    ├── fastqc                                         │
 │    │   └── fastqc_summary.csv                         │"""
         if ( params.checkm2_db ) {

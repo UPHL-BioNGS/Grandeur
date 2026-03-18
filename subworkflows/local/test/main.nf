@@ -36,7 +36,7 @@ issues.
     ch_versions = channel.empty()
 
     if ( ! params.sra_accessions.isEmpty() ) {
-        DOWNLOAD_FASTQ(ch_sra_accessions.filter({it[0]}))
+        DOWNLOAD_FASTQ(ch_sra_accessions.filter{it -> it[0]})
         ch_versions = ch_versions.mix(DOWNLOAD_FASTQ.out.versions.first())
 
         DOWNLOAD_FASTQ.out.fastq
