@@ -19,10 +19,11 @@ process PLASMIDFINDER {
   def args   = task.ext.args   ?: ''
   def prefix = task.ext.prefix ?: "${meta.id}"
   """
+    export HOME=\$PWD
+    git config --global --add safe.directory /database
+    
     mkdir -p plasmidfinder/${prefix} logs/${task.process}
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
-
-    git config --global --add safe.directory /database
 
     python -m plasmidfinder ${args} \
       -i ${file} \
