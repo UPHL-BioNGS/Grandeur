@@ -1,11 +1,11 @@
 process GOTREE {
-  tag           "${analysis}"
+  tag           "${newick.baseName}"
   label         "process_medium"
   container     'staphb/gotree:0.5.1'
 
   
   input:
-  tuple val(analysis), file(newick)
+  file(newick)
 
   output:
   path "gotree/*.png", emit: for_multiqc
@@ -19,10 +19,10 @@ process GOTREE {
 
   script:
   def args   = task.ext.args   ?: ''
-  def prefix = task.ext.prefix ?: "${analysis}"
+  def prefix = task.ext.prefix ?: "gotree_${newick.baseName}"
   """
     mkdir -p gotree logs/${task.process}
-    log_file=logs/${task.process}/${analysis}.${task.process}.${workflow.sessionId}.log
+    log_file=logs/${task.process}/${prefix}.${task.process}.${workflow.sessionId}.log
 
     gotree reroot midpoint -i ${newick} | \
       gotree draw png ${args} -o gotree/${prefix}.png | \

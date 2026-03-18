@@ -8,7 +8,7 @@ process MASHTREE {
 
   output:
   path "mashtree/*", emit: tree
-  tuple val("mashtree"), file("mashtree/*.nwk"), optional: true , emit: newick
+  path "mashtree/*.nwk", optional: true , emit: newick
   path "logs/${task.process}/*.log", emit: log
   path "versions.yml", emit: versions
 

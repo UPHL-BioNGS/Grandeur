@@ -1,5 +1,5 @@
 process HEATCLUSTER {
-  tag           "HeatCluster"
+  tag           "${matrix}"
   label         "process_single"
   container     'staphb/heatcluster:1.3.0'
 
@@ -17,7 +17,7 @@ process HEATCLUSTER {
 
   script:
   def args   = task.ext.args   ?: ''
-  def prefix = task.ext.prefix ?: "heatcluster"
+  def prefix = task.ext.prefix ?: "heatcluster_${matrix.baseName}"
   """
     mkdir -p heatcluster tmp logs/${task.process}
     log_file=logs/${task.process}/heatcluster.${workflow.sessionId}.log
