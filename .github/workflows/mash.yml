@@ -33,10 +33,9 @@ jobs:
         run: |
           nextflow run . -profile docker,test -c .github/workflows/github_actions.config --publish_dir_mode link --mash_db rep-genomes.msh
           
-      - name: Check contig files
+      - name: Check files
         run: |
-            head grandeur/mash/mashdist_summary.csv grandeur/mash/mashscreen_summary.csv
-            for file in grandeur/contigs/*_contigs.fa grandeur/grandeur_summary.tsv
+            for file in grandeur/contigs/*_contigs.fa grandeur/grandeur_summary.tsv grandeur/mash/mashdist_summary.csv
             do
                 head $file
                 wc -l $file

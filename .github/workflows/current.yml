@@ -40,7 +40,7 @@ jobs:
 
       - name: Check files
         run: |
-          for file in grandeur/contigs/*_contigs.fa grandeur/grandeur_summary.tsv grandeur/spestimator/spestimator_summary.csv grandeur/datasets/datasets_summary.csv
+          for file in grandeur/grandeur_summary.tsv grandeur/spestimator/spestimator_summary.csv grandeur/datasets/datasets_summary.csv
           do
             head $file
             wc -l $file

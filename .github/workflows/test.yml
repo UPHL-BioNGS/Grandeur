@@ -26,7 +26,7 @@ jobs:
           
       - name: Check files
         run: |
-          for file in grandeur/contigs/*_contigs.fa grandeur/grandeur_summary.tsv grandeur/skani/skani_summary.tsv grandeur/fastqc/fastqc_summary.csv grandeur/mlst/mlst_summary.tsv grandeur/plasmidfinder/plasmidfinder_result.json grandeur/quast/quast_report.tsv grandeur/multiqc/multiqc_report.html grandeur/mash/mashdist_summary.csv grandeur/mash/mashscreen_summary.csv
+          for file in grandeur/contigs/*_contigs.fa grandeur/grandeur_summary.tsv grandeur/skani/skani_summary.tsv grandeur/fastqc/fastqc_summary.csv grandeur/mlst/mlst_summary.tsv grandeur/plasmidfinder/plasmidfinder_result.json grandeur/quast/quast_report.tsv grandeur/multiqc/multiqc_report.html grandeur/mash/mashdist_summary.csv grandeur/mash/mashscreen_summary.txt
           do
             head $file
             wc -l $file
