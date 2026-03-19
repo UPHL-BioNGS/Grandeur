@@ -35,6 +35,8 @@ def paramCheck(keys) {
     "monochrome_logs",
     "hook_url",
     "help",
+    "help_full",
+    "show_hidden",
     "version",
     "pipelines_testdata_base_path",
     "config_profile_name",
