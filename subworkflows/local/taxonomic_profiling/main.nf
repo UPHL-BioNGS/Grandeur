@@ -2,8 +2,6 @@ include { KRAKEN2     } from '../../../modules/local/kraken2'
 include { MASH_DIST   } from '../../../modules/local/mashdist'
 include { MASH_SCREEN } from '../../../modules/local/mashscreen'
 include { SYLPH       } from '../../../modules/local/sylph'
-// still struggling with downloading the database
-//include { SOURMASH } from '../../../modules/local/sourmash'
 
 workflow TAXONOMIC_PROFILING {
     take:

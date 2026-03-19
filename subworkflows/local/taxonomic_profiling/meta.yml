@@ -14,8 +14,8 @@ keywords:
   - minhash
 components:
   - kraken2
-  - mashdist
-  - mashscreen
+  - mash/dist
+  - mash/screen
   - sylph
 input:
   - ch_reads:

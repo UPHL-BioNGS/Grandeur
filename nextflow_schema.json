@@ -77,27 +77,23 @@
       "description": "",
       "default": "",
       "properties": {
+        "checkm2_db": {
+          "type": "string",
+          "description": "prepared checkm2 reference file"
+        },
         "kraken2_db": {
           "type": "string",
           "description": "directory of kraken2 database"
-        },
-        "blast_db": {
-          "type": "string",
-          "description": "directory of blast database. Compressed directories can be found at https://ftp.ncbi.nlm.nih.gov/blast/db/v5/."
-        },
-        "blast_db_type": {
-          "type": "string",
-          "description": "type of blast database (ex: 'nt', 'nt_prok', or 'ref_prok_rep_genomes')"
         },
         "mash_db": {
           "type": "string",
           "description": "prepared mash reference msh file"
         },
-        "fastani_ref": {
+        "sylph_db": {
           "type": "string",
-          "description": "additional fasta files for fastani references"
+          "description": "prepared sylph reference file"
         },
-        "fastani_ref_list": {
+        "reference_genomes": {
           "type": "string",
           "description": "list of genomes (in fasta format) for fastani references"
         }
@@ -109,18 +105,6 @@
       "description": "",
       "default": "",
       "properties": {
-        "datasets_max_genomes": {
-          "type": "integer",
-          "default": 5,
-          "hidden": true,
-          "description": "the maxiumum number of genomes to download per organism"
-        },
-        "mash_max_hits": {
-          "type": "integer",
-          "default": 25,
-          "hidden": true,
-          "description": "the number of mash hits allowed in result file"
-        },
         "min_core_genes": {
           "type": "integer",
           "default": 500,
@@ -130,11 +114,6 @@
           "type": "number",
           "default": 0.5,
           "description": "minimum percentage number of core genes in core genome alignment for iqtree2 (default is 0.5 or 50%)"
-        },
-        "iqtree2_outgroup": {
-          "type": "string",
-          "hidden": true,
-          "description": "to specify outgroup in iqtree2"
         },
         "minimum_reads": {
           "type": "integer",
@@ -198,6 +177,12 @@
           "description": "Less common options for the pipeline, typically set in a config file.",
           "help_text": "These options are common to all nf-core pipelines and allow you to customise some of the core preferences for how the pipeline runs.\n\nTypically these options would be set in a Nextflow config file loaded for all pipeline runs, such as `~/.nextflow/config`.",
           "properties": {
+              "help": {
+                "type": "boolean",
+                "description": "Display help text.",
+                "fa_icon": "fas fa-question-circle",
+                "hidden": true
+              },
               "version": {
                   "type": "boolean",
                   "description": "Display version and exit.",
@@ -268,30 +253,9 @@
                   "description": "Stolen from example and might not do anything.",
                   "hidden": true
               },
-              "validationLenientMode": {
-                  "type": "boolean",
-                  "description": "Stolen from example and might not do anything.",
-                  "hidden": true
-              },
-              "validationShowHiddenParams": {
-                  "type": "boolean",
-                  "description": "Stolen from example and might not do anything.",
-                  "hidden": true
-              },
-              "validationFailUnrecognisedParams": {
-                  "type": "boolean",
-                  "description": "Stolen from example and might not do anything.",
-                  "hidden": true
-              },
               "config_profile_contact": {
                   "type": "string",
                   "description": "Stolen from example and might not do anything.",
-                  "hidden": true
-              },
-              "validate_params": {
-                  "type": "boolean",
-                  "description": "Stolen from example and might not do anything.",
-                  "fa_icon": "fas fa-check-square",
                   "hidden": true
               }
           }

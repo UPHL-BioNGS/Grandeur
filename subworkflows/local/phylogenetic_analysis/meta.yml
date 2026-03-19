@@ -15,8 +15,7 @@ components:
   - bakta
   - panaroo
   - roary
-  - core_genome_evaluation
-  - ksnp4
+  - core/genome/evaluation
   - mashtree
   - ska2
   - iqtree

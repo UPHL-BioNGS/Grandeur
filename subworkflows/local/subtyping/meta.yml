@@ -14,7 +14,7 @@ components:
   - drprg
   - elgato
   - emmtyper
-  - json_convert
+  - json/convert
   - kaptive
   - kleborate
   - meningotype

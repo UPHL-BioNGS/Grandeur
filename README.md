@@ -55,8 +55,6 @@ Grandeur is modular and executes the following stages based on inputs and flags:
 | `--skip_extras` | **Toggle:** Run only core assembly/QC |
 | `--current_datasets`| **Toggle:** Download NCBI references via `datasets` |
 
-*The full list of parameters is available by running:* `nextflow run UPHL-BioNGS/Grandeur --help`
-
 ---
 
 ## Documentation
@@ -67,54 +65,98 @@ Detailed guides, FAQ, and process explanations are located in the **[Grandeur Wi
 - [Phylogenetic Analysis](https://github.com/UPHL-BioNGS/Grandeur/wiki/Phylogenetic-Analysis)
 - [Subworkflow Explanations](https://github.com/UPHL-BioNGS/Grandeur/wiki/subworkflows)
 
-## Acknowledgements
-Grandeur integrates an extensive suite of open-source bioinformatics tools, including:
-`amrfinderplus`, `bakta`, `checkm2`, `drprg`, `elgato`, `emmtyper`, `fastp`, `fastqc`, `gotree`, `heatcluster`, `iqtree`, `kaptive`, `kleborate`, `kraken2`, `ksnp4`, `mash`, `mashtree`, `meningotype`, `mlst`, `multiqc`, `mykrobe`, `ngmaster`, `panaroo`, `pbptyper`, `plasmidfinder`, `prokka`, `quast`, `roary`, `seqsero2`, `serotypefinder`, `shigapass`, `ska2`, `skani`, `snp-dists`, `spades`, `sylph`.
+NF-CORE style docs can be found in [docs](./docs)
+
+## Help message
+
+```bash
+nextflow run UPHL-BioNGS/Grandeur --help
+```
+
+Running the workflow with `--help` should display a help message like the following.
+
+```
+
+ N E X T F L O W   ~  version 25.10.4
+
+Launching `UPHL-BioNGS/Grandeur` [furious_bardeen] DSL2 - revision: 8a4591f1a0
+
+Typical pipeline command:
+
+  nextflow run UPHL-BioNGS/Grandeur -profile docker --sample_sheet samplesheet.csv --outdir grandeur
+
+--help                [boolean, string] Show the help message for all top level parameters. When a parameter is given to `--help`, the full help message of that parameter will be printed.
+--help_full           [boolean]         Show the help message for all non-hidden parameters.
+--show_hidden         [boolean]         Show all hidden parameters in the help message. This needs to be used in combination with `--help` or `--help_full`.
+
+Input/output options
+  --sample_sheet      [string] csv with sample,read1,read2
+  --fasta_list        [string] A sample sheet for fasta files
+  --outdir            [string] The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. [default: grandeur]
+
+Reference files/paths
+  --checkm2_db        [string] prepared checkm2 reference file
+  --kraken2_db        [string] directory of kraken2 database
+  --mash_db           [string] prepared mash reference msh file
+  --sylph_db          [string] prepared sylph reference file
+  --reference_genomes [string] list of genomes (in fasta format) for fastani references
+
+workflow values
+  --min_core_genes    [integer] minimum number of genes in core genome alignment for iqtree2 (default is 500) [default: 500]
+  --min_core_per      [number]  minimum percentage number of core genes in core genome alignment for iqtree2 (default is 0.5 or 50%) [default: 0.5]
+
+Subworkflow toggles
+  --msa               [boolean] toggles whether or not phylogenetic analysis will be run on samples
+
+ !! Hiding 27 param(s), use the `--show_hidden` parameter to show them !!
+------------------------------------------------------
+```
 
 ## Technical Support
 Issues and problems should be submitted to the [GitHub Issues](https://github.com/UPHL-BioNGS/Grandeur/issues) page.
 
+## Acknowledgements
 Grandeur wouldn't be possible without the following tools:
-- nf-tools
+- [nf-tools](https://nf-co.re/docs/nf-core-tools) - for keeping the schema functional
+- [nf-docs](https://ewels.github.io/nf-docs/running/) - creation of nf-core style docs found in [docs](./docs)
 - [amrfinderplus](https://www.ncbi.nlm.nih.gov/pathogens/antimicrobial-resistance/AMRFinder/) - identification of genes associated with antimicrobial resistence
-- bakta
-- checkm2
+- [bakta](https://github.com/oschwengers/bakta) - gene prediction
+- [checkm2](https://github.com/chklovski/CheckM2) - assembly QC
 - [datasets](https://github.com/ncbi/datasets) - downloads genomes from NCBI
 - [drprg](https://github.com/mbhall88/drprg) - TB AMR predictions
 - [elgato](https://github.com/appliedbinf/el_gato) - Legionella pneumophila Sequence Based Typing (SBT)
 - [emmtyper](https://github.com/MDU-PHL/emmtyper) - Group A Strep "emm" typing
-- enatools
+- [enatools](https://github.com/enasequence/enaBrowserTools) - download fastq files from the ENA
 - [fastp](https://github.com/OpenGene/fastp) - cleaning reads
 - [fastqc](https://github.com/s-andrews/FastQC) - fastq file QC
-- gotree
+- [gotree](https://github.com/evolbioinfo/gotree) - stats and visualization of newick files
 - [heatcluster](https://github.com/erinyoung/heatcluster) - visualizes SNP matrix from SNP dists
 - [iqtree](http://www.iqtree.org/) - phylogenetic tree creation - used after core genome alignment
-- kaptive
-- [kleborate](https://github.com/katholt/Kleborate) - Klebsiella serotyping
+- [kaptive](https://github.com/klebgenomics/Kaptive) - Vibrio and Acinetobacter subtyping
+- [kleborate](https://github.com/katholt/Kleborate) - Klebsiella and Escherichia serotyping
 - [kraken2](https://ccb.jhu.edu/software/kraken2/) - contamination
-- ksnp4
 - [mash](https://github.com/marbl/Mash) - species identifier
 - [mashtree](https://github.com/lskatz/mashtree) - tree based on mash distances (not impacted by size of core genome)
-- meningotype
+- [meningotype](https://github.com/MDU-PHL/meningotype) - Neisseria subtyping
 - [mlst](https://github.com/tseemann/mlst) - identification of MLST subtype
 - [multiqc](https://multiqc.info/) - summarizes QC efforts
 - [mykrobe](https://github.com/Mykrobe-tools/mykrobe) - Mycobacterium subtyping
-- ngmaster
+- [ngmaster](https://github.com/MDU-PHL/ngmaster) - Neisseria subtyping
 - [panaroo](https://github.com/gtonkinhill/panaroo) - core genome alignment - optional (set with params.msa = true)
 - [pbptyper](https://github.com/rpetit3/pbptyper) - Penicillin Binding Protein (PBP) typer for Streptococcus pneumoniae assemblies
 - [plasmidfinder](https://bitbucket.org/genomicepidemiology/plasmidfinder/) - MLST typing for plasmids
 - [prokka](https://github.com/tseemann/prokka) - gene annotation - used for core genome alignment
 - [quast](http://quast.sourceforge.net/quast) - contig QC
-- roary
+- [roary](https://github.com/sanger-pathogens/Roary) - core genome alignement - optional (set with params.msa = true)
 - [seqsero2](https://github.com/denglab/SeqSero2) - Salmonella serotyping
-- [seqsero2S]() - Salmonella serotyping
+- [seqsero2S](https://github.com/denglab/SeqSero2s) - Salmonella serotyping
 - [serotypefinder](https://cge.cbs.dtu.dk/services/SerotypeFinder/) - E. coli serotyping
-- [shigapass]() - Shigella serotyping
-- ska2
-- skani
+- [shigapass](https://github.com/imanyass/ShigaPass) - Shigella serotyping
+- [ska2](https://github.com/bacpop/ska.rust) - sequencing comparison
+- [skani](https://github.com/bluenote-1577/skani) - ani comparison
 - [snp-dists](https://github.com/tseemann/snp-dists) - SNP matrix - used after core genome aligment
 - [spades](https://cab.spbu.ru/software/spades/) - _de novo_ alignment
-- spestimator
-- sylph
+- [spestimator](https://github.com/erinyoung/Spestimator) - species estimation
+- [sylph](https://github.com/bluenote-1577/sylph) - taxonomic profiling
 
 The expected tools are split into multiple processes. Each [process has its own wiki page](https://github.com/UPHL-BioNGS/Grandeur/wiki/Processes) that we encourage users to view.

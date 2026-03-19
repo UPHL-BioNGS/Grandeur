@@ -13,11 +13,11 @@ keywords:
 components:
   - spestimator
   - species
-  - datasets_summary
-  - datasets_download
+  - datasets/summary
+  - datasets/download
   - references
-  - skanisketch
-  - skanidist
+  - skani/sketch
+  - skani/dist
 input:
   - meta:
       type: map

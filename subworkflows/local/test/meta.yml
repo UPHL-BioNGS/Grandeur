@@ -13,8 +13,8 @@ keywords:
   - fastq
   - fasta
 components:
-  - ena_download
-  - datasets_download
+  - ena/download
+  - datasets/download
 input:
   - ch_sra_accessions:
       type: value

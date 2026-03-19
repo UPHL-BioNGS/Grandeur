@@ -10,7 +10,7 @@ keywords:
   - versions
   - qc
 components:
-  - mqc_prep
+  - mqc/prep
   - multiqc
   - summary
   - versions

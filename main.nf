@@ -16,6 +16,7 @@
 include { INITIALIZE } from './subworkflows/local/initialize'
 include { GRANDEUR   } from './workflows/grandeur'
 
+include { paramsHelp; validateParameters; paramsSummaryLog } from 'plugin/nf-schema'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -25,6 +26,15 @@ include { GRANDEUR   } from './workflows/grandeur'
 workflow {
 
     main:
+    //
+    // HELP: Run help message and exit
+    //
+
+    if (params.help) {
+        log.info paramsHelp("nextflow run UPHL-BioNGS/Grandeur -profile docker --sample_sheet samplesheet.csv --outdir grandeur")
+        exit 0
+    }
+
     //
     // SUBWORKFLOW: Initialize files and tasks
     //
