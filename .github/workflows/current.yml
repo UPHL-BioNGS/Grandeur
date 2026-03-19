@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@main
             
       - name: Clean up Disk space
         uses: jlumbroso/free-disk-space@main
@@ -40,9 +40,11 @@ jobs:
 
       - name: Check files
         run: |
-          cat grandeur/grandeur_summary.tsv
-          cat grandeur/summary/software_versions.yml
-          ls  grandeur/multiqc/multiqc_report.html
+          for file in grandeur/contigs/*_contigs.fa grandeur/grandeur_summary.tsv grandeur/spestimator/spestimator_summary.csv grandeur/datasets/datasets_summary.csv
+          do
+            head $file
+            wc -l $file
+          done
 
       - name: tree
         run: tree grandeur*

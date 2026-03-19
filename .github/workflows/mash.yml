@@ -8,11 +8,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@main
             
       - name: Clean up Disk space
         uses: jlumbroso/free-disk-space@main
-            
+
+      - name: Maximize build space and add swap
+        uses: pierotofy/set-swap-space@master
+        with:
+          swap-size-gb: 10
+
       - name: Install Nextflow
         run: |
           wget -qO- get.nextflow.io | bash
