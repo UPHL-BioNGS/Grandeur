@@ -65,6 +65,7 @@ workflow INITIALIZE {
   ch_versions  = channel.empty()
   
   log.info """\
+------------------------------------------------------------------------------------------------------------
 
    /^^^^    /^^^^^^^           /^        /^^^     /^^ /^^^^^     /^^^^^^^^ /^^     /^^ /^^^^^^^    
  /^    /^^  /^^    /^^        /^ ^^      /^ /^^   /^^ /^^   /^^  /^^       /^^     /^^ /^^    /^^  
@@ -73,6 +74,8 @@ workflow INITIALIZE {
 /^^   /^^^^ /^^  /^^       /^^^^^^ /^^   /^^   /^ /^^ /^^    /^^ /^^       /^^     /^^ /^^  /^^    
  /^^    /^  /^^    /^^    /^^       /^^  /^^    /^ ^^ /^^   /^^  /^^       /^^     /^^ /^^    /^^  
   /^^^^^    /^^      /^^ /^^         /^^ /^^      /^^ /^^^^^     /^^^^^^^^   /^^^^^    /^^      /^^
+
+------------------------------------------------------------------------------------------------------------
 
 Currently using the Grandeur workflow for use with microbial sequencing.
 The view is great from 8299 feet (2530 meters) above sea level.
@@ -119,8 +122,13 @@ Initializing Workflow and Evaluating Parameters
 
   paramCheck(params.keySet())
 
-  log.info "Documentation for this workflow can be found at https://github.com/UPHL-BioNGS/Grandeur/wiki\n"
-  log.info "All files will be saved to ${params.outdir}\n\t- To change this, set 'params.outdir' to the desired output directory.\n"
+
+
+  log.info """
+Documentation for this workflow can be found at https://github.com/UPHL-BioNGS/Grandeur/wiki
+All files will be saved to ${params.outdir}
+\t- To change this, set 'params.outdir' to the desired output directory.
+"""
 
 
   // ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
@@ -150,24 +158,27 @@ Initializing Sample Input Files
 
 ------------------------------------------------------
 
-┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━
-┃ param             ┃ type  ┃ value                              
-┣━━━━━━━━━━━━━━━━━━━╋━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━
-┃ sample_sheet      ┃ file  ┃ ${params.sample_sheet}
-┃ reads             ┃ dir   ┃ ${params.reads}
-┃ fasta_list        ┃ file  ┃ ${params.fasta_list}
-┃ fastas            ┃ dir   ┃ ${params.fastas}
-┃ sra_accessions    ┃ array ┃ ${params.sra_accessions}
-┃ genome_accessions ┃ array ┃ ${params.genome_accessions}
-┗━━━━━━━━━━━━━━━━━━━┻━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━
+┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ param             ┃ type  ┃ value                                                      ┃
+┣━━━━━━━━━━━━━━━━━━━╋━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ sample_sheet      ┃ file  ┃ ${params.sample_sheet.toString().padRight(58)} ┃
+┃ reads             ┃ dir   ┃ ${params.reads.toString().padRight(58)} ┃
+┃ fasta_list        ┃ file  ┃ ${params.fasta_list.toString().padRight(58)} ┃
+┃ fastas            ┃ dir   ┃ ${params.fastas.toString().padRight(58)} ┃
+┃ sra_accessions    ┃ array ┃ ${params.sra_accessions.toString().padRight(58)} ┃
+┃ genome_accessions ┃ array ┃ ${params.genome_accessions.toString().padRight(58)} ┃
+┗━━━━━━━━━━━━━━━━━━━┻━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 ------------------------------------------------------
 """
 
 
   if (params.sample_sheet) {
-    log.info "Using sample sheet at ${params.sample_sheet}"
-    log.info "\t- The sample sheet should be a csv file with the column header of 'sample,fastq_1,fastq_2' and the respective values for each sample listed below. The base name of each sample (the value in the 'sample' column) is used as the \"meta.id\" value, and is used when generating output files and summarizing results."
+
+    log.info """
+Using sample sheet at ${params.sample_sheet}
+\t- The sample sheet should be a csv file with the column header of 'sample,fastq_1,fastq_2' and the respective values for each sample listed below. The base name of each sample (the value in the 'sample' column) is used as the \"meta.id\" value, and is used when generating output files and summarizing results.
+"""
     // using a sample sheet with the column header of 'sample,fastq_1,fastq_2'
     channel
       .fromPath("${params.sample_sheet}", type: "file")
@@ -181,15 +192,18 @@ Initializing Sample Input Files
       }
       .unique()
       .ifEmpty{
-        log.fatal "The 'params.sample_sheet' was set, but no input files were found!"
+        log.error "The 'params.sample_sheet' was set, but no input files were found!"
         exit 1}
       .set {ch_reads}
 
   } else {
     // Getting the FASTQ files from a directory
     if (params.reads) {
-      log.info "Looking for FASTQ files in directory ${params.reads}"
-      log.info "\t- FASTQ files should have the extension .fastq, .fastq.gz, .fq, or .fq.gz"
+
+      log.info """
+Looking for FASTQ files in directory ${params.reads}
+\t- FASTQ files should have the extension .fastq, .fastq.gz, .fq, or .fq.gz
+"""
       channel
           .fromFilePairs(["${params.reads}/*_R{1,2}*.{fastq,fastq.gz,fq,fq.gz}",
                           "${params.reads}/*_{1,2}*.{fastq,fastq.gz,fq,fq.gz}"], size: 2 )
@@ -202,11 +216,15 @@ Initializing Sample Input Files
           .unique()
           .view { it ->  "Paired-end FASTQ files found : ${it[0].id}" }
           .ifEmpty{
-            log.fatal "The 'params.reads' was set, but no input files were found!"
+            log.error "The 'params.reads' was set, but no input files were found!"
             exit 1}
           .set { ch_reads }
     } else {
-      log.info "FYI: Input FASTQ files can be provided to Grandeur with 'params.reads' or with a sample sheet designated with 'params.sample_sheet'."
+
+      log.info """
+FYI: Input FASTQ files can be provided to Grandeur with 'params.reads' or with a sample 
+sheet designated with 'params.sample_sheet'.
+"""
       ch_reads = channel.empty()
     }
   }
@@ -226,15 +244,19 @@ Initializing Sample Input Files
       }
       .unique()
       .ifEmpty{
-          log.fatal "The 'params.fasta_list' was set, but no input files were found!"
+          log.error "The 'params.fasta_list' was set, but no input files were found!"
           exit 1}
       .set{ ch_fastas }
   } else {
     // getting FASTAs from a directory
     if (params.fastas) {
-      log.info "Looking for FASTA files in directory ${params.fastas}"
-      log.info "\t- FASTA files should have the extension .fa, .fasta, or .fna"
-      log.info "\t- The base name of each FASTA file is used as the \"meta.id\" value, and is used when generating output files and summarizing results."
+
+      log.info """
+Looking for FASTA files in directory ${params.fastas}
+\t- FASTA files should have the extension .fa, .fasta, or .fna"
+\t- The base name of each FASTA file is used as the \"meta.id\" value, and is used when 
+    generating output files and summarizing results.
+"""
       channel
         .fromPath("${params.fastas}/*{.fa,.fasta,.fna}")
         .view { it ->  "FASTA file found : ${it.baseName}" }
@@ -244,11 +266,15 @@ Initializing Sample Input Files
         }
         .unique()
         .ifEmpty{
-          log.fatal "The 'params.fastas' was set, but no input files were found!"
+          log.error "The 'params.fastas' was set, but no input files were found!"
           exit 1}
         .set { ch_fastas }
     } else {
-      log.info "FYI: Input FASTA files can be provided to Grandeur with 'params.fastas' or with a list of FASTA files designated with 'params.fasta_list'."
+
+      log.info """
+FYI: Input FASTA files can be provided to Grandeur with 'params.fastas' or with a list of 
+FASTA files designated with 'params.fasta_list'.
+"""
       ch_fastas = channel.empty()
     }
   }
@@ -264,7 +290,7 @@ Initializing Sample Input Files
       .unique()
       .view { it ->  "Using SRA accession : ${it}" }
       .ifEmpty{
-        log.fatal "The 'params.sra_accessions' was set, but no value was given!"
+        log.error "The 'params.sra_accessions' was set, but no value was given!"
         exit 1}
       .set { ch_sra_accessions }
   } else {
@@ -280,7 +306,7 @@ Initializing Sample Input Files
       .unique()
       .view { it ->  "Using Genome accession : ${it}" }
       .ifEmpty{
-        log.fatal "The 'params.genome_accessions' was set, but no value was given!"
+        log.error "The 'params.genome_accessions' was set, but no value was given!"
         exit 1}
       .set { ch_genome_accessions }
   } else {
@@ -300,15 +326,15 @@ Initializing Databases and References
 
 ------------------------------------------------------
 
-┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━
-┃ param             ┃ type  ┃ value                              
-┣━━━━━━━━━━━━━━━━━━━╋━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━
-┃ kraken2_db        ┃ dir   ┃ ${params.kraken2_db}
-┃ mash_db           ┃ file  ┃ ${params.mash_db}
-┃ checkm2_db        ┃ file  ┃ ${params.checkm2_db}
-┃ sylph_db          ┃ file  ┃ ${params.sylph_db}
-┃ reference_genomes ┃ file  ┃ ${params.reference_genomes}
-┗━━━━━━━━━━━━━━━━━━━┻━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ param             ┃ type  ┃ value                                                      ┃
+┣━━━━━━━━━━━━━━━━━━━╋━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ kraken2_db        ┃ dir   ┃ ${params.kraken2_db.toString().padRight(58)} ┃
+┃ mash_db           ┃ file  ┃ ${params.mash_db.toString().padRight(58)} ┃
+┃ checkm2_db        ┃ file  ┃ ${params.checkm2_db.toString().padRight(58)} ┃
+┃ sylph_db          ┃ file  ┃ ${params.sylph_db.toString().padRight(58)} ┃
+┃ reference_genomes ┃ file  ┃ ${params.reference_genomes.toString().padRight(58)} ┃
+┗━━━━━━━━━━━━━━━━━━━┻━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 """
 
@@ -345,7 +371,10 @@ Initializing Databases and References
         .view { it ->  "Using KRAKEN2 database : $it" }
         .set { ch_kraken2_db }
   } else {
-    log.info "FYI: A KRAKEN2 database can be loaded into Grandeur with 'params.kraken2_db', more information can be found at https://github.com/UPHL-BioNGS/Grandeur/wiki/kraken2_ref"
+    log.info """
+FYI: A KRAKEN2 database can be loaded into Grandeur with 'params.kraken2_db', more 
+information can be found at https://github.com/UPHL-BioNGS/Grandeur/wiki/kraken2_ref
+"""
     ch_kraken2_db = channel.empty()
   }
 
@@ -362,8 +391,12 @@ Initializing Databases and References
         .view { it ->  "Using MASH reference : $it" }
         .set { ch_mash_db }
   } else {
-    log.info "Using default MASH database located in STaPH-B/mash container (RefSeqSketchesDefaults.msh)."
-    log.info "FYI: A custome MASH database can be loaded into Grandeur with 'params.mash_db', more information can be found at https://github.com/UPHL-BioNGS/Grandeur/wiki/mash"
+
+    log.info """
+Using default MASH database located in STaPH-B/mash container (RefSeqSketchesDefaults.msh).
+FYI: A custom MASH database can be loaded into Grandeur with 'params.mash_db', more 
+    information can be found at https://github.com/UPHL-BioNGS/Grandeur/wiki/mash
+"""
     ch_mash_db = channel.empty()
   }
 
@@ -380,8 +413,12 @@ Initializing Databases and References
         .view { it ->  "Using CHECKM2 database : $it" }
         .set { ch_checkm2_db }
   } else {
-    log.info "FYI: A CHECKM2 database can be loaded into Grandeur with 'params.checkm2_db'."
-    log.info "\t- Please read the wiki for instructions on how to create a CHECKM2 database for use with Grandeur at https://github.com/UPHL-BioNGS/Grandeur/wiki/checkm2_database"
+
+    log.info """
+FYI: A CHECKM2 database can be loaded into Grandeur with 'params.checkm2_db'.
+\t- Please read the wiki for instructions on how to create a CHECKM2 database for use with 
+    Grandeur at https://github.com/UPHL-BioNGS/Grandeur/wiki/checkm2_database
+"""
     ch_checkm2_db = channel.empty()
   }
 
@@ -398,15 +435,21 @@ Initializing Databases and References
         .view { it ->  "Using SYLPH database : $it" }
         .set { ch_sylph_db }
   } else {
-    log.info "FYI: A SYLPH database can be loaded into Grandeur with 'params.sylph_db'."
-    log.info "\t- Please read the wiki for instructions on how to create a SYLPH database for use with Grandeur at https://github.com/UPHL-BioNGS/Grandeur/wiki/sylph_db"
+
+    log.info """
+FYI: A SYLPH database can be loaded into Grandeur with 'params.sylph_db'.
+\t- Please read the wiki for instructions on how to create a SYLPH database for use with Grandeur at https://github.com/UPHL-BioNGS/Grandeur/wiki/sylph_db
+"""
     ch_sylph_db = channel.empty()
   }
   
   // if using additional fasta files for ani
   if (  params.reference_genomes ) {
-    log.info "Loading additional reference genomes listed in ${params.reference_genomes}"
-    log.info "\t- Please note that these files must be named genus_species_uniquename.fasta."
+
+    log.info """
+Loading additional reference genomes listed in ${params.reference_genomes}
+\t- Please note that these files must be named genus_species_uniquename.fasta.
+"""
     channel.fromPath(params.reference_genomes, type: "file")
       .splitText()
       .map{ it -> it.trim()}
@@ -415,8 +458,13 @@ Initializing Databases and References
       .view{ it ->  "Additional reference genome from file : $it" }
       .set{ ch_reference_genomes }
   } else {
-    log.info "FYI: Additional reference genomes can be loaded into Grandeur for ANI analysis with 'params.reference_genomes'."
-    log.info "\t- Please note that this file should list the path for one reference genome per line, and these references must be named genus_species_uniquename.fasta."
+
+    log.info """
+FYI: Additional reference genomes can be loaded into Grandeur for ANI analysis with 
+\t'params.reference_genomes'.
+\t- Please note that this file should list the path for one reference genome per line, and 
+\t  these references must be named genus_species_uniquename.fasta.
+"""
     ch_reference_genomes = channel.empty()
   }
 
@@ -427,46 +475,66 @@ Initializing Workflow Options
 
 ------------------------------------------------------
 
-┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━
-┃ param             ┃ type  ┃ value                              
-┣━━━━━━━━━━━━━━━━━━━╋━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━
-┃ msa               ┃ bool  ┃ ${params.msa}
-┃ skip_extras       ┃ bool  ┃ ${params.skip_extras}
-┃ aligner           ┃ str   ┃ ${params.aligner}
-┃ minimum_reads     ┃ int   ┃ ${params.minimum_reads}
-┃ min_core_genes    ┃ int   ┃ ${params.min_core_genes}
-┃ min_core_per      ┃ float ┃ ${params.min_core_per}
-┃ current_datasets  ┃ bool  ┃ ${params.current_datasets}
-┃ exclude_top_hit   ┃ bool  ┃ ${params.exclude_top_hit}
-┗━━━━━━━━━━━━━━━━━━━┻━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ param             ┃ type  ┃ value                                                      ┃
+┣━━━━━━━━━━━━━━━━━━━╋━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ msa               ┃ bool  ┃ ${params.msa.toString().padRight(58)} ┃
+┃ skip_extras       ┃ bool  ┃ ${params.skip_extras.toString().padRight(58)} ┃
+┃ aligner           ┃ str   ┃ ${params.aligner.toString().padRight(58)} ┃
+┃ minimum_reads     ┃ int   ┃ ${params.minimum_reads.toString().padRight(58)} ┃
+┃ min_core_genes    ┃ int   ┃ ${params.min_core_genes.toString().padRight(58)} ┃
+┃ min_core_per      ┃ float ┃ ${params.min_core_per.toString().padRight(58)} ┃
+┃ current_datasets  ┃ bool  ┃ ${params.current_datasets.toString().padRight(58)} ┃
+┃ exclude_top_hit   ┃ bool  ┃ ${params.exclude_top_hit.toString().padRight(58)} ┃
+┗━━━━━━━━━━━━━━━━━━━┻━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 """
 
 
   if (params.msa) {
-    log.info "'params.msa' is set to true. All input files will be put through the PHYLOGENETIC_ANALYSIS subworkflow. Please ensure that all input genomes are reasonably related."
-    log.info "The minimum number of genes these genomes should share is ${params.min_core_genes} and the minimum core genome percentage is ${params.min_core_per}%. These can be adjusted with 'params.min_core_genes' and 'params.min_core_per'."
+    log.info """
+'params.msa' is set to true. All input files will be put through the PHYLOGENETIC_ANALYSIS 
+subworkflow. Please ensure that all input genomes are reasonably related.
+\tThe minimum number of genes these genomes should share is ${params.min_core_genes} 
+\tThe minimum core genome percentage is ${params.min_core_per}%. 
+\tThese can be adjusted with 'params.min_core_genes' and 'params.min_core_per'.
+"""
   } else {
-    log.info "FYI: The PHYLOGENETIC_ANALYSIS subworkflow is skipped by default. To compare isolates with reasonable top hits, set 'params.msa' to true."
+
+    log.info """
+FYI: The PHYLOGENETIC_ANALYSIS subworkflow is skipped by default. To compare isolates with 
+\treasonable top hits, set 'params.msa' to true.
+"""
   }
 
 
   if ( params.skip_extras ) {
-    log.info "'params.skip_extras' is set to true. Skipping all \"extra\" processes and subworkflows. This focuses on the core assembly of reads (if FASTQ files are provided) or multiple sequence alignment (if 'params.msa' is set to true)."
+    log.info """
+'params.skip_extras' is set to true. Skipping all \"extra\" processes and subworkflows. This 
+focuses on the core assembly of reads (if FASTQ files are provided) or multiple sequence 
+alignment (if 'params.msa' is set to true).
+"""
   } else {
-    log.info "FYI: It is possible to skip ANI analysis, subtyping, and taxonomic profiling subworkflows. To skip these steps, set 'params.skip_extras' to true."
+    log.info """
+FYI: It is possible to skip ANI analysis, subtyping, and taxonomic profiling subworkflows. 
+\tTo skip these steps, set 'params.skip_extras' to true.
+"""
   }
 
 
   if ( ! params.reads && ! params.fastas && ! params.input && ! params.sample_sheet && ! params.fasta_list && params.sra_accessions.isEmpty() && params.genome_accessions.isEmpty() ) { 
-    log.fatal "No input files were detected. Exiting."
+    log.error "No input files were detected. Exiting."
     exit 0
   }
 
   // getting test files
   if ( ! params.sra_accessions.isEmpty()  || ! params.genome_accessions.isEmpty() ) { 
-    log.info "Will download test data for SRA accessions: ${params.sra_accessions} and genome accessions: ${params.genome_accessions} using the TEST subworkflow for use in pipeline testing and development."
+
+    log.info """
+Will download test data for SRA accessions: ${params.sra_accessions} 
+and genome accessions: ${params.genome_accessions} 
+using the TEST subworkflow for use in pipeline testing and development.
+"""
     TEST(
       ch_sra_accessions.ifEmpty([]), 
       ch_genome_accessions.ifEmpty([])
