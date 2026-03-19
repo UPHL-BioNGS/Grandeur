@@ -7,7 +7,7 @@ process PLASMIDFINDER {
   tuple val(meta), file(file)
 
   output:
-  tuple val(meta), file("plasmidfinder/*/*"), emit: files
+  tuple val(meta), file("plasmidfinder/*/*"), emit: files, optional: true
   path "plasmidfinder/*/*json", emit: collect, optional: true
   path "logs/${task.process}/*.log", emit: log
   path "versions.yml", emit: versions
