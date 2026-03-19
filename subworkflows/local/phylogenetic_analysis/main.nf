@@ -142,11 +142,11 @@ Relevant params and their values:
   // ch_nwk = ch_nwk.mix(KSNP4.out.newick)
   // ch_versions = ch_versions.mix(KSNP4.out.versions)
 
-  MASHTREE(ch_contigs.map{it -> it[1]}.collect())
+  MASHTREE(ch_contigs.map{it -> it[1]}.unique().collect())
   ch_nwk = ch_nwk.mix(MASHTREE.out.newick)
   ch_versions = ch_versions.mix(MASHTREE.out.versions)
 
-  SKA2(ch_contigs.map{it -> it[1]}.collect())
+  SKA2(ch_contigs.map{it -> it[1]}.unique().collect())
   ch_versions = ch_versions.mix(SKA2.out.versions)
     
   IQTREE(ch_core_genome.mix(SKA2.out.aln))
@@ -167,7 +167,7 @@ Relevant params and their values:
   ch_multiqc  = ch_multiqc.mix(GOTREE.out.for_multiqc)
   ch_summary  = ch_summary.mix(ch_gotree_summary)
 
-  SNPDISTS(ch_core_genome.mix(SKA2.out.aln))
+  SNPDISTS(ch_core.map{it -> it[0]}.mix(SKA2.out.aln))
   ch_versions = ch_versions.mix(SNPDISTS.out.versions)
   ch_multiqc  = ch_multiqc.mix(SNPDISTS.out.snp_matrix)
   ch_summary  = ch_summary.mix(SNPDISTS.out.snp_matrix)
