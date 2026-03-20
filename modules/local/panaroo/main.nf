@@ -4,7 +4,7 @@ process PANAROO {
   container     'staphb/panaroo:1.6.0'
   
   input:
-  file(gff)
+  path(gff, stageAs: 'inputs_?/*')
 
   output:
   path "panaroo/*"                                                                         , emit: files

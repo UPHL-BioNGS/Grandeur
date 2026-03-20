@@ -4,7 +4,7 @@ process ROARY {
     container     'staphb/roary:3.13.0'
     
     input:
-    file(contigs)
+    path(contigs, stageAs: 'inputs_?/*')
 
     output:
     path "roary/*"                                                                       , emit: files
