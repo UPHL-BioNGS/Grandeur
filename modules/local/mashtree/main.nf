@@ -4,7 +4,7 @@ process MASHTREE {
   container     'staphb/mashtree:1.4.6'
   
   input:
-  path(assemblies, stageAs: 'inputs_?/*')
+  path(assemblies)
 
   output:
   path "mashtree/*", emit: tree

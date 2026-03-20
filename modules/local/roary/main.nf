@@ -4,7 +4,7 @@ process ROARY {
     container     'staphb/roary:3.13.0'
     
     input:
-    path(contigs, stageAs: 'inputs_?/*')
+    path(contigs)
 
     output:
     path "roary/*"                                                                       , emit: files
@@ -26,7 +26,7 @@ process ROARY {
         -p ${task.cpus} \
         -f ${prefix} \
         -e -n \
-        *.gff \
+        ${contigs} \
         | tee -a \$log_file
 
         cat <<-END_VERSIONS > versions.yml
