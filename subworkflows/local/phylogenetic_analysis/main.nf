@@ -78,16 +78,16 @@ Relevant params and their values:
   ch_contigs  = ch_org_contigs.mix(ch_top_hit).map{it -> tuple(it[0], it[2])}
 
   if (params.annotator == 'prokka' ) {
-    PROKKA(ch_org_contigs.mix(ch_top_hit).filter{it -> it}.unique())
+    PROKKA(ch_org_contigs.mix(ch_top_hit).filter{it -> it}.unique{it -> it[2].name })
     
     ch_versions = ch_versions.mix(PROKKA.out.versions.first())
     ch_multiqc  = ch_multiqc.mix(PROKKA.out.for_multiqc)
     ch_gff      = PROKKA.out.gff
   } else if (params.annotator == 'bakta') {
-    BAKTA(ch_org_contigs.mix(ch_top_hit).filter{it -> it}.unique())
+    BAKTA(ch_org_contigs.mix(ch_top_hit).filter{it -> it}.unique{it -> it[2].name })
     
     ch_versions = ch_versions.mix(BAKTA.out.versions.first())
-    ch_multiqc  = ch_multiqc.mix(BAKTA.out.for_multiqc)
+    ch_multiqc  = ch_multiqc.mix(BAKTA.out.for_multiqc).unique{it -> it.name }
     ch_gff      = BAKTA.out.gff
 
   } else {
@@ -96,13 +96,13 @@ Relevant params and their values:
   }
 
   if (params.aligner == 'panaroo') {
-    PANAROO(ch_gff.unique().collect())
+    PANAROO(ch_gff.unique{it -> it.name }.collect())
 
     ch_core     = PANAROO.out.core_gene_alignment
     ch_versions = ch_versions.mix(PANAROO.out.versions)
 
   } else if (params.aligner == 'roary') {
-    ROARY(ch_gff.unique().collect())
+    ROARY(ch_gff.unique{it -> it.name }.collect())
 
     ch_core     = ROARY.out.core_gene_alignment
     ch_versions = ch_versions.mix(ROARY.out.versions)
@@ -141,11 +141,11 @@ Relevant params and their values:
   // ch_nwk = ch_nwk.mix(KSNP4.out.newick)
   // ch_versions = ch_versions.mix(KSNP4.out.versions)
 
-  MASHTREE(ch_contigs.map{it -> it[1]}.unique().collect())
+  MASHTREE(ch_contigs.map{it -> it[1]}.unique{it -> it.name }.collect())
   ch_nwk = ch_nwk.mix(MASHTREE.out.newick)
   ch_versions = ch_versions.mix(MASHTREE.out.versions)
 
-  SKA2(ch_contigs.map{it -> it[1]}.unique().collect())
+  SKA2(ch_contigs.map{it -> it[1]}.unique{it -> it.name }.collect())
   ch_versions = ch_versions.mix(SKA2.out.versions)
     
   IQTREE(ch_core_genome.mix(SKA2.out.aln))
