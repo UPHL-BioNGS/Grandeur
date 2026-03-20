@@ -25,19 +25,28 @@ process PROKKA {
     mkdir -p prokka gff logs/${task.process}
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
+    # ref fasta files are compressed
+    if [[ "$contigs" == "*.gz" ]]
+    then
+      gunzip $contigs
+      filename="\${$contigs%.gz}"
+    else
+      filename=$contigs
+    fi
+
     prokka ${args} \
       --cpu ${task.cpus} \
       --outdir prokka/${prefix} \
       --prefix ${prefix} \
       ${gen_sp} \
-      --force ${contigs} \
+      --force \$filename \
       | tee -a \$log_file
 
     cp prokka/${prefix}/${prefix}.gff gff/${prefix}.gff
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        prokka: \$(echo \$(prokka --version 2>&1) | sed 's/^.*prokka //')
+      prokka: \$(echo \$(prokka --version 2>&1) | sed 's/^.*prokka //')
     END_VERSIONS
   """
 }
