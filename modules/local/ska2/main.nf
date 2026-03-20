@@ -4,7 +4,7 @@ process SKA2 {
     container     'staphb/ska2:0.5.1'
 
     input:
-    file(contigs)
+    path(contigs, stageAs: 'inputs_?/*')
 
     output:
     path "ska/*_alignment.aln",        emit: aln, optional: true
