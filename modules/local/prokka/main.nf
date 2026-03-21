@@ -29,7 +29,7 @@ process PROKKA {
     if [[ "$contigs" == *.gz ]]
     then
       filename="${prefix}.fna"
-      gunzip -c "$contigs" > "$filename"
+      gunzip -c "$contigs" > "\$filename"
     else
       filename="$contigs"
     fi
