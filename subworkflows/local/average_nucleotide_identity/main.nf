@@ -189,7 +189,8 @@ Relevant params and their values:
                 .map { file, _meta -> file }
                 .view { it ->  "Adding SKANI top hit ${it.name} to analysis." }
                 .map { it ->
-                    def meta = [id:it.baseName]
+                    def id = it.name.replaceFirst(/\.(fa|fna|fasta)(\.gz)?$/, '').baseName
+                    def meta = [id:id]
                     def species = it.name.split("_")[0]
                     def genus = it.name.split("_")[1]
                     tuple( meta, [species, genus], it)
