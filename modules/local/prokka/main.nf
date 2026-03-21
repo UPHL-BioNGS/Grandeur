@@ -26,12 +26,12 @@ process PROKKA {
     log_file=logs/${task.process}/${prefix}.${workflow.sessionId}.log
 
     # ref fasta files are compressed
-    if [[ "$contigs" == "*.gz" ]]
+    if [[ "$contigs" == *.gz ]]
     then
-      gunzip $contigs
-      filename="\${$contigs%.gz}"
+      filename="${prefix}.fna"
+      gunzip -c "$contigs" > "$filename"
     else
-      filename=$contigs
+      filename="$contigs"
     fi
 
     prokka ${args} \
