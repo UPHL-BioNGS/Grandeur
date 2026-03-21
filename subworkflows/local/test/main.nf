@@ -56,7 +56,8 @@ issues.
         DOWNLOAD_GENOME.out.genomes
             .flatten()
             .map { it ->
-                def meta = [id:it.baseName]
+                def id = it.name.replaceFirst(/\.(fa|fna|fasta)(\.gz)?$/, '').baseName
+                def meta = [id:id]
                 tuple( meta, it)
             }
             .set { ch_fasta }
