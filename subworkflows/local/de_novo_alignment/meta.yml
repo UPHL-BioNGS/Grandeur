@@ -1,0 +1,50 @@
+name: "de_novo_alignment"
+description: >-
+  Runs de novo assembly. Performs FASTQ file filtering using FASTP
+  and de novo assembly using SPAdes.
+keywords:
+  - de novo
+  - assembly
+  - fastp
+  - spades
+  - fastq
+  - alignment
+components:
+  - fastp
+  - spades
+input:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [ id:'test', single_end:false ]
+  - reads:
+      type: tuple
+      description: Channel containing sample metadata and raw sequencing reads (FASTQ format)
+      pattern: "*.{fastq,fq,fastq.gz,fq.gz}"
+output:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [ id:'test', single_end:false ]
+  - reads_contigs:
+      type: tuple
+      description: Tuple containing sample metadata, the cleaned reads, and the assembled contigs
+  - clean_reads:
+      type: tuple
+      description: Channel containing sample metadata and the filtered/cleaned FASTQ files from FASTP
+      pattern: "*.{fastq.gz,fq.gz}"
+  - contigs:
+      type: tuple
+      description: Channel containing sample metadata and the assembled contigs from SPAdes
+      pattern: "*.{fasta,fa,fna}"
+  - for_multiqc:
+      type: file
+      description: FASTP output files (JSON/HTML) to be routed to MultiQC for reporting
+  - versions:
+      type: file
+      description: File containing software versions
+      pattern: "versions.yml"
+authors:
+  - "@erinyoung"

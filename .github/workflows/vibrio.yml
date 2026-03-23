@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@main
             
       - name: Clean up Disk space
         uses: jlumbroso/free-disk-space@main
@@ -19,11 +19,9 @@ jobs:
           sudo mv nextflow /usr/local/bin/
 
           nextflow -version
-          
-      - name: Run Grandeur
+
+      - name: Download FASTAS
         run: |
-          docker --version
-          
           mkdir fastas
           for accession in GCA_009665515.2_ASM966551v2 GCA_009763645.1_ASM976364v1 GCA_004355205.1_ASM435520v1 GCA_009665315.1_ASM966531v1 GCA_002953375.1_ASM295337v1
           do
@@ -36,15 +34,15 @@ jobs:
             mv ${accession}_genomic.fna fastas/.
           done
 
+      - name: Run Grandeur
+        run: |
           nextflow run . -profile docker -c .github/workflows/github_actions.config --fastas fastas --publish_dir_mode link
-          cat grandeur/grandeur_summary.tsv
-          cat grandeur/summary/software_versions.yml
-          ls  grandeur/multiqc/multiqc_report.html
+
 
       - name: Check Vibrio species
         run: |
-          grep -i vibrio grandeur/fastani/fastani_summary.csv
-          for file in grandeur/kaptive/kaptive_summary.txt
+          grep -i vibrio grandeur/skani/skani_summary.tsv || { echo "Error: No Vibrio records found."; exit 1; }
+          for file in grandeur/grandeur_summary.tsv grandeur/summary/software_versions.yml grandeur/multiqc/multiqc_report.html grandeur/kaptive/kaptive_summary.tsv
           do
             head $file
             wc -l $file

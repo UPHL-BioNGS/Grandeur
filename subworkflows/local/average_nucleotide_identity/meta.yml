@@ -1,0 +1,91 @@
+name: "average_nucleotide_identity"
+description: >-
+  Runs average nucleotide identity (ANI) analysis. Optionally identifies and downloads 
+  reference genomes from NCBI using datasets, then calculates sketch distances using Skani 
+  to estimate the organism and identify top hits.
+keywords:
+  - ani
+  - nucleotide identity
+  - skani
+  - reference download
+  - taxonomy
+  - species estimation
+components:
+  - spestimator
+  - species
+  - datasets/summary
+  - datasets/download
+  - references
+  - skani/sketch
+  - skani/dist
+input:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [ id:'test', single_end:false ]
+  - ch_contigs:
+      type: file
+      description: Channel containing assembled contigs/fastas to analyze
+      pattern: "*.{fasta,fna,fa}"
+  - ch_reference_genomes:
+      type: file
+      description: Channel containing user-provided local reference genome fasta files
+      pattern: "*.{fasta,fna,fa}"
+  - ch_species:
+      type: file
+      description: Channel containing initial species estimations/mash results
+  - dataset_script:
+      type: file
+      description: Script required to run the datasets reference genome lookups
+output:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [ id:'test', single_end:false ]
+  - for_summary:
+      type: file
+      description: Combined channel of summary CSV/TSV files from spestimator, datasets, and skani
+  - top_hit:
+      type: tuple
+      description: Tuple containing meta, a list of [species, genus], and the top hit reference fasta file
+  - ch_org_contigs:
+      type: tuple
+      description: Tuple containing meta, predicted organism list [species, genus], and the input contigs
+  - ch_salmonella:
+      type: file
+      description: Skani dist output specific to Salmonella hits
+  - ch_ecoli:
+      type: file
+      description: Skani dist output specific to E. coli hits
+  - ch_kleb:
+      type: file
+      description: Skani dist output specific to Klebsiella hits
+  - ch_gas:
+      type: file
+      description: Skani dist output specific to GAS (Group A Strep) hits
+  - ch_strep:
+      type: file
+      description: Skani dist output specific to Streptococcus hits
+  - ch_legionella:
+      type: file
+      description: Skani dist output specific to Legionella hits
+  - ch_vibrio:
+      type: file
+      description: Skani dist output specific to Vibrio hits
+  - ch_acinetobacter:
+      type: file
+      description: Skani dist output specific to Acinetobacter hits
+  - ch_myco:
+      type: file
+      description: Skani dist output specific to Mycobacterium hits
+  - ch_gc:
+      type: file
+      description: Skani dist output specific to Neisseria gonorrhoeae hits
+  - versions:
+      type: file
+      description: File containing software versions
+      pattern: "versions.yml"
+authors:
+  - "@erinyoung"

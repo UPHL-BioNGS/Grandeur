@@ -1,0 +1,45 @@
+name: Test Grandeur with MASH database
+
+on: [pull_request, workflow_dispatch]
+
+jobs:
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+            
+      - name: Clean up Disk space
+        uses: jlumbroso/free-disk-space@main
+
+      - name: Maximize build space and add swap
+        uses: pierotofy/set-swap-space@master
+        with:
+          swap-size-gb: 10
+
+      - name: Install Nextflow
+        run: |
+          wget -qO- get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+
+          nextflow -version
+
+      - name: Download MASH database
+        run: |
+            wget https://zenodo.org/records/7348463/files/rep-genomes.msh
+
+      - name: Run Grandeur
+        run: |
+          nextflow run . -profile docker,test -c .github/workflows/github_actions.config --publish_dir_mode link --mash_db rep-genomes.msh
+          
+      - name: Check files
+        run: |
+            for file in grandeur/contigs/*_contigs.fa grandeur/grandeur_summary.tsv grandeur/mash/mashdist_summary.csv
+            do
+                head $file
+                wc -l $file
+            done      
+
+      - name: tree
+        run: tree grandeur*

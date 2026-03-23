@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@main
             
       - name: Clean up Disk space
         uses: jlumbroso/free-disk-space@main
@@ -37,7 +37,7 @@ jobs:
 
       - name: Check MSA files
         run: |
-          for file in grandeur/*/summary_statistics.txt grandeur/iqtree2/iqtree.treefile.nwk grandeur/snp-dists/snp_matrix.txt grandeur/gff/*gff
+          for file in grandeur/*/summary_statistics.txt grandeur/iqtree/iqtree_core_gene_alignment.treefile.nwk grandeur/iqtree/iqtree_ska_alignment.treefile.nwk grandeur/gotree/gotree_summary.tsv grandeur/snp-dists/snpdists_core_gene_alignment.txt grandeur/snp-dists/snpdists_ska_alignment.txt grandeur/gff/*gff
           do
             head $file
             wc -l $file

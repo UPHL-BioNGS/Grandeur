@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@main
             
       - name: Clean up Disk space
         uses: jlumbroso/free-disk-space@main
@@ -43,7 +43,7 @@ jobs:
           
       - name: Check E. coli file
         run: |
-          for file in grandeur/shigatyper/shigatyper_summary.txt grandeur/shigatyper/shigatyper_hits.txt grandeur/serotypefinder/serotypefinder_results.txt
+          for file in grandeur/shigapass/shigapass_summary.tsv grandeur/serotypefinder/serotypefinder_results.txt grandeur/kleborate/kleborate_results.tsv
           do
             head $file
             wc -l $file

@@ -16,6 +16,7 @@
 include { INITIALIZE } from './subworkflows/local/initialize'
 include { GRANDEUR   } from './workflows/grandeur'
 
+include { paramsHelp; validateParameters; paramsSummaryLog } from 'plugin/nf-schema'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -24,34 +25,91 @@ include { GRANDEUR   } from './workflows/grandeur'
 */
 workflow {
 
-  main:
-  //
-  // SUBWORKFLOW: Initialize files and tasks
-  //
-  INITIALIZE ()
+    main:
+    //
+    // HELP: Run help message and exit
+    //
 
-  //
-  // WORKFLOW: Run main workflow
-  //
-  GRANDEUR (
-    INITIALIZE.out.reads,
-    INITIALIZE.out.fastas,
-    INITIALIZE.out.fastani_genomes,
-    INITIALIZE.out.versions,
-    INITIALIZE.out.genome_sizes,
-    INITIALIZE.out.mash_db,
-    INITIALIZE.out.kraken2_db,
-    INITIALIZE.out.blast_db,
-    INITIALIZE.out.dataset_script,
-    INITIALIZE.out.evaluat_script,
-    INITIALIZE.out.jsoncon_script,
-    INITIALIZE.out.multiqc_script,
-    INITIALIZE.out.summary_script,
-    INITIALIZE.out.summfle_script,
-    INITIALIZE.out.version_script
-  )
+    if (params.help) {
+        log.info paramsHelp("nextflow run UPHL-BioNGS/Grandeur -profile docker --sample_sheet samplesheet.csv --outdir grandeur")
+        exit 0
+    }
+
+    //
+    // SUBWORKFLOW: Initialize files and tasks
+    //
+    INITIALIZE ()
+
+    //
+    // WORKFLOW: Run main workflow
+    //
+    GRANDEUR (
+        INITIALIZE.out.reads,
+        INITIALIZE.out.fastas,
+        INITIALIZE.out.reference_genomes,
+        INITIALIZE.out.versions,
+        INITIALIZE.out.genome_sizes,
+        INITIALIZE.out.mash_db,
+        INITIALIZE.out.kraken2_db,
+        INITIALIZE.out.checkm2_db,
+        INITIALIZE.out.sylph_db,
+        INITIALIZE.out.dataset_script,
+        INITIALIZE.out.evaluat_script,
+        INITIALIZE.out.jsoncon_script,
+        INITIALIZE.out.multiqc_script,
+        INITIALIZE.out.summary_script,
+        INITIALIZE.out.summfle_script,
+        INITIALIZE.out.version_script
+    )
 
 
+}
+
+workflow.onComplete {
+    
+    log.info """
+------------------------------------------------------------------------------------------------------------
+
+GRANDEUR pipeline execution summary
+-----------------------------------
+Completed at : ${workflow.complete}
+Duration     : ${workflow.duration}
+Status       : ${workflow.success ? 'SUCCESS' : 'FAILED'}
+Exit status  : ${workflow.exitStatus ?: 'N/A'}
+"""
+
+    if (workflow.success) {
+        log.info """
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Pipeline Completed Successfully                                    ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ All results have been saved to:                                    │
+│  ${params.outdir.padRight(66)}│"""
+        // Only point out the summary and MultiQC if they were actually generated
+        if ( ! params.skip_extras ) {
+            log.info """│    ├── multiqc/multiqc_report.html                                 │
+│    └── grandeur_summary.tsv                                        │"""
+        }
+        
+        log.info """└────────────────────────────────────────────────────────────────────┘
+
+Thanks for using Grandeur! The view really is great from up here.
+------------------------------------------------------------------------------------------------------------
+"""
+    } else {
+        log.info """
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Pipeline Failed                                                    ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ Error message:                                                     │
+│ ${workflow.errorMessage ?: 'No specific error message provided.'}
+│                                                                    │
+│ Please check the .nextflow.log file for more detailed information. │
+└────────────────────────────────────────────────────────────────────┘
+
+------------------------------------------------------------------------------------------------------------
+"""
+    }
 }
 
 /*
@@ -59,12 +117,3 @@ workflow {
     THE END
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-
-
-
-workflow.onComplete {
-  println("Pipeline completed at: $workflow.complete")
-  println("MultiQC report can be found at ${params.outdir}/multiqc/multiqc_report.html")
-  println("Summary can be found at ${params.outdir}/grandeur_summary.tsv")
-  println("Execution status: ${ workflow.success ? 'OK' : 'failed' }")
-}
