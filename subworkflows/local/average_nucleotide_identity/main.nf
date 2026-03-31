@@ -72,15 +72,6 @@ Relevant params and their values:
 
             ch_concat   = ch_concat.mix(DATASETS_SUMMARY.out.genomes.collect().map {it -> [it, "datasets_summary.csv","datasets",true]})
 
-            ch_datasets_summary
-                .subscribe { summaryFile ->
-                    def genomeCount = summaryFile.countLines() - 1 
-                    log.info "Successfully identified ${genomeCount} genomes from NCBI for ANI analysis."
-                    if (genomeCount == 0) {
-                        log.warn "No genomes were identified from NCBI for ANI analysis. This may be due to issues with the NCBI API, or because no reference genomes were identified for the species in the dataset. If you believe there should be reference genomes available, try running this workflow again, or provide references with 'params.reference_genomes'."
-                    }
-                }
-
             DATASETS_DOWNLOAD(DATASETS_SUMMARY.out.genomes.mix(SPECIES.out.accessions).collect())
 
             DATASETS_DOWNLOAD.out.genomes
@@ -98,8 +89,6 @@ Relevant params and their values:
             ch_versions = ch_versions.mix(DATASETS_DOWNLOAD.out.versions)
 
 
-        } else {
-            ch_datasets_summary = channel.empty()
         }
 
         REFERENCES()
