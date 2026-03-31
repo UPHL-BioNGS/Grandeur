@@ -65,9 +65,9 @@ Relevant params and their values:
         MASH_DIST(ch_reads.mix(ch_fastas).filter{ it -> it }.map{it -> tuple(it[0], it[1], null)})
         MASH_SCREEN(ch_reads.mix(ch_fastas).filter{ it -> it }.map{it -> tuple(it[0], it[1], null)})
     }
-    ch_concat   = ch_concat.mix(MASH_DIST.out.results.collect().map {it -> [it, "mashdist_summary.csv","mash",false]})
+    ch_concat   = ch_concat.mix(MASH_DIST.out.results.collect().map {it -> [it, "mashdist_summary.csv","mash",true]})
     ch_concat   = ch_concat.mix(MASH_DIST.out.mash_err.collect().map {it -> [it, "mash_err_summary.csv","mash",false]})
-    ch_concat   = ch_concat.mix(MASH_SCREEN.out.screen_results.collect().map {it -> [it, "skani_summary.csv","mash",false]})
+    ch_concat   = ch_concat.mix(MASH_SCREEN.out.screen_results.collect().map {it -> [it, "mashscreen_summary.txt","mash",true]})
     ch_versions = ch_versions.mix(MASH_DIST.out.versions.first())
     ch_versions = ch_versions.mix(MASH_SCREEN.out.versions.first())
 
