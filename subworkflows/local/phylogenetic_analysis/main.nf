@@ -75,6 +75,7 @@ Relevant params and their values:
   ch_summary  = channel.empty()
   ch_multiqc  = channel.empty()
   ch_nwk      = channel.empty()
+  ch_concat   = channel.empty()
   ch_contigs  = ch_org_contigs.mix(ch_top_hit).map{it -> tuple(it[0], it[2])}
 
   if (params.annotator == 'prokka' ) {
@@ -154,17 +155,9 @@ Relevant params and their values:
 
   GOTREE(ch_nwk)
 
-  GOTREE.out.stats
-    .collectFile(
-      storeDir: "${params.outdir}/gotree/",
-      keepHeader: true,
-      sort: { file -> file.text },
-      name: "gotree_summary.tsv")
-    .set { ch_gotree_summary }
-
+  ch_concat   = ch_concat.mix(GOTREE.out.stats.collect().map {it -> [it, "gotree_summary.tsv","gotree",true]})
   ch_versions = ch_versions.mix(GOTREE.out.versions.first())
   ch_multiqc  = ch_multiqc.mix(GOTREE.out.for_multiqc)
-  ch_summary  = ch_summary.mix(ch_gotree_summary)
 
   SNPDISTS(ch_core.map{it -> it[0]}.mix(SKA2.out.aln))
   ch_versions = ch_versions.mix(SNPDISTS.out.versions)
@@ -174,6 +167,9 @@ Relevant params and their values:
   HEATCLUSTER(SNPDISTS.out.snp_matrix)
   ch_versions = ch_versions.mix(HEATCLUSTER.out.versions)
   ch_multiqc  = ch_multiqc.mix(HEATCLUSTER.out.for_multiqc)
+
+  CONCAT_REPORTS(ch_concat)
+  ch_summary = ch_summary.mix(CONCAT_REPORTS.out.summary)
 
   emit:
   for_multiqc = ch_multiqc
