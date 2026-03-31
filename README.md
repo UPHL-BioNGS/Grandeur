@@ -99,7 +99,7 @@ Reference files/paths
   --kraken2_db        [string] directory of kraken2 database
   --mash_db           [string] prepared mash reference msh file
   --sylph_db          [string] prepared sylph reference file
-  --reference_genomes [string] list of genomes (in fasta format) for fastani references
+  --reference_genomes [string] list of genomes (in fasta format) for ANI references
 
 workflow values
   --min_core_genes    [integer] minimum number of genes in core genome alignment for iqtree2 (default is 500) [default: 500]

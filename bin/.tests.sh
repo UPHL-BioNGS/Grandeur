@@ -42,7 +42,7 @@ nextflow run /Volumes/NGS_2/Bioinformatics/eriny/Grandeur \
   --gff    /home/eriny/sandbox/test_files/grandeur/msa \
   --fastas /home/eriny/sandbox/test_files/grandeur/msa \
   --reads  /home/eriny/sandbox/test_files/grandeur/msa \
-  --outdir grandeur_msa_fastani \
+  --outdir grandeur_msa_skani \
   --min_core_genes 50 \
   -resume  \
   -with-tower
