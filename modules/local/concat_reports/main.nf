@@ -7,7 +7,7 @@ process CONCAT_REPORTS {
     tuple file(files), val(output_name), val(subdir), val(keep_header)
 
     output:
-    path "${output_name}", emit: summary
+    path "*/${output_name}", emit: summary
 
     script:
     if ( keep_header )
