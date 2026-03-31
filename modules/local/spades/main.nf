@@ -26,6 +26,7 @@ process SPADES {
     spades.py ${args} \
       -1 ${reads[0]} \
       -2 ${reads[1]} \
+      --memory ${task.memory.toGiga()} \
       --threads ${task.cpus} \
       -o spades/${prefix} \
       | tee -a \$log_file
