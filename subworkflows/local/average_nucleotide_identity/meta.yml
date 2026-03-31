@@ -18,6 +18,7 @@ components:
   - references
   - skani/sketch
   - skani/dist
+  - concat/reports
 input:
   - meta:
       type: map
