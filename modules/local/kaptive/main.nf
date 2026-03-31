@@ -1,7 +1,7 @@
 process KAPTIVE {
   tag           "${meta.id}"
   label         "process_medium"
-  container     'staphb/kaptive:3.1.0'
+  container     'staphb/kaptive:3.2.0'
 
   input:
   tuple val(meta), file(contigs)

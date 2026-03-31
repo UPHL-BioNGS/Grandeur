@@ -1,7 +1,7 @@
 process PLASMIDFINDER {
   tag           "${meta.id}"
   label         "process_low"
-  container     'staphb/plasmidfinder:3.0.2'
+  container     'staphb/plasmidfinder:3.0.3'
 
   input:
   tuple val(meta), file(file)
