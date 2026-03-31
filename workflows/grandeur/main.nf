@@ -92,7 +92,6 @@ workflow GRANDEUR {
         ch_for_summary = ch_for_summary.mix(QUALITY_ASSESSMENT.out.for_summary)
         ch_versions    = ch_versions.mix(QUALITY_ASSESSMENT.out.versions)
 
-
         // getting all the other information
         SUBTYPING(
             AVERAGE_NUCLEOTIDE_IDENTITY.out.ch_myco.ifEmpty([]),
