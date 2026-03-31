@@ -1,8 +1,7 @@
-include { CONCAT_REPORTS    } from '../../../modules/local/concat_reports'
-include { MQC_PREP          } from '../../../modules/local/mqc_prep'
-include { MULTIQC           }  from '../../../modules/local/multiqc'
-include { SUMMARY           }  from '../../../modules/local/summary'
-include { VERSIONS          } from '../../../modules/local/versions'
+include { MQC_PREP } from '../../../modules/local/mqc_prep'
+include { MULTIQC  }  from '../../../modules/local/multiqc'
+include { SUMMARY  }  from '../../../modules/local/summary'
+include { VERSIONS } from '../../../modules/local/versions'
 
 workflow REPORT {
     take:
@@ -32,14 +31,14 @@ More information can be found at https://github.com/UPHL-BioNGS/Grandeur/wiki/re
 
 """
 
-        versions_out = CONCAT_REPORTS(
-            ch_versions.collect(), 
-                "versions.yml", 
-                "pipeline_info", 
-                false
-        )
+        ch_versions
+            .collectFile(
+                keepHeader: false,
+                name: "versions.yml")
+            .set { ch_collated_versions }
 
-        VERSIONS(versions_out.summary, version_script)
+
+        VERSIONS(ch_collated_versions, version_script)
 
         MQC_PREP(for_multiqc.mix(for_summary).flatten().unique().collect(), multiqc_script)
 
