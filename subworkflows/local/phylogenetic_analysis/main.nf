@@ -1,5 +1,6 @@
-include { CORE_GENOME_EVALUATION } from '../../../modules/local/core_genome_evaluation'
 include { BAKTA }                  from '../../../modules/local/bakta'
+include { CORE_GENOME_EVALUATION } from '../../../modules/local/core_genome_evaluation'
+include { CONCAT_REPORTS }         from '../../../modules/local/concat_reports'
 include { GOTREE }                 from '../../../modules/local/gotree'
 include { HEATCLUSTER }            from '../../../modules/local/heatcluster'
 include { IQTREE }                 from '../../../modules/local/iqtree'
