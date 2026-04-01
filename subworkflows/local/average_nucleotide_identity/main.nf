@@ -69,7 +69,6 @@ Relevant params and their values:
 
             DATASETS_SUMMARY(ch_species_list.combine(dataset_script))
             ch_versions = ch_versions.mix(DATASETS_SUMMARY.out.versions.first())
-
             ch_concat   = ch_concat.mix(DATASETS_SUMMARY.out.genomes.collect().map {it -> [it, "datasets_summary.csv","datasets",true]})
 
             DATASETS_DOWNLOAD(DATASETS_SUMMARY.out.genomes.mix(SPECIES.out.accessions).collect())
@@ -87,8 +86,6 @@ Relevant params and their values:
 
             ch_reference_genomes = ch_reference_genomes.mix(DATASETS_DOWNLOAD.out.genomes.flatten())
             ch_versions = ch_versions.mix(DATASETS_DOWNLOAD.out.versions)
-
-
         }
 
         REFERENCES()
@@ -181,7 +178,6 @@ Relevant params and their values:
         ch_acinetobacter = SKANI_DIST.out.acinetobacter
         ch_myco          = SKANI_DIST.out.myco
         ch_gc            = SKANI_DIST.out.gc
-
         versions         = ch_versions
 }
 
@@ -196,7 +192,7 @@ AVERAGE NUCLEOTIDE IDENTITY subworkflow completed at: $workflow.complete
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
 │   ${params.outdir.padRight(52)}│"""
         if ( params.current_datasets ) {
-    log.info """│    ├── spestimator                                    │
+            log.info """│    ├── spestimator                                    │
 │    │   └── spestimator_summary.csv                    │
 │    ├── datasets                                       │
 │    │   └── datasets_summary.csv                       │"""

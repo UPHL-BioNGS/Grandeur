@@ -79,10 +79,10 @@ Relevant params and their values:
     }
 
     CONCAT_REPORTS(ch_concat)
-    ch_species = ch_species.mix(CONCAT_REPORTS.out.summary.filter{ it -> it.contains("kraken") })
-    ch_species = ch_species.mix(CONCAT_REPORTS.out.summary.filter{ it -> it.contains("mashscreen") })
-    ch_species = ch_species.mix(CONCAT_REPORTS.out.summary.filter{ it -> it.contains("mashdist") })
-    ch_species = ch_species.mix(CONCAT_REPORTS.out.summary.filter{ it -> it.contains("sylph_download_summary") })
+    ch_species = ch_species.mix(CONCAT_REPORTS.out.summary.filter{ it -> it.name.contains("kraken") })
+    ch_species = ch_species.mix(CONCAT_REPORTS.out.summary.filter{ it -> it.name.contains("mashscreen") })
+    ch_species = ch_species.mix(CONCAT_REPORTS.out.summary.filter{ it -> it.name.contains("mashdist") })
+    ch_species = ch_species.mix(CONCAT_REPORTS.out.summary.filter{ it -> it.name.contains("sylph_download_summary") })
     ch_summary = ch_summary.mix(CONCAT_REPORTS.out.summary)
 
     emit:
