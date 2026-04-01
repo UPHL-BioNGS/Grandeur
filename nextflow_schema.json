@@ -52,14 +52,14 @@
           "default": "grandeur"
         },
         "sra_accessions": {
-          "type": "string",
-          "default": [],
+          "type": "array",
+          "items": { "type": "string" },
           "hidden": true,
-          "description": "list of accessions to download from the SRA"
+          "description": "list of accessions to download from the ENA"
         },
         "genome_accessions": {
-          "type": "string",
-          "default": [],
+          "type": "array",
+          "items": { "type": "string" },
           "hidden": true,
           "description": "list of accessions to download from genomes"
         },
