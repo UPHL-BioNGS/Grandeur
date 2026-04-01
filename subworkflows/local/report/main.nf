@@ -1,6 +1,6 @@
 include { MQC_PREP } from '../../../modules/local/mqc_prep'
-include { MULTIQC }  from '../../../modules/local/multiqc'
-include { SUMMARY }  from '../../../modules/local/summary'
+include { MULTIQC  }  from '../../../modules/local/multiqc'
+include { SUMMARY  }  from '../../../modules/local/summary'
 include { VERSIONS } from '../../../modules/local/versions'
 
 workflow REPORT {
@@ -36,6 +36,7 @@ More information can be found at https://github.com/UPHL-BioNGS/Grandeur/wiki/re
                 keepHeader: false,
                 name: "versions.yml")
             .set { ch_collated_versions }
+
 
         VERSIONS(ch_collated_versions, version_script)
 

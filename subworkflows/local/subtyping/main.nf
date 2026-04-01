@@ -1,3 +1,4 @@
+include { CONCAT_REPORTS } from '../../../modules/local/concat_reports'
 include { DRPRG }          from '../../../modules/local/drprg'
 include { ELGATO }         from '../../../modules/local/elgato'
 include { EMMTYPER }       from '../../../modules/local/emmtyper'
@@ -32,6 +33,7 @@ workflow SUBTYPING {
   main:
     ch_summary  = channel.empty()
     ch_versions = channel.empty()
+    ch_concat   = channel.empty()
 
     log.info """
 
@@ -79,162 +81,71 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
 
     JSON_CONVERT(DRPRG.out.json.combine(jsoncon_script))
 
-    JSON_CONVERT.out.collect
-      .filter( ~/.*drprg.tsv/ )
-      .collectFile(name: 'drprg_summary.tsv',
-        keepHeader: true,
-        sort: { file -> file.text },
-        storeDir: "${params.outdir}/drprg")
-      .set{ drprg_summary }
-
-    ch_summary  = ch_summary.mix(drprg_summary)
+    ch_concat   = ch_concat.mix(JSON_CONVERT.out.collect.filter( ~/.*drprg.tsv/ ).collect().map {it -> [it, "drprg_summary.tsv","drprg",true]})
     ch_versions = ch_versions.mix(DRPRG.out.versions.first())
 
     EMMTYPER(ch_gas.filter{it -> it}.combine(summfle_script)) 
 
-    EMMTYPER.out.collect
-      .collectFile(name: 'emmtyper_summary.tsv',
-        keepHeader: true,
-        sort: { file -> file.text },
-        storeDir: "${params.outdir}/emmtyper")
-      .set{ emmtyper_summary }
-
-    ch_summary  = ch_summary.mix(emmtyper_summary)
+    ch_concat   = ch_concat.mix(EMMTYPER.out.collect.collect().map {it -> [it, "emmtyper_summary.tsv","emmtyper",true]})
     ch_versions = ch_versions.mix(EMMTYPER.out.versions.first())
 
     KAPTIVE(ch_vibrio.mix(ch_acinetobacter).filter{it -> it})      
 
-    KAPTIVE.out.collect
-      .collectFile(name: 'kaptive_summary.tsv',
-        keepHeader: true,
-        sort: { file -> file.text },
-        storeDir: "${params.outdir}/kaptive")
-      .set{ kaptive_summary }
-    
-    ch_summary  = ch_summary.mix(kaptive_summary)
+    ch_concat   = ch_concat.mix(KAPTIVE.out.collect.collect().map {it -> [it, "kaptive_summary.tsv","kaptive",true]})
     ch_versions = ch_versions.mix(KAPTIVE.out.versions.first())
 
     KLEBORATE(ch_kleb.mix(ch_ecoli).filter{it -> it}.combine(summfle_script))
-
-    KLEBORATE.out.collect
-      .collectFile(name: 'kleborate_results.tsv',
-        keepHeader: true,
-        sort: { file -> file.text },
-        storeDir: "${params.outdir}/kleborate")
-      .set{ kleborate_summary }
     
-    ch_summary  = ch_summary.mix(kleborate_summary)
+    ch_concat   = ch_concat.mix(KLEBORATE.out.collect.collect().map {it -> [it, "kleborate_results.tsv","kleborate",true]})
     ch_versions = ch_versions.mix(KLEBORATE.out.versions.first())
 
     ELGATO(ch_legionella.filter{it -> it})
 
-    ELGATO.out.collect
-      .collectFile(name: 'elgato_summary.tsv',
-        keepHeader: true,
-        sort: { file -> file.text },
-        storeDir: "${params.outdir}/elgato")
-      .set{ elgato_summary }
-
-    ch_summary = ch_summary.mix(elgato_summary)
+    ch_concat   = ch_concat.mix(ELGATO.out.collect.collect().map {it -> [it, "elgato_summary.tsv","elgato",true]})
     ch_versions = ch_versions.mix(ELGATO.out.versions.first())
 
     MYKROBE(ch_myco.filter{it -> it})
 
-    MYKROBE.out.collect
-      .collectFile(name: 'mykrobe_summary.csv',
-        keepHeader: true,
-        sort: { file -> file.text },
-        storeDir: "${params.outdir}/mykrobe")
-      .set{ mykrobe_summary }
-
-    ch_summary  = ch_summary.mix(mykrobe_summary)
+    ch_concat   = ch_concat.mix(MYKROBE.out.collect.collect().map {it -> [it, "mykrobe_summary.csv","mykrobe",true]})
     ch_versions = ch_versions.mix(MYKROBE.out.versions.first())
 
     MENINGOTYPE(ch_gc.filter{it -> it})
 
-    MENINGOTYPE.out.summary
-      .collectFile(name: 'meningotype_summary.tsv',
-        keepHeader: true,
-        sort: {file -> file.text },
-        storeDir: "${params.outdir}/meningotype")
-      .set{ meningotype_summary }
-
-    ch_summary  = ch_summary.mix(meningotype_summary)
+    ch_concat   = ch_concat.mix(MENINGOTYPE.out.summary.collect().map {it -> [it, "meningotype_summary.tsv","meningotype",true]})
     ch_versions = ch_versions.mix(MENINGOTYPE.out.versions.first())
 
     NGMASTER(ch_gc.filter{it -> it})
 
-    NGMASTER.out.collect
-      .collectFile(name: 'ngmaster_summary.csv',
-        keepHeader: true,
-        sort: { file -> file.text },
-        storeDir: "${params.outdir}/ngmaster")
-      .set{ ngmaster_summary }
-
-    ch_summary  = ch_summary.mix(ngmaster_summary)
+    ch_concat   = ch_concat.mix(NGMASTER.out.collect.collect().map {it -> [it, "ngmaster_summary.csv","ngmaster",true]})
     ch_versions = ch_versions.mix(NGMASTER.out.versions.first())
 
     PBPTYPER(ch_strep.filter{it -> it})
 
-    PBPTYPER.out.collect
-      .collectFile(name: 'pbptyper_summary.tsv',
-        keepHeader: true,
-        sort: { file -> file.text },
-        storeDir: "${params.outdir}/pbptyper")
-      .set{ pbptyper_summary }
-
-    ch_summary  = ch_summary.mix(pbptyper_summary)
+    ch_concat   = ch_concat.mix(PBPTYPER.out.collect.collect().map {it -> [it, "pbptyper_summary.tsv","pbptyper",true]})
     ch_versions = ch_versions.mix(PBPTYPER.out.versions.first())
 
     SEQSERO2(ch_salmonella.filter{it -> it})
-
-    SEQSERO2.out.collect
-      .collectFile(name: 'seqsero2_results.txt',
-        keepHeader: true,
-        sort: { file -> file.text },
-        storeDir: "${params.outdir}/seqsero2")
-      .set{ seqsero2_summary }
-
-    ch_summary  = ch_summary.mix(seqsero2_summary)
+    
+    ch_concat   = ch_concat.mix(SEQSERO2.out.collect.collect().map {it -> [it, "seqsero2_results.txt","seqsero2",true]})
     ch_versions = ch_versions.mix(SEQSERO2.out.versions.first())
 
     SEQSERO2S(ch_salmonella.filter{it -> it})
 
-    SEQSERO2S.out.collect
-      .collectFile(name: 'seqsero2s_results.txt',
-        keepHeader: true,
-        sort: { file -> file.text },
-        storeDir: "${params.outdir}/seqsero2s")
-      .set{ seqsero2s_summary }
-
-    ch_summary  = ch_summary.mix(seqsero2s_summary)
+    ch_concat   = ch_concat.mix(SEQSERO2S.out.collect.collect().map {it -> [it, "seqsero2s_results.txt","seqsero2s",true]})
     ch_versions = ch_versions.mix(SEQSERO2S.out.versions.first())
-
 
     SEROTYPEFINDER(ch_ecoli.filter{it -> it}.combine(summfle_script))
 
-    SEROTYPEFINDER.out.collect
-      .collectFile(name: 'serotypefinder_results.txt',
-        keepHeader: true,
-        sort: { file -> file.text },
-        storeDir: "${params.outdir}/serotypefinder")
-      .set{ serotypefinder_summary }
-    
-    ch_summary  = ch_summary.mix(serotypefinder_summary)
+    ch_concat   = ch_concat.mix(SEROTYPEFINDER.out.collect.collect().map {it -> [it, "serotypefinder_results.txt","serotypefinder",true]})
     ch_versions = ch_versions.mix(SEROTYPEFINDER.out.versions.first())
 
     SHIGAPASS(ch_ecoli.filter{it -> it})
 
-    SHIGAPASS.out.summary
-      .collectFile(name: 'shigapass_summary.tsv',
-        keepHeader: true,
-        sort: { file -> file.text },
-        storeDir: "${params.outdir}/shigapass")
-      .set{ shigapass_summary }
-
-
-    ch_summary  = ch_summary.mix(shigapass_summary)
+    ch_concat   = ch_concat.mix(SHIGAPASS.out.summary.collect().map {it -> [it, "shigapass_summary.tsv","shigapass",true]})
     ch_versions = ch_versions.mix(SHIGAPASS.out.versions.first())
+
+    CONCAT_REPORTS(ch_concat)
+    ch_summary = ch_summary.mix(CONCAT_REPORTS.out.summary)
 
   emit:
     for_summary = ch_summary

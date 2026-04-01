@@ -112,7 +112,7 @@ prepared sylph reference file
 
 **Type:** `string` | *Optional*
 
-list of genomes (in fasta format) for fastani references
+list of genomes (in fasta format) for ANI references
 
 
 
@@ -152,7 +152,7 @@ the minimum number of reads in a fastq file required to move to de novo alignmen
 
 **Type:** `boolean` | *Optional*
 
-removes fastani top hit from msa
+removes ANI top hit from msa
 
 
 ### `--msa` {#msa}
@@ -192,7 +192,7 @@ chooses annotator (params.msa must be set to true)
 
 **Type:** `boolean` | *Optional*
 
-turns off blobtools, kraken2, fastani, mash, and report generation subworkflows
+turns off blobtools, kraken2, skani, mash, and report generation subworkflows
 
 
 ### `--current_datasets` {#current-datasets}

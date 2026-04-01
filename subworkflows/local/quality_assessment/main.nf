@@ -1,5 +1,6 @@
 include { AMRFINDER }      from '../../../modules/local/amrfinder'
 include { CHECKM2 }         from '../../../modules/local/checkm2'
+include { CONCAT_REPORTS } from '../../../modules/local/concat_reports'
 include { FASTQC }         from '../../../modules/local/fastqc'
 include { MLST }           from '../../../modules/local/mlst'
 include { PLASMIDFINDER }  from '../../../modules/local/plasmidfinder'
@@ -20,7 +21,7 @@ workflow QUALITY_ASSESSMENT {
     ch_for_multiqc = channel.empty()
     ch_versions    = channel.empty()
     ch_summary     = channel.empty()
-    _ch_bams        = channel.empty()
+    ch_concat      = channel.empty()
 
 
     log.info """
@@ -68,86 +69,36 @@ Relevant params and their values:
         FASTQC(ch_raw_reads)
         ch_versions    = ch_versions.mix(FASTQC.out.versions.first())
         ch_for_multiqc = ch_for_multiqc.mix(FASTQC.out.for_multiqc)
-
-        FASTQC.out.collect
-            .collectFile(name: "fastqc_summary.csv",
-                keepHeader: true,
-                sort: { file -> file.text },
-                storeDir: "${params.outdir}/fastqc")
-            .set{ fastqc_summary }
-
-        ch_summary = ch_summary.mix(fastqc_summary)
+        ch_concat      = ch_concat.mix(FASTQC.out.collect.collect().map {it -> [it, "fastqc_summary.csv","fastqc",true]})
 
     }
 
     AMRFINDER(ch_contigs_org.filter{ it -> it })
-
-    AMRFINDER.out.collect
-        .collectFile(name: 'amrfinderplus.txt',
-            keepHeader: true,
-            sort: { file -> file.text },
-            storeDir: "${params.outdir}/amrfinder")
-        .set{ amrfinderplus_summary }
-
-    ch_summary  = ch_summary.mix(amrfinderplus_summary)
+    ch_concat   = ch_concat.mix(AMRFINDER.out.collect.collect().map {it -> [it, "amrfinderplus_summary.txt","amrfinder",true]})
     ch_versions = ch_versions.mix(AMRFINDER.out.versions.first())
 
     QUAST(ch_reads_contigs.filter{ it -> it })
     ch_versions = ch_versions.mix(QUAST.out.versions.first())
-
-    QUAST.out.collect
-        .collectFile(name: "quast_report.tsv",
-            keepHeader: true,
-            sort: { file -> file.text },
-            storeDir: "${params.outdir}/quast")
-        .set{ quast_summary }
-
-    ch_summary = ch_summary.mix(quast_summary)
     ch_for_multiqc = ch_for_multiqc.mix(QUAST.out.for_multiqc)
-
-    QUAST.out.collect_contig
-        .collectFile(name: "quast_contig_report.tsv",
-            keepHeader: true,
-            sort: { file -> file.text },
-            storeDir: "${params.outdir}/quast")
-        .set{ quast_contig_summary }
-    ch_summary = ch_summary.mix(quast_contig_summary)
-
+    ch_concat   = ch_concat.mix(QUAST.out.collect.collect().map {it -> [it, "quast_report.tsv","quast",true]})
+    ch_concat   = ch_concat.mix(QUAST.out.collect_contig.collect().map {it -> [it, "quast_contig_report.tsv","quast",true]})
+    
     MLST(ch_all_fastas.filter{ it -> it })
     ch_versions = ch_versions.mix(MLST.out.versions.first())
-
-    MLST.out.collect
-        .collectFile(name: "mlst_summary.tsv",
-            keepHeader: true,
-            sort: { file -> file.text },
-            storeDir: "${params.outdir}/mlst")
-        .set{ mlst_summary }
-    ch_summary = ch_summary.mix(mlst_summary)
+    ch_concat   = ch_concat.mix(MLST.out.collect.collect().map {it -> [it, "mlst_summary.tsv","mlst",true]})
 
     PLASMIDFINDER(ch_all_fastas.filter{ it -> it })
     ch_versions = ch_versions.mix(PLASMIDFINDER.out.versions.first())
-
-    PLASMIDFINDER.out.collect
-        .collectFile(
-            name: "plasmidfinder_result.json",
-            storeDir: "${params.outdir}/plasmidfinder"
-            )
-        .set{ plasmidfinder_summary }
-    ch_summary = ch_summary.mix(plasmidfinder_summary)
-
+    ch_concat   = ch_concat.mix(PLASMIDFINDER.out.collect.collect().map {it -> [it, "plasmidfinder_result.json","plasmidfinder",false]})
 
     if (params.checkm2_db) {    
         CHECKM2(ch_all_fastas.filter{ it -> it }.combine(ch_checkm2_db))
         ch_versions = ch_versions.mix(CHECKM2.out.versions.first())
-
-        CHECKM2.out.report
-            .collectFile(name: "checkm2_summary.tsv",
-                keepHeader: true,
-                sort: { file -> file.text },
-                storeDir: "${params.outdir}/checkm2")
-            .set{ checkm2_summary }
-        ch_summary = ch_summary.mix(checkm2_summary)
+        ch_concat   = ch_concat.mix(CHECKM2.out.report.collect().map {it -> [it, "checkm2_summary.tsv","checkm2",true]})
     } 
+
+    CONCAT_REPORTS(ch_concat)
+    ch_summary = ch_summary.mix(CONCAT_REPORTS.out.summary)
 
     emit:
     for_summary = ch_summary

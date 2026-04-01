@@ -60,7 +60,7 @@ def add_quast_warnings(df):
     if 'quast_n50' in df.columns:
         n50_vals = pd.to_numeric(df['quast_n50'], errors='coerce')
         mask_low_n50 = n50_vals < 30000
-        append_warning(mask_low_n50, f"Low N50 (<30000)")
+        append_warning(mask_low_n50, "Low N50 (<30000)")
 
     # Check: High Number of Contigs (> 500)
     if 'quast_#_contigs' in df.columns:
@@ -240,14 +240,17 @@ def add_st_mismatch_warning(df):
 
     def standardize(val):
         """Cleans ST values for direct comparison."""
-        if pd.isna(val): return None
+        if pd.isna(val):
+            return None
         s = str(val).strip().upper()
         # Filter out common empty/null placeholders
-        if s in ['', '-', 'ND', 'UNKNOWN', 'NOT FOUND', 'NONE', 'NAN', '.']: return None
+        if s in ['', '-', 'ND', 'UNKNOWN', 'NOT FOUND', 'NONE', 'NAN', '.']:
+            return None
         
         # Remove 'ST' prefix and any trailing '.0' from floats
         s = s.replace('ST', '').strip()
-        if s.endswith('.0'): s = s[:-2]
+        if s.endswith('.0'):
+            s = s[:-2]
         return s
     
     def has_mismatch(row):
@@ -301,7 +304,8 @@ def parse_newick(newick_str):
             if state == 'name':
                 current_node['name'] = buffer.strip()
             else:
-                if buffer.strip(): current_node['length'] = float(buffer)
+                if buffer.strip():
+                    current_node['length'] = float(buffer)
             
             new_node = create_node(parent=current_node['parent'])
             current_node['parent']['children'].append(new_node)
@@ -312,7 +316,8 @@ def parse_newick(newick_str):
             if state == 'name':
                 current_node['name'] = buffer.strip()
             else:
-                if buffer.strip(): current_node['length'] = float(buffer)
+                if buffer.strip():
+                    current_node['length'] = float(buffer)
             
             current_node = current_node['parent']
             state = 'name'
@@ -326,7 +331,8 @@ def parse_newick(newick_str):
             if state == 'name':
                 current_node['name'] = buffer.strip()
             elif state == 'length':
-                if buffer.strip(): current_node['length'] = float(buffer)
+                if buffer.strip():
+                    current_node['length'] = float(buffer)
             break
         else:
             buffer += char

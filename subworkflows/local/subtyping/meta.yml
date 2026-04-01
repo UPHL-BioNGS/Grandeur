@@ -25,6 +25,7 @@ components:
   - seqsero2s
   - serotypefinder
   - shigapass
+  - concat/reports
 input:
   - ch_myco:
       type: tuple

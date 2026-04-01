@@ -34,6 +34,8 @@ process KRAKEN2 {
     --report kraken2/${prefix}_kraken2_report.txt \
     | tee -a \$log_file
 
+  gzip kraken2/*.fastq
+
   echo "Sample,Percentage of fragments,Number of fragments,Number of fragments assigned directly to this taxon,Rank code,NCBI taxonomic ID number,Scientific name" > kraken2/${prefix}_reads_summary_kraken2.csv
   cat kraken2/${prefix}_kraken2_report.txt | grep -w S | sed 's/,//g' | \
     awk -v sample=${prefix} '{ if (\$1 >= 5 ) print sample "," \$1 "," \$2 "," \$3 "," \$4 "," \$5 "," \$6 "_" \$7 }' | \

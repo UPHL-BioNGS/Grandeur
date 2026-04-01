@@ -52,14 +52,14 @@
           "default": "grandeur"
         },
         "sra_accessions": {
-          "type": "string",
-          "default": [],
+          "type": "array",
+          "items": { "type": "string" },
           "hidden": true,
-          "description": "list of accessions to download from the SRA"
+          "description": "list of accessions to download from the ENA"
         },
         "genome_accessions": {
-          "type": "string",
-          "default": [],
+          "type": "array",
+          "items": { "type": "string" },
           "hidden": true,
           "description": "list of accessions to download from genomes"
         },
@@ -95,7 +95,7 @@
         },
         "reference_genomes": {
           "type": "string",
-          "description": "list of genomes (in fasta format) for fastani references"
+          "description": "list of genomes (in fasta format) for ANI references"
         }
       }
     },
@@ -132,7 +132,7 @@
           "exclude_top_hit": {
             "type": "boolean",
             "hidden": true,
-            "description": "removes fastani top hit from msa"
+            "description": "removes ANI top hit from msa"
           },
           "msa": {
             "type": "boolean",
@@ -161,7 +161,7 @@
           "skip_extras": {
             "type": "boolean",
             "hidden": true,
-            "description": "turns off blobtools, kraken2, fastani, mash, and report generation subworkflows"
+            "description": "turns off blobtools, kraken2, skani, mash, and report generation subworkflows"
           },
           "current_datasets": {
             "type": "boolean",

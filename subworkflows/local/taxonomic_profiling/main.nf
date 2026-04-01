@@ -1,3 +1,4 @@
+include { CONCAT_REPORTS } from '../../../modules/local/concat_reports'
 include { KRAKEN2     } from '../../../modules/local/kraken2'
 include { MASH_DIST   } from '../../../modules/local/mashdist'
 include { MASH_SCREEN } from '../../../modules/local/mashscreen'
@@ -48,23 +49,13 @@ Relevant params and their values:
     ch_summary  = channel.empty()
     ch_multiqc  = channel.empty()
     ch_species  = channel.empty()
+    ch_concat   = channel.empty()
 
     if ( params.kraken2_db && ( params.sample_sheet || params.reads || params.sra_accessions )) {
         KRAKEN2(ch_reads.combine(ch_kraken2_db))
-
-        KRAKEN2.out.results
-            .map { it -> it [1] }
-            .collectFile(
-                storeDir: "${params.outdir}/kraken2/",
-                keepHeader: true,
-                sort: { file -> file.text },
-                name: "kraken2_summary.csv")
-            .set { ch_kraken2_summary }
-
+        ch_concat   = ch_concat.mix(KRAKEN2.out.results.map{ it -> it[1] }.collect().map {it -> [it, "kraken2_summary.csv","kraken2",true]})
         ch_versions = KRAKEN2.out.versions.first()
-        ch_summary  = ch_summary.mix(ch_kraken2_summary)
         ch_multiqc  = ch_multiqc.mix(KRAKEN2.out.for_multiqc)
-        ch_species  = ch_species.mix(ch_kraken2_summary)
     }
 
     if (params.mash_db) {
@@ -74,57 +65,25 @@ Relevant params and their values:
         MASH_DIST(ch_reads.mix(ch_fastas).filter{ it -> it }.map{it -> tuple(it[0], it[1], null)})
         MASH_SCREEN(ch_reads.mix(ch_fastas).filter{ it -> it }.map{it -> tuple(it[0], it[1], null)})
     }
-
-    MASH_DIST.out.results
-        .collectFile(
-            storeDir: file("${params.outdir}/mash/"),
-            keepHeader: true,
-            sort: { file -> file.text },
-            name: "mashdist_summary.csv")
-        .set { ch_mashdist_summary }
-
-    MASH_DIST.out.mash_err
-        .collectFile(
-            storeDir: "${params.outdir}/mash/",
-            name: "mash_err_summary.csv")
-        .set { mash_err_summary }
-
-    MASH_SCREEN.out.screen_results
-        .collectFile(
-            storeDir: file("${params.outdir}/mash/"),
-            keepHeader: true,
-            sort: { file -> file.text },
-            name: "mashscreen_summary.txt")
-        .set { ch_mashscreen_summary }
-
-    ch_versions = ch_versions.mix(MASH_DIST.out.versions.first()).mix(MASH_SCREEN.out.versions.first())
-    ch_summary  = ch_summary.mix(ch_mashdist_summary).mix(ch_mashscreen_summary).mix(mash_err_summary)
-    ch_species  = ch_species.mix(ch_mashdist_summary).mix(ch_mashscreen_summary)
+    ch_concat   = ch_concat.mix(MASH_DIST.out.results.collect().map {it -> [it, "mashdist_summary.csv","mash",true]})
+    ch_concat   = ch_concat.mix(MASH_DIST.out.mash_err.collect().map {it -> [it, "mash_err_summary.csv","mash",false]})
+    ch_concat   = ch_concat.mix(MASH_SCREEN.out.screen_results.collect().map {it -> [it, "mashscreen_summary.txt","mash",true]})
+    ch_versions = ch_versions.mix(MASH_DIST.out.versions.first())
+    ch_versions = ch_versions.mix(MASH_SCREEN.out.versions.first())
 
     if (params.sylph_db) {
         SYLPH(ch_reads.mix(ch_fastas).filter{ it -> it }.combine(ch_sylph_db))
-
-        SYLPH.out.results
-            .collectFile(
-                storeDir: "${params.outdir}/sylph/",
-                keepHeader: true,
-                sort: { file -> file.text },
-                name: "sylph_summary.tsv")
-            .set { ch_sylph_summary }
-
-        SYLPH.out.for_download
-            .collectFile(
-                storeDir: "${params.outdir}/summary/",
-                keepHeader: true,
-                sort: { file -> file.text },
-                name: "sylph_download_summary.tsv")
-            .set { ch_sylph_download_summary }
-
+        ch_concat   = ch_concat.mix(SYLPH.out.results.collect().map {it -> [it, "sylph_summary.tsv","sylph",true]})
+        ch_concat   = ch_concat.mix(SYLPH.out.for_download.collect().map {it -> [it, "sylph_download_summary.tsv","sylph",true]})
         ch_versions = ch_versions.mix(SYLPH.out.versions.first())
-        ch_summary  = ch_summary.mix(ch_sylph_summary)
-        ch_species  = ch_species.mix(ch_sylph_download_summary)
     }
 
+    CONCAT_REPORTS(ch_concat)
+    ch_species = ch_species.mix(CONCAT_REPORTS.out.summary.filter{ it -> it.name.contains("kraken") })
+    ch_species = ch_species.mix(CONCAT_REPORTS.out.summary.filter{ it -> it.name.contains("mashscreen") })
+    ch_species = ch_species.mix(CONCAT_REPORTS.out.summary.filter{ it -> it.name.contains("mashdist") })
+    ch_species = ch_species.mix(CONCAT_REPORTS.out.summary.filter{ it -> it.name.contains("sylph_download_summary") })
+    ch_summary = ch_summary.mix(CONCAT_REPORTS.out.summary)
 
     emit:
         for_ref_download = ch_species

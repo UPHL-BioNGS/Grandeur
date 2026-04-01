@@ -17,6 +17,7 @@ components:
   - mash/dist
   - mash/screen
   - sylph
+  - concat/reports
 input:
   - ch_reads:
       type: tuple

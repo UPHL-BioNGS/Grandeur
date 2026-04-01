@@ -22,6 +22,7 @@ components:
   - gotree
   - snpdists
   - heatcluster
+  - concat/reports
 input:
   - evaluat_script:
       type: file

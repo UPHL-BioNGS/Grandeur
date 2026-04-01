@@ -1,10 +1,11 @@
-include { DATASETS_SUMMARY }  from '../../../modules/local/datasets_summary'
+include { CONCAT_REPORTS    } from '../../../modules/local/concat_reports'
+include { DATASETS_SUMMARY  } from '../../../modules/local/datasets_summary'
 include { DATASETS_DOWNLOAD } from '../../../modules/local/datasets_download'
-include { REFERENCES }        from '../../../modules/local/references'
-include { SKANI_SKETCH }      from '../../../modules/local/skanisketch'
-include { SKANI_DIST }        from '../../../modules/local/skanidist'
-include { SPECIES }           from '../../../modules/local/species'
-include { SPESTIMATOR }       from '../../../modules/local/spestimator'
+include { REFERENCES        } from '../../../modules/local/references'
+include { SKANI_SKETCH      } from '../../../modules/local/skanisketch'
+include { SKANI_DIST        } from '../../../modules/local/skanidist'
+include { SPECIES           } from '../../../modules/local/species'
+include { SPESTIMATOR       } from '../../../modules/local/spestimator'
 
 
 workflow AVERAGE_NUCLEOTIDE_IDENTITY {
@@ -48,25 +49,15 @@ Relevant params and their values:
 """
 
         ch_versions = channel.empty()
-        ch_summary = channel.empty()
+        ch_summary  = channel.empty()
+        ch_concat   = channel.empty()
 
         if ( params.current_datasets ) {
 
             SPESTIMATOR(ch_contigs)
 
-            SPESTIMATOR.out.results
-                .map { it -> it [1] }
-                .collectFile(
-                    storeDir: "${params.outdir}/spestimator/",
-                    keepHeader: true,
-                    sort: { file -> file.text },
-                    name: "spestimator_summary.csv")
-                .set { ch_spestimator_summary }
-
-
             ch_versions = ch_versions.mix(SPESTIMATOR.out.versions.first())
-            ch_summary  = ch_summary.mix(ch_spestimator_summary)
-            ch_species = ch_species.mix(ch_spestimator_summary )
+            ch_concat   = ch_concat.mix(SPESTIMATOR.out.results.map{ it[1] }.collect().map {it -> [it, "spestimator_summary.csv","spestimator",true]})
 
             // could be a channel, but some mash results are very long and may overload headnodes
             SPECIES(ch_species.collect())
@@ -78,25 +69,7 @@ Relevant params and their values:
 
             DATASETS_SUMMARY(ch_species_list.combine(dataset_script))
             ch_versions = ch_versions.mix(DATASETS_SUMMARY.out.versions.first())
-
-            DATASETS_SUMMARY.out.genomes
-                .collectFile(
-                    storeDir: "${params.outdir}/datasets/",
-                    keepHeader: true,
-                    sort: { file -> file.text },
-                    name: "datasets_summary.csv")
-                .set { ch_datasets_summary }
-
-            ch_summary = ch_summary.mix(ch_datasets_summary)
-
-            ch_datasets_summary
-                .subscribe { summaryFile ->
-                    def genomeCount = summaryFile.countLines() - 1 
-                    log.info "Successfully identified ${genomeCount} genomes from NCBI for ANI analysis."
-                    if (genomeCount == 0) {
-                        log.warn "No genomes were identified from NCBI for ANI analysis. This may be due to issues with the NCBI API, or because no reference genomes were identified for the species in the dataset. If you believe there should be reference genomes available, try running this workflow again, or provide references with 'params.reference_genomes'."
-                    }
-                }
+            ch_concat   = ch_concat.mix(DATASETS_SUMMARY.out.genomes.collect().map {it -> [it, "datasets_summary.csv","datasets",true]})
 
             DATASETS_DOWNLOAD(DATASETS_SUMMARY.out.genomes.mix(SPECIES.out.accessions).collect())
 
@@ -113,10 +86,6 @@ Relevant params and their values:
 
             ch_reference_genomes = ch_reference_genomes.mix(DATASETS_DOWNLOAD.out.genomes.flatten())
             ch_versions = ch_versions.mix(DATASETS_DOWNLOAD.out.versions)
-
-
-        } else {
-            ch_datasets_summary = channel.empty()
         }
 
         REFERENCES()
@@ -139,16 +108,8 @@ Relevant params and their values:
 
         SKANI_DIST(ch_contigs, SKANI_SKETCH.out.db)
 
-        SKANI_DIST.out.skani
-            .collectFile(
-                storeDir: "${params.outdir}/skani/",
-                keepHeader: true,
-                sort: { file -> file.text },
-                name: "skani_summary.tsv")
-            .set { ch_skani_summary }
-
-        ch_summary  = ch_summary.mix(ch_skani_summary)
         ch_versions = ch_versions.mix(SKANI_DIST.out.versions.first())
+        ch_concat   = ch_concat.mix(SKANI_DIST.out.skani.collect().map {it -> [it, "skani_summary.tsv","skani",true]})
 
         SKANI_DIST.out.hits
             .map { meta, contigs, tsv ->
@@ -200,6 +161,10 @@ Relevant params and their values:
             ch_top_hits = channel.empty()
         }
 
+        CONCAT_REPORTS(ch_concat)
+        ch_species = ch_species.mix(CONCAT_REPORTS.out.summary.filter{ it -> it.contains("spestimator") })
+        ch_summary = ch_summary.mix(CONCAT_REPORTS.out.summary)
+
     emit:
         for_summary      = ch_summary
         top_hit          = ch_top_hits
@@ -214,7 +179,6 @@ Relevant params and their values:
         ch_acinetobacter = SKANI_DIST.out.acinetobacter
         ch_myco          = SKANI_DIST.out.myco
         ch_gc            = SKANI_DIST.out.gc
-
         versions         = ch_versions
 }
 
@@ -229,7 +193,7 @@ AVERAGE NUCLEOTIDE IDENTITY subworkflow completed at: $workflow.complete
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
 │   ${params.outdir.padRight(52)}│"""
         if ( params.current_datasets ) {
-    log.info """│    ├── spestimator                                    │
+            log.info """│    ├── spestimator                                    │
 │    │   └── spestimator_summary.csv                    │
 │    ├── datasets                                       │
 │    │   └── datasets_summary.csv                       │"""
