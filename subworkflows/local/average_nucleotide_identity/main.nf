@@ -112,7 +112,7 @@ Relevant params and their values:
         SKANI_DIST(ch_contigs, SKANI_SKETCH.out.db)
 
         ch_versions = ch_versions.mix(SKANI_DIST.out.versions.first())
-        ch_concat   = ch_concat.mix(SKANI_DIST.out.skani.collect().map {it -> [it, "skani_summary.csv","skani",true]})
+        ch_concat   = ch_concat.mix(SKANI_DIST.out.skani.collect().map {it -> [it, "skani_summary.tsv","skani",true]})
 
         SKANI_DIST.out.hits
             .map { meta, contigs, tsv ->
