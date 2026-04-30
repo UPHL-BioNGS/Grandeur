@@ -444,7 +444,7 @@ def get_snp_distance_stats(filepath):
 
 # input files
 names          = 'input_files.txt'
-amrfinderplus  = 'amrfinderplus.txt'
+amrfinderplus  = 'amrfinderplus_summary.txt'
 checkm2        = 'checkm2_summary.tsv'
 core           = 'multiqc_core_genome_evaluation.txt'
 datasets       = 'datasets_summary.csv'
@@ -516,6 +516,8 @@ if not exists(names) :
 input_cols = ['sample', 'file', 'file_2', 'version']
 
 summary_df = pd.read_csv(names, dtype = str, names=input_cols, delimiter=",")
+summary_df['sample'] = summary_df['sample'].astype(str)
+summary_df['file'] = summary_df['file'].astype(str)
 summary_df['warnings'] = ''
 columns = list(summary_df.columns)
 
@@ -898,12 +900,15 @@ if exists(multiqc_stats) :
 
     if fastp_columns:
         tmp_df = new_df[["Sample"] + fastp_columns].copy()
+        tmp_df["Sample"] = tmp_df["Sample"].astype(str)
+        tmp_df["possible_fastp_name"] = tmp_df['Sample'].str.split(" ").str[0].str.split(".").str[0].str.split("_").str[0]
         if 'fastp-pct_surviving' in tmp_df.columns:
+            tmp_df = tmp_df.dropna(subset=['fastp-pct_surviving'])
             tmp_df["fastp_pct_passed_reads"] = tmp_df["fastp-pct_surviving"].astype(float).round(2)
             tmp_df.drop("fastp-pct_surviving", axis=1, inplace=True)
         
-        summary_df["possible_fastp_name"] = summary_df['file'].str.split(" ").str[0].str.split(".").str[0]
-        summary_df = pd.merge(summary_df, tmp_df, left_on="possible_fastp_name", right_on="Sample", how = 'left')
+        summary_df["possible_fastp_name"] = summary_df['file'].str.split(" ").str[0].str.split(".").str[0].str.split("_").str[0]
+        summary_df = pd.merge(summary_df, tmp_df, on="possible_fastp_name", how = 'left')
         summary_df.drop("Sample", axis=1, inplace=True)
         summary_df.drop("possible_fastp_name", axis=1, inplace=True)
 
