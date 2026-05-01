@@ -3,7 +3,7 @@
 process DATASETS_DOWNLOAD {
   tag           "Downloading Genomes"
   label         "process_medium"
-  container     'staphb/ncbi-datasets:18.18.0'
+  container     'staphb/ncbi-datasets:18.23.0'
   
   input:
   file(ids)
