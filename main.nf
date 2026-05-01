@@ -64,7 +64,7 @@ workflow {
         INITIALIZE.out.version_script
     )
 
-    workflow.onComplete {
+    onComplete:
         log.info """
 ------------------------------------------------------------------------------------------------------------
 
@@ -106,6 +106,5 @@ Thanks for using Grandeur! The view really is great from up here.
 
 ------------------------------------------------------------------------------------------------------------
 """
-    }
     }
 }
