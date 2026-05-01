@@ -31,7 +31,9 @@ workflow {
     //
 
     if (params.help) {
-        log.info paramsHelp("nextflow run UPHL-BioNGS/Grandeur -profile docker --sample_sheet samplesheet.csv --outdir grandeur")
+        // We pass the usage string as a named parameter so it doesn't look for it in the schema keys
+        def help_string = paramsHelp(usage: "nextflow run UPHL-BioNGS/Grandeur -profile docker --sample_sheet samplesheet.csv --outdir grandeur")
+        log.info help_string
         exit 0
     }
 
@@ -62,12 +64,8 @@ workflow {
         INITIALIZE.out.version_script
     )
 
-
-}
-
-workflow.onComplete {
-    
-    log.info """
+    workflow.onComplete {
+        log.info """
 ------------------------------------------------------------------------------------------------------------
 
 GRANDEUR pipeline execution summary
@@ -85,7 +83,6 @@ Exit status  : ${workflow.exitStatus ?: 'N/A'}
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
 │ All results have been saved to:                                    │
 │  ${params.outdir.padRight(66)}│"""
-        // Only point out the summary and MultiQC if they were actually generated
         if ( ! params.skip_extras ) {
             log.info """│    ├── multiqc/multiqc_report.html                                 │
 │    └── grandeur_summary.tsv                                        │"""
@@ -110,10 +107,5 @@ Thanks for using Grandeur! The view really is great from up here.
 ------------------------------------------------------------------------------------------------------------
 """
     }
+    }
 }
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    THE END
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
