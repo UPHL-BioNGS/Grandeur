@@ -189,6 +189,11 @@
                   "fa_icon": "fas fa-question-circle",
                   "hidden": true
               },
+              "trace_report_suffix": {
+                "type": "string",
+                "description": "Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss.",
+                "hidden": true
+              },
               "publish_dir_mode": {
                   "type": "string",
                   "default": "copy",
