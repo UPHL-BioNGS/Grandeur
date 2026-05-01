@@ -576,13 +576,3 @@ Initializing Complete
 
 }
 
-if ( ! params.skip_extras ) {
-  workflow.onComplete {
-    log.info """------------------------------------------------------
-
-INITIALIZE subworkflow completed at: $workflow.complete
-
-------------------------------------------------------
-"""
-  }
-}

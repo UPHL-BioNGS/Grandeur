@@ -85,15 +85,8 @@ Relevant params and their values:
     ch_species = ch_species.mix(CONCAT_REPORTS.out.summary.filter{ it -> it.name.contains("sylph_download_summary") })
     ch_summary = ch_summary.mix(CONCAT_REPORTS.out.summary)
 
-    emit:
-        for_ref_download = ch_species
-        for_summary      = ch_summary
-        for_multiqc      = ch_multiqc
-        versions         = ch_versions
-}
 
-if ( ! params.skip_extras ) {
-    workflow.onComplete {
+    if ( ! params.skip_extras ) {
         log.info """------------------------------------------------------
 
 TAXONOMIC PROFILING subworkflow completed at: $workflow.complete
@@ -119,4 +112,14 @@ TAXONOMIC PROFILING subworkflow completed at: $workflow.complete
 ------------------------------------------------------
 """
     }
+
+    emit:
+        for_ref_download = ch_species
+        for_summary      = ch_summary
+        for_multiqc      = ch_multiqc
+        versions         = ch_versions
+
+
 }
+
+

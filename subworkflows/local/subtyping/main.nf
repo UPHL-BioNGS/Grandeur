@@ -147,20 +147,11 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
     CONCAT_REPORTS(ch_concat)
     ch_summary = ch_summary.mix(CONCAT_REPORTS.out.summary)
 
-  emit:
-    for_summary = ch_summary
-    versions    = ch_versions
-
-}
-
 if ( ! params.skip_extras ) {
-  workflow.onComplete {
-    log.info """------------------------------------------------------
-
-SUBTYPING subworkflow completed at: $workflow.complete
+  log.info """------------------------------------------------------
 
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Subworkflow Output Files                              ┃
+┃ SUBTYPING Output Files                                ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
 │   ${params.outdir.padRight(52)}│
 │    ├── drprg                                          │
@@ -195,4 +186,11 @@ so not all files will be present.
 ------------------------------------------------------
 """
   }
+
+  emit:
+    for_summary = ch_summary
+    versions    = ch_versions
+
 }
+
+

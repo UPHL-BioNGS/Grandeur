@@ -172,20 +172,12 @@ Relevant params and their values:
   CONCAT_REPORTS(ch_concat)
   ch_summary = ch_summary.mix(CONCAT_REPORTS.out.summary)
 
-  emit:
-  for_multiqc = ch_multiqc
-  for_summary = ch_summary.mix(ch_nwk)
-  versions    = ch_versions
-}
 
 if ( params.msa ) {
-    workflow.onComplete {
-        log.info """------------------------------------------------------
-
-PHYLOGENETIC ANALYSIS subworkflow completed at: $workflow.complete
+  log.info """------------------------------------------------------
 
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Subworkflow Output Files                              ┃
+┃ PHYLOGENETIC_ANALYSIS Output Files                    ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
 │   ${params.outdir.padRight(52)}│
 │    ├── gff                                            │
@@ -216,5 +208,12 @@ PHYLOGENETIC ANALYSIS subworkflow completed at: $workflow.complete
 
 ------------------------------------------------------
 """
-    }
+  }
+
+  emit:
+  for_multiqc = ch_multiqc
+  for_summary = ch_summary.mix(ch_nwk)
+  versions    = ch_versions
 }
+
+
