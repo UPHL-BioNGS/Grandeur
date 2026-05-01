@@ -57,7 +57,7 @@ Relevant params and their values:
             SPESTIMATOR(ch_contigs)
 
             ch_versions = ch_versions.mix(SPESTIMATOR.out.versions.first())
-            ch_concat   = ch_concat.mix(SPESTIMATOR.out.results.map{ it[1] }.collect().map {it -> [it, "spestimator_summary.csv","spestimator",true]})
+            ch_concat   = ch_concat.mix(SPESTIMATOR.out.results.map{ it -> it[1] }.collect().map {it -> [it, "spestimator_summary.csv","spestimator",true]})
 
             // could be a channel, but some mash results are very long and may overload headnodes
             SPECIES(ch_species.collect())
