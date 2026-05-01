@@ -1,6 +1,6 @@
 process CONCAT_REPORTS {
     tag           "${output_name}"
-    container     'staphb/pandas:3.0.1'
+    container     'staphb/pandas:3.0.2'
     label         "process_single"
 
     input:
