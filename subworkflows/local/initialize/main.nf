@@ -38,6 +38,7 @@ def paramCheck(keys) {
     "help_full",
     "show_hidden",
     "version",
+    "trace_report_suffix",
     "pipelines_testdata_base_path",
     "config_profile_name",
     "config_profile_description",
