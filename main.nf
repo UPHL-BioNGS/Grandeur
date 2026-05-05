@@ -64,47 +64,19 @@ workflow {
         INITIALIZE.out.version_script
     )
 
-    onComplete:
-        log.info """
-------------------------------------------------------------------------------------------------------------
-
-GRANDEUR pipeline execution summary
------------------------------------
-Completed at : ${workflow.complete}
-Duration     : ${workflow.duration}
-Status       : ${workflow.success ? 'SUCCESS' : 'FAILED'}
-Exit status  : ${workflow.exitStatus ?: 'N/A'}
-"""
-
-    if (workflow.success) {
-        log.info """
+    log.info """
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Pipeline Completed Successfully                                    ┃
+┃ Grandeur WORKFLOW                                                  ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ All results have been saved to:                                    │
-│  ${params.outdir.padRight(66)}│"""
-        if ( ! params.skip_extras ) {
-            log.info """│    ├── multiqc/multiqc_report.html                                 │
-│    └── grandeur_summary.tsv                                        │"""
-        }
-        
-        log.info """└────────────────────────────────────────────────────────────────────┘
-
-Thanks for using Grandeur! The view really is great from up here.
-------------------------------------------------------------------------------------------------------------
-"""
-    } else {
-        log.info """
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Pipeline Failed                                                    ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ Error message:                                                     │
-│ ${workflow.errorMessage ?: 'No specific error message provided.'}
-│                                                                    │
-│ Please check the .nextflow.log file for more detailed information. │
+│ All results will be saved to:                                      │
+│  ${params.outdir.padRight(66)}│
+│    ├── multiqc/multiqc_report.html                                 │
+│    └── grandeur_summary.tsv                                        │
 └────────────────────────────────────────────────────────────────────┘
 
+Thank you for using Grandeur! The view really is great from up here.
+
+Please remember to tell us about all issues at https://github.com/UPHL-BioNGS/Grandeur/issues
 ------------------------------------------------------------------------------------------------------------
 """
-    }
 }
