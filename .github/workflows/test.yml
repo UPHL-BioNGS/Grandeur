@@ -9,7 +9,7 @@ jobs:
       fail-fast: false
       matrix:
         nxf_ver:
-          # - '23.10.1' will not work with version 23
+          - '23.10.1'
           - '24.10.6'
           - '25.10.4'
           - '26.04.0'
