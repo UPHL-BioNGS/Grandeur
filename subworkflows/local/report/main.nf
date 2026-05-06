@@ -62,17 +62,8 @@ More information can be found at https://github.com/UPHL-BioNGS/Grandeur/wiki/re
 
         SUMMARY(for_summary.mix(ch_names).mix(MULTIQC.out.data_folder).flatten().unique().collect())
 
-    emit:
-        //summary  = SUMMARY.out.extended_tsv
-        summary  = channel.empty()
-        versions = ch_versions
-}
-
 if ( ! params.skip_extras ) {
-    workflow.onComplete {
-        log.info """------------------------------------------------------
-
-REPORT subworkflow completed at: $workflow.complete
+    log.info """------------------------------------------------------
 
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Subworkflow Output Files                              ┃
@@ -86,4 +77,11 @@ REPORT subworkflow completed at: $workflow.complete
 ------------------------------------------------------
 """
     }
+
+
+    emit:
+        //summary  = SUMMARY.out.extended_tsv
+        summary  = channel.empty()
+        versions = ch_versions
 }
+

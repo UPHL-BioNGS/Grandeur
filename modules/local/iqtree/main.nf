@@ -1,7 +1,7 @@
 process IQTREE {
   tag           "${msa.baseName}"
   label         "process_high"
-  container     'staphb/iqtree3:3.0.1'
+  container     'staphb/iqtree3:3.1.1'
   
   input:
   file(msa)

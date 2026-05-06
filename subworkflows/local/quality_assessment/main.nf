@@ -100,20 +100,11 @@ Relevant params and their values:
     CONCAT_REPORTS(ch_concat)
     ch_summary = ch_summary.mix(CONCAT_REPORTS.out.summary)
 
-    emit:
-    for_summary = ch_summary
-    for_multiqc = ch_for_multiqc
-    versions    = ch_versions
-}
-
 if ( ! params.skip_extras ) {
-    workflow.onComplete {
-        log.info """------------------------------------------------------
-
-QUALITY ASSESSMENT subworkflow completed at: $workflow.complete
+    log.info """------------------------------------------------------
 
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Subworkflow Output Files                              ┃
+┃ QUALITY_ASSESSMENT Output Files                       ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
 │   ${params.outdir.padRight(52)}│
 │    ├── fastqc                                         │
@@ -134,4 +125,11 @@ QUALITY ASSESSMENT subworkflow completed at: $workflow.complete
 ------------------------------------------------------
 """
     }
+
+    emit:
+    for_summary = ch_summary
+    for_multiqc = ch_for_multiqc
+    versions    = ch_versions
 }
+
+

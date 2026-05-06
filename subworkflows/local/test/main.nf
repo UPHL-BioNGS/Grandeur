@@ -71,13 +71,3 @@ issues.
     versions = ch_versions
 }
 
-if ( ! params.sra_accessions.isEmpty()  || ! params.genome_accessions.isEmpty() ) { 
-    workflow.onComplete {
-        log.info """------------------------------------------------------
-
-TEST subworkflow completed at: $workflow.complete
-
-------------------------------------------------------
-"""
-    }
-}

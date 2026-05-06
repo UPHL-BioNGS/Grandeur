@@ -5,6 +5,16 @@ on: [pull_request, workflow_dispatch]
 jobs:
 
   test:
+    strategy:
+      fail-fast: false
+      matrix:
+        nxf_ver:
+          # - '23.10.1'
+          # - '24.10.6'
+          - '25.10.4'
+          - '26.04.0'
+          - 'latest-stable'
+
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -14,11 +24,9 @@ jobs:
         uses: jlumbroso/free-disk-space@main
             
       - name: Install Nextflow
-        run: |
-          wget -qO- get.nextflow.io | bash
-          sudo mv nextflow /usr/local/bin/
-
-          nextflow -version
+        uses: nf-core/setup-nextflow@master
+        with:
+          version: "${{ matrix.nxf_ver }}"
           
       - name: Run Grandeur
         run: |

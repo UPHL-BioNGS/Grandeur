@@ -33,6 +33,21 @@ Relevant params and their values:
     SPADES(FASTP.out.fastq)
     ch_versions = ch_versions.mix(SPADES.out.versions.first())
 
+    if ( params.sample_sheet || params.reads || params.sra_accessions ) {
+      log.info """------------------------------------------------------
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ DE_NOVO_ALIGNMENT Output Files                        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│   ${params.outdir.padRight(52)}│
+│    └── contigs                                        │
+│        └── *_contigs.fa                               │
+└───────────────────────────────────────────────────────┘
+
+------------------------------------------------------
+"""
+  }
+
   emit:
     // for downstream analyses
     reads_contigs = SPADES.out.reads_contigs
@@ -44,21 +59,4 @@ Relevant params and their values:
     versions    = ch_versions
 }
 
-if ( params.sample_sheet || params.reads || params.sra_accessions ) {
-  workflow.onComplete {
-    log.info """------------------------------------------------------
 
-DE NOVO ASSEMBLY subworkflow completed at: $workflow.complete
-
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Subworkflow Output Files                              ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│   ${params.outdir.padRight(52)}│
-│    └── contigs                                        │
-│        └── *_contigs.fa                               │
-└───────────────────────────────────────────────────────┘
-
-------------------------------------------------------
-"""
-  }
-}

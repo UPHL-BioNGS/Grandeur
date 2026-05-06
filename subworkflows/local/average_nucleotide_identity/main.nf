@@ -57,7 +57,7 @@ Relevant params and their values:
             SPESTIMATOR(ch_contigs)
 
             ch_versions = ch_versions.mix(SPESTIMATOR.out.versions.first())
-            ch_concat   = ch_concat.mix(SPESTIMATOR.out.results.map{ it[1] }.collect().map {it -> [it, "spestimator_summary.csv","spestimator",true]})
+            ch_concat   = ch_concat.mix(SPESTIMATOR.out.results.map{ it -> it[1] }.collect().map {it -> [it, "spestimator_summary.csv","spestimator",true]})
 
             // could be a channel, but some mash results are very long and may overload headnodes
             SPECIES(ch_species.collect())
@@ -165,6 +165,27 @@ Relevant params and their values:
         ch_species = ch_species.mix(CONCAT_REPORTS.out.summary.filter{ it -> it.contains("spestimator") })
         ch_summary = ch_summary.mix(CONCAT_REPORTS.out.summary)
 
+        if ( ! params.skip_extras ) {
+            log.info """------------------------------------------------------
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ AVERAGE_NUCLEOTIDE_IDENTITY Output Files              ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│   ${params.outdir.padRight(52)}│"""
+            if ( params.current_datasets ) {
+            log.info """│    ├── spestimator                                    │
+│    │   └── spestimator_summary.csv                    │
+│    ├── datasets                                       │
+│    │   └── datasets_summary.csv                       │"""
+            }
+        log.info """│    └── skani                                          │
+│        └── skani_summary.tsv                          │
+└───────────────────────────────────────────────────────┘
+
+------------------------------------------------------
+"""
+    }
+
     emit:
         for_summary      = ch_summary
         top_hit          = ch_top_hits
@@ -182,28 +203,3 @@ Relevant params and their values:
         versions         = ch_versions
 }
 
-if ( ! params.skip_extras ) {
-    workflow.onComplete {
-        log.info """------------------------------------------------------
-
-AVERAGE NUCLEOTIDE IDENTITY subworkflow completed at: $workflow.complete
-
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Subworkflow Output Files                              ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│   ${params.outdir.padRight(52)}│"""
-        if ( params.current_datasets ) {
-            log.info """│    ├── spestimator                                    │
-│    │   └── spestimator_summary.csv                    │
-│    ├── datasets                                       │
-│    │   └── datasets_summary.csv                       │"""
-        }
-
-        log.info """│    └── skani                                          │
-│        └── skani_summary.tsv                          │
-└───────────────────────────────────────────────────────┘
-
-------------------------------------------------------
-"""
-    }
-}

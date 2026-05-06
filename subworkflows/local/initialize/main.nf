@@ -38,6 +38,7 @@ def paramCheck(keys) {
     "help_full",
     "show_hidden",
     "version",
+    "trace_report_suffix",
     "pipelines_testdata_base_path",
     "config_profile_name",
     "config_profile_description",
@@ -576,13 +577,3 @@ Initializing Complete
 
 }
 
-if ( ! params.skip_extras ) {
-  workflow.onComplete {
-    log.info """------------------------------------------------------
-
-INITIALIZE subworkflow completed at: $workflow.complete
-
-------------------------------------------------------
-"""
-  }
-}
