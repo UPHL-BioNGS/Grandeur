@@ -32,6 +32,7 @@ def parse_file(summary_df, file, delim):
     new_df = pd.read_csv(file, dtype = str, index_col= False, delimiter=delim)
     new_df = new_df.add_prefix(analysis + "_")
     new_df.columns = new_df.columns.str.replace('Sample', 'sample', regex=True)
+    new_df['sample'] = new_df['sample'].astype(str)
     new_df.columns = [x.lower() for x in new_df.columns]
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
@@ -594,6 +595,7 @@ if exists(fastqc):
     print("Adding results for " + file)
     analysis = "fastqc"
     new_df = pd.read_csv(file, dtype=str, index_col=False)
+    new_df['sample'] = new_df['sample'].astype(str)
     
     # FastQC output usually has two rows per sample (R1 and R2).
     R1_df = new_df.drop_duplicates(subset='sample', keep="first").add_prefix('R1_')
@@ -632,6 +634,7 @@ if exists(kraken2):
     print("Adding results for " + kraken2)
     analysis = "kraken2"
     new_df = pd.read_csv(kraken2, dtype=str, index_col=False)
+    new_df['Sample'] = new_df['Sample'].astype(str)
     
     # Sort by abundance to find the top hit
     new_df = new_df.sort_values(['Sample', 'Percentage of fragments'], ascending=False)
@@ -659,6 +662,7 @@ if exists(mash_dist) :
     print("Adding results for " + file)
     analysis = "mash_dist"
     new_df = pd.read_csv(file, dtype = str, index_col= False)
+    new_df['sample'] = new_df['sample'].astype(str)
     # header : sample,reference,query,mash-distance,P-value,matching-hashes,organism
     new_df = new_df.sort_values(by = ['sample', 'P-value', 'mash-distance'], ascending = [True, True, True])
 
@@ -678,6 +682,7 @@ if exists(mash_screen) :
     print("Adding results for " + file)
     analysis = "mash_screen"
     new_df = pd.read_csv(file, dtype = str, index_col= False)
+    new_df['sample'] = new_df['sample'].astype(str)
     # header : sample,identity,shared-hashes,median-multiplicity,p-value,query-ID,organism
     new_df = new_df.sort_values(by = ['sample', 'p-value', 'identity'], ascending = [True, True, False])
 
@@ -776,6 +781,7 @@ if exists(quast_contig):
 
 if exists(quast) or exists(quast_contig):
     new_df = pd.concat([q_df, qc_df])
+    new_df['sample'] = new_df['sample'].astype(str)
 
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how='left')
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
@@ -786,6 +792,7 @@ if exists(serotypefinder):
     print("Adding results for " + file)
     analysis = "serotypefinder"
     new_df = pd.read_table(file, dtype=str, index_col=False)
+    new_df['sample'] = new_df['sample'].astype(str)
     
     counts_df = new_df.groupby(['sample', 'Database']).size().unstack(fill_value=0).reset_index()
     counts_df = counts_df.rename_axis(None, axis=1) # Clean up the column grouping name
@@ -824,6 +831,7 @@ if exists(skani):
     print("Adding results for " + skani)
     analysis = "skani"
     new_df = pd.read_table(skani, dtype=str, index_col=False)
+    new_df['sample'] = new_df['sample'].astype(str)
     
     # Clean up names and split Genus_species
     new_df['organism'] = new_df['Ref_file'].str.split('_').str[0:2].str.join('_')
@@ -846,6 +854,7 @@ if exists(spestimator):
     
     # Read the TSV file
     new_df = pd.read_table(spestimator, sep=",", dtype=str)
+    new_df['sample'] = new_df['sample'].astype(str)
     
     # 1. Clean the 'input file' column to match your 'sample' IDs
     # This removes '_contigs.fa' and other extensions
@@ -867,6 +876,7 @@ if exists(spestimator):
 if exists(sylph):
     print("Adding results for " + sylph)
     new_df = pd.read_table(sylph, dtype=str, index_col=False)
+    new_df['sample'] = new_df['sample'].astype(str)
     
     # Convert abundance to numeric so we can safely sort by it
     new_df['Taxonomic_abundance'] = pd.to_numeric(new_df['Taxonomic_abundance'], errors='coerce')
@@ -918,6 +928,7 @@ if exists(core):
     analysis = "core_genome_genes"
     print("Adding core genome percentage from " + file)
     new_df = pd.read_table(file, dtype = str, index_col= False)
+    new_df['Sample'] = new_df['Sample'].astype(str)
     new_df = new_df.add_prefix(analysis + '_')
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_Sample", how = 'left')
     summary_df.drop(analysis + "_Sample", axis=1, inplace=True)
@@ -1050,12 +1061,14 @@ for nwk in newick_files:
     if exists(nwk) :
         print("Adding results for " + nwk)
         new_df = get_tip_distance_stats(nwk)
+        new_df['sample'] = new_df['sample'].astype(str)
         summary_df = pd.merge(summary_df, new_df, on="sample", how = 'left')
 
 for snp_matrix in snpdist_matrices:
     if exists(snp_matrix) :
         print("Adding results for " + snp_matrix)
         new_df = get_snp_distance_stats(snp_matrix)
+        new_df['sample'] = new_df['sample'].astype(str)
         summary_df = pd.merge(summary_df, new_df, on="sample", how = 'left')
 
 if exists(gotree):
