@@ -854,7 +854,6 @@ if exists(spestimator):
     
     # Read the TSV file
     new_df = pd.read_table(spestimator, sep=",", dtype=str)
-    new_df['sample'] = new_df['sample'].astype(str)
     
     # 1. Clean the 'input file' column to match your 'sample' IDs
     # This removes '_contigs.fa' and other extensions
@@ -863,6 +862,8 @@ if exists(spestimator):
         .str.replace('_contigs.fa', '', regex=False)
         .str.replace(r'\.(fasta|fna|fa)$', '', regex=True)
     )
+    
+    new_df['sample'] = new_df['sample'].astype(str)
     
     # 2. Count unique organisms identified for each sample
     # Using 'organism' as the unique identifier here
