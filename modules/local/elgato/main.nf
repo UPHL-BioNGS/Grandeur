@@ -7,7 +7,7 @@ process ELGATO {
   tuple val(meta), file(contigs)
 
   output:
-  path "elgato/*/possible_mlsts.txt", emit: collect, optional: true
+  path "elgato/*/*_possible_mlsts.txt", emit: collect, optional: true
   path "elgato/*/*", emit: results, optional: true
   path "logs/${task.process}/*.log" , emit: log
   path "versions.yml"               , emit: versions
@@ -30,6 +30,11 @@ process ELGATO {
       --out elgato/${prefix} \
       --threads ${task.cpus} \
       | tee -a \$log_file
+
+    if [ -f "elgato/${prefix}/possible_mlsts.txt" ]
+    then
+      cp elgato/${prefix}/possible_mlsts.txt elgato/${prefix}/${prefix}_possible_mlsts.txt
+    fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
