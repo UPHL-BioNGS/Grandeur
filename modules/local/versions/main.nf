@@ -1,7 +1,7 @@
 process VERSIONS {
   tag           "extracting versions"
   label         "process_single"
-  container     'staphb/multiqc:1.33'
+  container     'staphb/multiqc:1.35'
 
   input:
   file(input)
