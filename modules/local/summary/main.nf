@@ -1,6 +1,6 @@
 process SUMMARY {
   tag           "Creating summary files"
-  container     'staphb/pandas:3.0.2'
+  container     'staphb/pandas:3.0.3'
   label         "process_single"
 
   input:
