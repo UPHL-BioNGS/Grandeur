@@ -1,6 +1,6 @@
 process KLEBORATE {
   tag           "${meta.id}"
-  label         "process_medium"
+  label         "process_low"
   container     'staphb/kleborate:3.2.4-micromamba'
 
   input:
