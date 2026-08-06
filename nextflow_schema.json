@@ -68,6 +68,12 @@
           "default": null,
           "hidden": true,
           "description": "text of genome sizes"
+        },
+        "container_registry": {
+          "type": "string",
+          "default": "docker.io",
+          "hidden": false,
+          "description": "Registry to pull containers from (default is docker.io)"
         }
       }
     },
