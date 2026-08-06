@@ -6,13 +6,16 @@ lint:
   multiqc_config: False
   template_strings: False
   version_consistencey: False
+  pipeline_name_conventions: False
+  readme: False
   nextflow_config:
     - "process.cpus"
     - "process.memory"
     - "process.time"
     - "manifest.name"
     - "manifest.homePage"
-nf_core_version: 4.0.1
+    - "manifest.version.dev"
+nf_core_version: 4.1.0
 org_path: null
 template:
   author: Erin Young
