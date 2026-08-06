@@ -89,12 +89,12 @@ submit an issue on GitHub at https://github.com/UPHL-BioNGS/Grandeur/issues
     ch_concat   = ch_concat.mix(EMMTYPER.out.collect.collect().map {it -> [it, "emmtyper_summary.tsv","emmtyper",true]})
     ch_versions = ch_versions.mix(EMMTYPER.out.versions.first())
 
-    KAPTIVE(ch_vibrio.mix(ch_acinetobacter).filter{it -> it})      
+    KAPTIVE(ch_vibrio.mix(ch_acinetobacter).filter{it -> it}.unique())      
 
     ch_concat   = ch_concat.mix(KAPTIVE.out.collect.collect().map {it -> [it, "kaptive_summary.tsv","kaptive",true]})
     ch_versions = ch_versions.mix(KAPTIVE.out.versions.first())
 
-    KLEBORATE(ch_kleb.mix(ch_ecoli).filter{it -> it}.combine(summfle_script))
+    KLEBORATE(ch_kleb.mix(ch_ecoli).filter{it -> it}.combine(summfle_script).unique())
     
     ch_concat   = ch_concat.mix(KLEBORATE.out.collect.collect().map {it -> [it, "kleborate_results.tsv","kleborate",true]})
     ch_versions = ch_versions.mix(KLEBORATE.out.versions.first())
