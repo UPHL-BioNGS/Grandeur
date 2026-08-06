@@ -10,6 +10,10 @@ Named after [Grandeur Peak](https://www.alltrails.com/trail/us/utah/grandeur-pea
 
 ---
 
+[![Nextflow](https://img.shields.io/badge/nextflow-%21%3E%3D25.0.0-05C3DD.svg)](https://www.nextflow.io/)
+[![Launch with Nextflow](https://img.shields.io/badge/Launch%20with%20Nextflow-10.5281/zenodo.1400710-brightgreen.svg)](https://nextflow.io/)
+[![nf-core template version](https://img.shields.io/badge/nf--core%20template-4.1.0-brightgreen)](https://github.com/nf-core/tools/releases/tag/4.1.0)
+
 **Grandeur** is a species-agnostic sequencing analysis workflow developed by [@erinyoung](https://github.com/erinyoung) at the [Utah Public Health Laboratory (UPHL)](https://uphl.utah.gov/). Built on [Nextflow](https://www.nextflow.io/), the pipeline provides quality control (QC), *de novo* assembly, taxonomic profiling, and in silico serotyping for paired-end Illumina data.
 
 While intended to augment the CDC's [PHOENIX](https://github.com/CDCgov/phoenix) workflow, Grandeur also functions as a powerful standalone pipeline.
