@@ -1,7 +1,7 @@
 process CORE_GENOME_EVALUATION {
   tag         "Evaluating core genome"
   label       "process_single"
-  container   'staphb/pandas:3.0.3'
+  container   'staphb/pandas:3.0.5'
 
   input:
   tuple file(fasta), file(summary), file(script)
