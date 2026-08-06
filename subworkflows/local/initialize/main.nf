@@ -531,7 +531,7 @@ FYI: It is possible to skip ANI analysis, subtyping, and taxonomic profiling sub
   }
 
   // getting test files
-  if ( ! params.sra_accessions.isEmpty()  || ! params.genome_accessions.isEmpty() ) { 
+  if ( params.sra_accessions || params.genome_accessions ) { 
 
     log.info """
 Will download test data for SRA accessions: ${params.sra_accessions} 
