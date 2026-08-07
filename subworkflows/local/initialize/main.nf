@@ -525,7 +525,7 @@ FYI: It is possible to skip ANI analysis, subtyping, and taxonomic profiling sub
   }
 
 
-  if ( ! params.reads && ! params.fastas && ! params.input && ! params.sample_sheet && ! params.fasta_list && params.sra_accessions.isEmpty() && params.genome_accessions.isEmpty() ) { 
+  if ( ! params.reads && ! params.fastas && ! params.input && ! params.sample_sheet && ! params.fasta_list && ! params.sra_accessions && ! params.genome_accessions ) { 
     log.error "No input files were detected. Exiting."
     exit 0
   }
