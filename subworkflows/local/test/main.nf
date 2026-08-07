@@ -27,7 +27,7 @@ Relevant params and their values:
 ┃ DOWNLOAD_GENOME   ┃ Downloads FASTA files from NCBI using DATASETS                     ┃
 ┗━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-This subworkflow is dependant on third-part API which is out of the control by the 
+This subworkflow is dependant on third-party API which is out of the control by the 
 Grandeur developers. These processes require internet access, and may be slow or have 
 issues.
 
@@ -35,7 +35,7 @@ issues.
 
     ch_versions = channel.empty()
 
-    if ( ! params.sra_accessions.isEmpty() ) {
+    if ( params.sra_accessions ) {
         DOWNLOAD_FASTQ(ch_sra_accessions.filter{it -> it[0]})
         ch_versions = ch_versions.mix(DOWNLOAD_FASTQ.out.versions.first())
 
@@ -49,7 +49,7 @@ issues.
         ch_fastq = channel.empty()
     }
 
-    if ( ! params.genome_accessions.isEmpty() ) {
+    if ( params.genome_accessions ) {
         DOWNLOAD_GENOME(ch_genome_accessions.collectFile(name: 'ids.csv', newLine: true))
         ch_versions = ch_versions.mix(DOWNLOAD_GENOME.out.versions.first())
 
