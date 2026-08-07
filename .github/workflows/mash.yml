@@ -2,6 +2,10 @@ name: Test Grandeur with MASH database
 
 on: [pull_request, workflow_dispatch]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
 
   test:
