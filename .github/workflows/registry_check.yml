@@ -1,10 +1,11 @@
-name: Test Grandeur workflow profile test3
+name: Changing registry to quay
 
 on: [pull_request, workflow_dispatch]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
   
 jobs:
 
@@ -26,11 +27,11 @@ jobs:
           
       - name: Run Grandeur
         run: |
-          nextflow run . -profile docker,test3 -c .github/workflows/github_actions.config --publish_dir_mode link
+          nextflow run . -profile docker,test -c .github/workflows/github_actions.config --publish_dir_mode link --container_registry 'quay.io'
           
       - name: Check contig files
         run: |
-          for file in grandeur/contigs/*_contigs.fa
+          for file in grandeur/contigs/*_contigs.fa grandeur/grandeur_summary.tsv
           do
             head $file
             wc -l $file

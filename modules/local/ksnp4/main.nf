@@ -1,7 +1,7 @@
 process KSNP4 {
     tag           "kSNP4 Tree"
     label         "process_high"
-    container     'staphb/ksnp4:4.1'
+    container     'staphb/ksnp4:4.1-2607'
 
     input:
     file(fastas)

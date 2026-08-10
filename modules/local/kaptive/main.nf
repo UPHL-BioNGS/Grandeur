@@ -33,7 +33,7 @@ process KAPTIVE {
       assembly \
       /kaptive/reference_database/\${ref}.gbk \
       ${contigs} \
-      --threads 6 \
+      --threads ${task.cpus} \
       --out kaptive/${prefix}_\${ref}.txt  \
       | tee -a \$log_file
 
