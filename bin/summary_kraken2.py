@@ -1,5 +1,9 @@
 import pandas as pd
 
+
+from bin.summary_warnings import append_warning
+
+
 # kraken2 : merging relevant rows into one
 def summarize_kraken2(summary_df, kraken2):
     print("Adding results for " + kraken2)

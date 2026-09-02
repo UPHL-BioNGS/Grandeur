@@ -1,5 +1,7 @@
 import pandas as pd
 
+from bin.summary_warnings import append_warning
+
 # serotypefinder : splitting O and H groups, getting the top hit for O and H group, combining rows
 def summarize_serotypefinder(summary_df, serotypefinder):
     file = serotypefinder

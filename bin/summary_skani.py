@@ -1,5 +1,7 @@
 import pandas as pd
 
+from bin.summary_warnings import append_warning
+
 # skani
 def summarize_skani(summary_df, skani):
     print("Adding results for " + skani)

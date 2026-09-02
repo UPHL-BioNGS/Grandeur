@@ -1,4 +1,28 @@
 import pandas as pd
+
+
+from bin.summary_warnings import append_warning
+
+def add_fastqc_warnings(df, min_seqs=500000, max_flagged_pct=5.0, min_len=100):
+    def append_warning(mask, warn_msg):
+        df.loc[mask, 'warnings'] += np.where(
+            df.loc[mask, 'warnings'] == '', warn_msg, ',' + warn_msg
+        )
+
+    if 'fastqc_total_sequences' in df.columns:
+        total_seqs = pd.to_numeric(df['fastqc_total_sequences'], errors='coerce')
+        append_warning(total_seqs < min_seqs, f"Low total sequences (<{min_seqs})")
+
+    if 'fastqc_percent_flagged' in df.columns:
+        flagged_pct = pd.to_numeric(df['fastqc_percent_flagged'], errors='coerce')
+        append_warning(flagged_pct > max_flagged_pct, f"High flagged sequences (>{max_flagged_pct}%)")
+
+    if 'fastqc_avg_length' in df.columns:
+        avg_len = pd.to_numeric(df['fastqc_avg_length'], errors='coerce')
+        append_warning(avg_len < min_len, f"Short avg read length (<{min_len}bp)")
+
+    return df
+
 # (Assuming summary_df and fastqc variables are defined)
 def summarize_fastqc(summary_df, fastqc):
     file = fastqc

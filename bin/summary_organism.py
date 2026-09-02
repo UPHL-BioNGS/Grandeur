@@ -1,5 +1,8 @@
 import pandas as pd
 
+from bin.summary_warnings import append_warning
+
+
 def predict_organism(summary_df):
 
     ##########################################

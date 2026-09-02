@@ -1,16 +1,6 @@
 #!/usr/bin/env python3
 
-import json
 import pandas as pd
-
-def parse_concatenated_json(json_string):
-    """Generator to parse concatenated JSON objects from a string."""
-    decoder = json.JSONDecoder()
-    json_string = json_string.strip()
-    while json_string:
-        obj, index = decoder.raw_decode(json_string)
-        yield obj
-        json_string = json_string[index:].lstrip()
 
 def parse_file(summary_df, file, delim):
     """Parses standard CSV/TSV metrics and merges them into the summary dataframe."""

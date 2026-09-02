@@ -1,27 +1,6 @@
 
-def create_final_summary(summary_df):
-
-    ##########################################
-    # creating files                         #
-    ##########################################
-
-    print("Creating final files")
-
-    summary_df = summary_df.sort_values(by='sample')
-    summary_df = summary_df.fillna("")
-
-    summary_df.columns = summary_df.columns.str.replace(' ', '_')
-
-    summary_df.to_csv(extended + '.tsv', index=False, sep="\t")
-    summary_df.to_csv(extended + '.txt', index=False, sep=";")
-
-    transposed_df = summary_df.set_index('sample').T
-    transposed_df = transposed_df.reset_index().rename(columns={'index': 'metric'})
-    transposed_df.to_csv(extended + '_transposed.tsv', index=False, sep="\t")
-    transposed_df.to_csv(extended + '_transposed.txt', index=False, sep=";")
-
-
-    # reducing to the top 1 or 2 results for each analysis
+def create_final_summary(df):
+# reducing to the top 1 or 2 results for each analysis
     final_columns = [
         # general information
         'coverage',
@@ -117,3 +96,27 @@ def create_final_summary(summary_df):
 
     summary_df.to_csv(final + '.tsv', columns = ['sample','file','version'] + set_columns, index=False, sep="\t")
     summary_df.to_csv(final + '.txt', columns = ['sample','file','version'] + set_columns, index=False, sep=";")
+
+def create_extended_summary(summary_df):
+
+    ##########################################
+    # creating files                         #
+    ##########################################
+
+    print("Creating final files")
+
+    summary_df = summary_df.sort_values(by='sample')
+    summary_df = summary_df.fillna("")
+
+    summary_df.columns = summary_df.columns.str.replace(' ', '_')
+
+    summary_df.to_csv(extended + '.tsv', index=False, sep="\t")
+    summary_df.to_csv(extended + '.txt', index=False, sep=";")
+
+    transposed_df = summary_df.set_index('sample').T
+    transposed_df = transposed_df.reset_index().rename(columns={'index': 'metric'})
+    transposed_df.to_csv(extended + '_transposed.tsv', index=False, sep="\t")
+    transposed_df.to_csv(extended + '_transposed.txt', index=False, sep=";")
+
+
+    

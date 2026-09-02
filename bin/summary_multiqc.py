@@ -1,6 +1,9 @@
 import pandas as pd
 
-if exists(multiqc_stats) : 
+from bin.summary_warnings import append_warning
+
+
+def summarize_multiqc(summary_df, multiqc_stats):
     file = multiqc_stats
     print("Adding analysis parsed via multiqc in " + file)
     new_df = pd.read_table(file, dtype = str, index_col= False)
@@ -19,3 +22,5 @@ if exists(multiqc_stats) :
         summary_df = pd.merge(summary_df, tmp_df, on="possible_fastp_name", how = 'left')
         summary_df.drop("Sample", axis=1, inplace=True)
         summary_df.drop("possible_fastp_name", axis=1, inplace=True)
+
+    return summary_df

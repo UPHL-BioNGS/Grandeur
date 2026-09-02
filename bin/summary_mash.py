@@ -1,5 +1,8 @@
 import pandas as pd
 
+from bin.summary_warnings import append_warning
+
+
 # mash dist
 def summarize_mashdist(summary_df, mash_dist):
     file = mash_dist

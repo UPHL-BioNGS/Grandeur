@@ -1,27 +1,56 @@
 import pandas as pd
+import numpy as np
 
-# quast : combining both files
-q_df  = pd.DataFrame()
-qc_df = pd.DataFrame()
-def summarize_quast_from_reads(summary_df, quast):
+
+from bin.summary_warnings import append_warning
+
+def add_quast_warnings(df):
+
+    if 'quast_n50' in df.columns:
+        n50 = pd.to_numeric(df['quast_n50'], errors='coerce')
+        append_warning(
+            df,
+            n50 < 30000,
+            "Low N50 (<30000)"
+        )
+
+    if 'quast_#_contigs' in df.columns:
+        contigs = pd.to_numeric(df['quast_#_contigs'], errors='coerce')
+        append_warning(
+            df,
+            contigs > 500,
+            "High contig count (>500)"
+        )
+
+    if 'quast_mapped_(%)' in df.columns:
+        mapped = pd.to_numeric(df['quast_mapped_(%)'], errors='coerce')
+        append_warning(
+            df,
+            mapped < 90.0,
+            "Low mapping rate (<90%)"
+        )
+
+    return df
+
+def summarize_quast_from_reads(quast):
     print("Adding results for " + quast)
     file = quast
     analysis = str(file).split("_")[0]
-    q_df = pd.read_table(file, dtype = str, index_col= False)
-    q_df = q_df.add_prefix(analysis + "_")
-    q_df.columns = [x.lower() for x in q_df.columns]
+    df = pd.read_table(file, dtype = str, index_col= False)
+    df = df.add_prefix(analysis + "_")
+    df.columns = [x.lower() for x in df.columns]
+    return df
 
-def summarize_quast_contig(summary_df, quast_contig):
+def summarize_quast_contig(quast_contig):
     print("Adding results for " + quast_contig)
     file = quast_contig
     analysis = str(file).split("_")[0]
-    qc_df = pd.read_table(file, dtype = str, index_col= False)
-    qc_df = qc_df.add_prefix(analysis + "_")
-    qc_df.columns = [x.lower() for x in qc_df.columns]
+    df = pd.read_table(file, dtype = str, index_col= False)
+    df = df.add_prefix(analysis + "_")
+    df.columns = [x.lower() for x in df.columns]
+    return df
 
-def summarize_quast(summary_df, quast_reads, quast_contigs):
-    q_df  = pd.DataFrame()
-    qc_df = pd.DataFrame()
+def summarize_quast(summary_df, q_df, qc_df):
     analysis = "quast"
     new_df = pd.concat([q_df, qc_df])
     new_df[analysis + "_sample"] = new_df[analysis + "_sample"].astype(str)

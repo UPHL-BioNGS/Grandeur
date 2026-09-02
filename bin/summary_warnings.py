@@ -1,33 +1,135 @@
 import pandas as pd
+import numpy as np
 
-def add_warnings(summary_df):
 
-    ##########################################
-    # warnings and flags                     #
-    ##########################################
+def append_warning(df, mask, warn_msg, warning_column='warnings'):
+    # Make sure the warning column exists
+    if warning_column not in df.columns:
+        df[warning_column] = ''
 
-    print("Adding warnings for QC")
+    # Only operate on rows where the mask is True
+    mask = mask.fillna(False)
 
-    # coverage flags
-    mask_under_30 = summary_df['coverage'] < 30
-    mask_under_40 = (summary_df['coverage'] >= 30) & (summary_df['coverage'] < 40)
-
-    # Define the warning messages
-    warn_30 = "Low coverage (<30x)"
-    warn_40 = "Low coverage (<40x)"
-
-    # Apply the warnings using numpy to conditionally add a semicolon separator if needed
-    summary_df.loc[mask_under_30, 'warnings'] += np.where(
-        summary_df.loc[mask_under_30, 'warnings'] == '', 
-        warn_30, 
-        ', ' + warn_30
+    df.loc[mask, warning_column] = np.where(
+        df.loc[mask, warning_column] == '',
+        warn_msg,
+        df.loc[mask, warning_column] + ', ' + warn_msg
     )
 
-    summary_df.loc[mask_under_40, 'warnings'] += np.where(
-        summary_df.loc[mask_under_40, 'warnings'] == '', 
-        warn_40, 
-        ', ' + warn_40
+    return df
+
+def add_st_mismatch_warning(df):
+    st_patterns = ['mlst_st', 'elgato_st', 'kleborate_st', 'meningotype_mlst', 'seqsero2s_st', 'shigapass_mlst']
+    target_cols = [c for c in df.columns if c in st_patterns]
+
+    if not target_cols:
+        return df
+
+    def standardize(val):
+        if pd.isna(val):
+            return None
+        s = str(val).strip().upper()
+        if s in ['', '-', 'ND', 'UNKNOWN', 'NOT FOUND', 'NONE', 'NAN', '.']:
+            return None
+        s = s.replace('ST', '').strip()
+        if s.endswith('.0'):
+            s = s[:-2]
+        return s
+    
+    def has_mismatch(row):
+        found_values = [standardize(row[col]) for col in target_cols if standardize(row[col])]
+        return len(set(found_values)) > 1
+    
+    mask = df.apply(has_mismatch, axis=1)
+    warn_msg = "ST mismatch detected"
+    df.loc[mask, 'warnings'] = df.loc[mask, 'warnings'].apply(
+        lambda x: warn_msg if x == '' else f"{x},{warn_msg}"
     )
+
+    return df
+
+def add_taxonomy_warnings(df):
+    def append_warning(mask, warn_msg):
+        df.loc[mask, 'warnings'] += np.where(
+            df.loc[mask, 'warnings'] == '', warn_msg, ',' + warn_msg
+        )
+
+    thresholds = {
+        'kraken2_predicted_organisms': 5,
+        'mash_screen_predicted_organisms': 5,
+        'skani_predicted_organisms': 7,
+        'sylph_predicted_organisms': 5,
+        'mash_dist_predicted_organisms': 15 
+    }
+
+    for col, limit in thresholds.items():
+        if col in df.columns:
+            hits = pd.to_numeric(df[col], errors='coerce')
+            mask_too_many = hits > limit
+            tool_name = col.split('_')[0].capitalize()
+            if tool_name == 'Mash':
+                tool_name = "Mash " + col.split('_')[1].capitalize()
+                
+            warn_msg = f"Multiple organisms detected by {tool_name} (>{limit})"
+            append_warning(mask_too_many, warn_msg)
+    
+    return df
+
+def add seqsero2_warnings():
+   # Identify existing SeqSero note columns
+    note_cols = ['seqsero_note', 'seqsero2_note', 'seqsero2s_note']
+    existing_note_cols = [c for c in note_cols if c in summary_df.columns]
+
+    if existing_note_cols:
+        def has_note_text(row):
+            for col in existing_note_cols:
+                val = str(row[col]).strip()
+                # Ignore NaNs and common empty string indicators
+                if val and val.lower() not in ['nan', 'none', '-', '', '.']:
+                    return True
+            return False
+
+        # Create the mask for rows containing notes
+        mask_has_note = summary_df.apply(has_note_text, axis=1)
+
+        # Define and apply the warning message
+        warn_msg = "SeqSero note detected"
+        
+        summary_df.loc[mask_has_note, 'warnings'] = summary_df.loc[mask_has_note, 'warnings'].apply(
+            lambda x: warn_msg if x == '' else f"{x},{warn_msg}"
+        )
+
+
+def add_kleborate_warnings():
+
+    if 'kleborate_qc' in summary_df.columns:
+        mask_bad_qc = summary_df['kleborate_qc'].str.contains('fail|unreliable', case=False, na=False)
+            
+        warn_msg = "Kleborate QC Unreliable"
+            
+        summary_df.loc[mask_bad_qc, 'warnings'] = summary_df.loc[mask_bad_qc, 'warnings'].apply(
+                lambda x: warn_msg if x == '' else f"{x},{warn_msg}"
+            )
+    return summary_df
+
+def add_checkm2_warnings(df, min_completeness=90.0, max_contamination=5.0):
+    def append_warning(mask, warn_msg):
+        df.loc[mask, 'warnings'] += np.where(
+            df.loc[mask, 'warnings'] == '', warn_msg, ',' + warn_msg
+        )
+
+    if 'checkm2_completeness' in df.columns:
+        completeness = pd.to_numeric(df['checkm2_completeness'], errors='coerce')
+        append_warning(completeness < min_completeness, f"Low completeness (<{min_completeness}%)")
+
+    if 'checkm2_contamination' in df.columns:
+        contamination = pd.to_numeric(df['checkm2_contamination'], errors='coerce')
+        append_warning(contamination > max_contamination, f"High contamination (>{max_contamination}%)")
+    
+    return df
+
+def add_genome_size_warnings(summary_df):
+
 
     size_cols = [
         'checkm2_genome_size',
@@ -71,48 +173,7 @@ def add_warnings(summary_df):
             ',' + warn_msg
         )
 
-    summary_df = add_quast_warnings(summary_df)
 
-    summary_df = add_fastqc_warnings(summary_df, min_seqs=500000, max_flagged_pct=5.0, min_len=100)
-
-    summary_df = add_checkm2_warnings(summary_df, min_completeness=90.0, max_contamination=5.0)
-
-    summary_df = add_taxonomy_warnings(summary_df)
-
-    summary_df = add_sylph_warnings(summary_df, min_abundance=85.0, min_ani=95.0)
-
-    summary_df = add_st_mismatch_warning(summary_df)
-
-    # Identify existing SeqSero note columns
-    note_cols = ['seqsero_note', 'seqsero2_note', 'seqsero2s_note']
-    existing_note_cols = [c for c in note_cols if c in summary_df.columns]
-
-    if existing_note_cols:
-        def has_note_text(row):
-            for col in existing_note_cols:
-                val = str(row[col]).strip()
-                # Ignore NaNs and common empty string indicators
-                if val and val.lower() not in ['nan', 'none', '-', '', '.']:
-                    return True
-            return False
-
-        # Create the mask for rows containing notes
-        mask_has_note = summary_df.apply(has_note_text, axis=1)
-
-        # Define and apply the warning message
-        warn_msg = "SeqSero note detected"
-        
-        summary_df.loc[mask_has_note, 'warnings'] = summary_df.loc[mask_has_note, 'warnings'].apply(
-            lambda x: warn_msg if x == '' else f"{x},{warn_msg}"
-        )
+ 
 
 
-    if 'kleborate_qc' in summary_df.columns:
-        mask_bad_qc = summary_df['kleborate_qc'].str.contains('fail|unreliable', case=False, na=False)
-            
-        warn_msg = "Kleborate QC Unreliable"
-            
-        summary_df.loc[mask_bad_qc, 'warnings'] = summary_df.loc[mask_bad_qc, 'warnings'].apply(
-                lambda x: warn_msg if x == '' else f"{x},{warn_msg}"
-            )
-    return summary_df

@@ -1,5 +1,33 @@
 import pandas as pd
 
+from bin.summary_warnings import append_warning
+
+def add_sylph_warnings(df, min_abundance=90.0, min_ani=95.0):
+
+    if 'sylph_Sequence_abundance' in df.columns:
+        abundance = pd.to_numeric(
+            df['sylph_Sequence_abundance'],
+            errors='coerce'
+        )
+        append_warning(
+            df,
+            abundance < min_abundance,
+            f"Low Sylph abundance (<{min_abundance}%)"
+        )
+
+    if 'sylph_Adjusted_ANI' in df.columns:
+        ani = pd.to_numeric(
+            df['sylph_Adjusted_ANI'],
+            errors='coerce'
+        )
+        append_warning(
+            df,
+            ani < min_ani,
+            f"Low Sylph ANI (<{min_ani}%)"
+        )
+
+    return df
+
 # sylph
 def summarize_sylph(summary_df, sylph):
     print("Adding results for " + sylph)

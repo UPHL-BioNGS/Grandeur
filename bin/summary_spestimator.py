@@ -1,5 +1,8 @@
 import pandas as pd
 
+from bin.summary_warnings import append_warning
+
+
 # spestimator : counting unique reference hits per sample
 def summarize_spestimator(summary_df, spestimator):
     print("Adding results for " + spestimator)

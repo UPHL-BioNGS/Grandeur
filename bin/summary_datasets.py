@@ -1,7 +1,9 @@
 import pandas as pd
 
+from bin.summary_warnings import append_warning
+
 # datasets : adding a count of reference genomes available
-def summary_datasets(summary_df, datasets):
+def summarize_datasets(summary_df, datasets):
     print("Adding reference genome counts from " + datasets)
     # Read the datasets file
     datasets_df = pd.read_csv(datasets, dtype=str)

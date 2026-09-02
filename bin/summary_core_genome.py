@@ -1,5 +1,8 @@
 import pandas as pd
 
+
+from bin.summary_warnings import append_warning
+
 # core genome analysis file is also from multiqc
 def summarize_core_genome(summary_df, core):
     file = core

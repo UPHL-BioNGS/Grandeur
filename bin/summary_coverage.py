@@ -4,6 +4,37 @@ import numpy as np
 ##########################################
 # size and coverage estimates            #
 ##########################################
+from bin.summary_warnings import append_warning
+
+def add_warnings(summary_df):
+
+    ##########################################
+    # warnings and flags                     #
+    ##########################################
+
+    print("Adding warnings for QC")
+
+    # coverage flags
+    mask_under_30 = summary_df['coverage'] < 30
+    mask_under_40 = (summary_df['coverage'] >= 30) & (summary_df['coverage'] < 40)
+
+    # Define the warning messages
+    warn_30 = "Low coverage (<30x)"
+    warn_40 = "Low coverage (<40x)"
+
+    # Apply the warnings using numpy to conditionally add a semicolon separator if needed
+    summary_df.loc[mask_under_30, 'warnings'] += np.where(
+        summary_df.loc[mask_under_30, 'warnings'] == '', 
+        warn_30, 
+        ', ' + warn_30
+    )
+
+    summary_df.loc[mask_under_40, 'warnings'] += np.where(
+        summary_df.loc[mask_under_40, 'warnings'] == '', 
+        warn_40, 
+        ', ' + warn_40
+    )
+
 
 def summarize_coverage(summary_df, genome_sizes):
 
