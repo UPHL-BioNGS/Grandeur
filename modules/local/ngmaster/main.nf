@@ -36,7 +36,7 @@ process NGMASTER {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        ngmaster: \$(echo \$(ngmaster --version 2>&1 | awk '{print \$2}'))
+        ngmaster: \$(echo \$(ngmaster --version 2>&1 | head -n 1  | awk '{print \$2}'))
     END_VERSIONS
     """
 }
