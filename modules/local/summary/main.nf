@@ -18,7 +18,8 @@ process SUMMARY {
   script:
   """
     mkdir -p summary
+    summary.py
 
-    python3 summary.py
+    #python3 summary.py
   """
 }
