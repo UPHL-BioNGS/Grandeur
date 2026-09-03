@@ -1,7 +1,7 @@
 process NGMASTER {
     tag           "${meta.id}"
     label         "process_medium"
-    container     'staphb/ngmaster:1.1.1'
+    container     'staphb/ngmaster:2.1.0'
 
     input:
     tuple val(meta), file(contigs)
