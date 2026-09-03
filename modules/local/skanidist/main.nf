@@ -43,6 +43,7 @@ process SKANI_DIST {
         -o skani/${prefix}_skani.tsv \
         | tee -a \$log_file
 
+    touch skani/${prefix}_skani.tsv
     line_count=\$(wc -l < skani/${prefix}_skani.tsv)
     if [ "\$line_count" -eq 1 ]
     then
