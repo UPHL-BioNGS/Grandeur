@@ -1,7 +1,7 @@
 process NGMASTER {
     tag           "${meta.id}"
     label         "process_medium"
-    container     'staphb/ngmaster:1.1.1'
+    container     'staphb/ngmaster:2.1.0'
 
     input:
     tuple val(meta), file(contigs)
@@ -36,7 +36,7 @@ process NGMASTER {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        ngmaster: \$(echo \$(ngmaster --version 2>&1 | awk '{print \$2}'))
+        ngmaster: \$(echo \$(ngmaster --version 2>&1 | head -n 1  | awk '{print \$2}'))
     END_VERSIONS
     """
 }

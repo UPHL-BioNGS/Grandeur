@@ -34,6 +34,7 @@ def parse_file(summary_df, file, delim):
     new_df.columns = new_df.columns.str.replace('Sample', 'sample', regex=True)
     new_df.columns = [x.lower() for x in new_df.columns]
     new_df[analysis + "_sample"] = new_df[analysis + "_sample"].astype(str)
+    new_df = new_df.drop_duplicates(subset=[analysis + "_sample"], keep="first")
     summary_df = pd.merge(summary_df, new_df, left_on="sample", right_on=analysis + "_sample", how = 'left')
     summary_df.drop(analysis + "_sample", axis=1, inplace=True)
 
@@ -917,6 +918,8 @@ if exists(multiqc_stats) :
             tmp_df = tmp_df.dropna(subset=['fastp-pct_surviving'])
             tmp_df["fastp_pct_passed_reads"] = tmp_df["fastp-pct_surviving"].astype(float).round(2)
             tmp_df.drop("fastp-pct_surviving", axis=1, inplace=True)
+
+        tmp_df = tmp_df.drop_duplicates(subset=["possible_fastp_name"], keep="first")
         
         summary_df["possible_fastp_name"] = summary_df['file'].str.split(" ").str[0].str.split(".").str[0].str.split("_").str[0]
         summary_df = pd.merge(summary_df, tmp_df, on="possible_fastp_name", how = 'left')
@@ -1213,6 +1216,7 @@ print("Creating final files")
 
 summary_df = summary_df.sort_values(by='sample')
 summary_df = summary_df.fillna("")
+summary_df = summary_df.drop_duplicates(subset=['sample'], keep='first')
 
 summary_df.columns = summary_df.columns.str.replace(' ', '_')
 

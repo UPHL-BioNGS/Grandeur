@@ -1,7 +1,7 @@
 process GOTREE {
   tag           "${newick.baseName}"
   label         "process_medium"
-  container     'staphb/gotree:0.5.1'
+  container     'staphb/gotree:0.5.2'
 
   
   input:
