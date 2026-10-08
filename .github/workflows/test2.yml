@@ -36,14 +36,6 @@ jobs:
           echo "=== FTP ==="
           time curl -I -L --max-time 30 \
             "https://ftp.sra.ebi.ac.uk/"
-
-      - name: Test enaDataGet
-        run: |
-          docker run --rm staphb/enabrowsertools:1.7.2 enaDataGet -v
-
-          timeout 120 docker run --rm \
-            staphb/enabrowsertools:1.7.2 \
-            enaDataGet -f fastq SRR22314959
           
       - name: Run Grandeur
         run: |
