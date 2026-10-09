@@ -23,6 +23,19 @@ jobs:
           sudo mv nextflow /usr/local/bin/
 
           nextflow -version
+
+      - name: Test ENA connectivity
+        run: |
+          echo "=== DNS ==="
+          getent hosts www.ebi.ac.uk
+
+          echo "=== ENA ==="
+          time curl -I -L --max-time 30 \
+            "https://www.ebi.ac.uk/ena/browser/api/fasta/SRR22314959"
+
+          echo "=== FTP ==="
+          time curl -I -L --max-time 30 \
+            "https://ftp.sra.ebi.ac.uk/"
           
       - name: Run Grandeur
         run: |

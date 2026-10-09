@@ -1,7 +1,7 @@
 process SPESTIMATOR {
     tag           "${meta.id}"
     label         "process_medium"
-    container     'staphb/spestimator:0.3.0.236'
+    container     'staphb/spestimator:0.3.0.237'
 
     input:
     tuple val(meta), file(contigs)
