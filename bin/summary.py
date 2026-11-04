@@ -90,6 +90,25 @@ def add_quast_warnings(df):
     
     return df
 
+def add_mlst_warnings(df):
+    """
+    Checks MLST status and appends a warning if the hit is not PERFECT.
+    """
+    def append_warning(mask, warn_msg):
+        df.loc[mask, 'warnings'] += np.where(
+            df.loc[mask, 'warnings'] == '',
+            warn_msg,
+            ',' + warn_msg
+        )
+
+    if 'mlst_status' in df.columns:
+        status_clean = df['mlst_status'].fillna('').astype(str).str.strip().str.upper()
+        # Flags rows with a non-empty status that isn't PERFECT (e.g. OK, BAD, NONE)
+        mask_imperfect = (status_clean != '') & (status_clean != 'PERFECT')
+        append_warning(mask_imperfect, "MLST hit not PERFECT")
+
+    return df
+
 def add_fastqc_warnings(df, min_seqs=500000, max_flagged_pct=5.0, min_len=100):
     """
     Checks FastQC metrics and appends warnings to the 'warnings' column:
@@ -1172,6 +1191,7 @@ summary_df = add_taxonomy_warnings(summary_df)
 summary_df = add_sylph_warnings(summary_df, min_abundance=85.0, min_ani=95.0)
 
 summary_df = add_st_mismatch_warning(summary_df)
+summary_df = add_mlst_warnings(summary_df)
 
 
 # Identify existing SeqSero note columns
@@ -1238,6 +1258,7 @@ final_columns = [
     'fastqc_flagged_sequences',
     'fastqc_avg_length',
     'fastp_pct_passed_reads',
+    'quast_total_length',
     'quast_#_contigs',
     'quast_mapped_(%)',
     'quast_gc_(%)',
@@ -1248,8 +1269,9 @@ final_columns = [
 
     # species
     'predicted_organism',
-    'mlst_matching_pubmlst_scheme',
+    'mlst_scheme',
     'mlst_st',
+    'mlst_score',
     'skani_ANI',
     'skani_organism',
     'spestimator_num_refs',

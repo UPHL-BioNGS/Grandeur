@@ -493,7 +493,6 @@ if exists(kleborate_input):
     #if [ -f 'kleborate_results.tsv' ]      ; then cut -f 1,3-12 kleborate_results.tsv > kleborate_mqc.tsv       ; fi
 
 if exists(mlst_input):
-    # sample  filename        matching PubMLST scheme ST      ID1     ID2     ID3     ID4     ID5     ID6     ID7     ID8     ID9     ID10    ID11    ID12    ID13    ID14    ID15
     line = "# plot_type: 'table'\n"
     line = line + "# section_name: 'mlst'\n"
     line = line + "# description: 'Scan contig files against traditional PubMLST typing schemes'\n"
@@ -511,7 +510,7 @@ if exists(mlst_input):
 
     mlst_df = pd.read_table(mlst_input)
     mlst_df = mlst_df.replace(' ', '_', regex=True)
-    mlst_df = mlst_df.loc[:, ['sample', 'matching PubMLST scheme', 'ST']] 
+    mlst_df = mlst_df.loc[:, ['sample', 'SCHEME', 'ST', 'STATUS', 'SCORE']] 
     mlst_df.to_csv(mlst_output, index=False, sep="\t", mode='a')
 
 if exists(mykrobe_input):

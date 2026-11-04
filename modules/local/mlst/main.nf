@@ -8,7 +8,7 @@ process MLST {
 
   output:
   tuple val(meta), file("mlst/*_mlst.txt"), emit: files, optional: true
-  path "*_mlst_summary.txt", emit: collect
+  path "*_mlst_summary.txt", emit: collect, optional: true
   path "versions.yml", emit: versions
 
   when:
@@ -24,13 +24,17 @@ process MLST {
     cat ${contig} > input_${prefix}.fasta
 
     mlst ${args} \
+      --full \
       --threads ${task.cpus} \
       input_${prefix}.fasta | \
       tr ' ' '_' \
       > mlst/${prefix}_mlst.txt
 
-    echo -e "sample\\tfilename\\tmatching PubMLST scheme\\tST\\tID1\\tID2\\tID3\\tID4\\tID5\\tID6\\tID7\\tID8\\tID9\\tID10\\tID11\\tID12\\tID13\\tID14\\tID15" > ${prefix}_mlst_summary.txt
-    cat mlst/${prefix}_mlst.txt | awk '{print "${prefix}\\t" \$1 "\\t" \$2 "\\t" \$3 "\\t" \$4 "\\t" \$5 "\\t" \$6 "\\t" \$7 "\\t" \$8 "\\t" \$9 "\\t" \$10 "\\t" \$11 "\\t" \$12 "\\t" \$13 "\\t" \$14 "\\t" \$15 "\\t" \$16 "\\t" \$17 "\\t" \$18 }' >> ${prefix}_mlst_summary.txt
+    if [ -f "mlst/${prefix}_mlst.txt" ]
+    then
+      head -n 1  mlst/${prefix}_mlst.txt | awk '{print "sample\\t" \$0 }' > ${prefix}_mlst_summary.txt
+      tail -n 1  mlst/${prefix}_mlst.txt| awk -v sample=${prefix} '{print sample "\\t" \$0}' >> ${prefix}_mlst_summary.txt
+    fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
