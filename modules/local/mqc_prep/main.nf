@@ -1,7 +1,7 @@
 process MQC_PREP {
   tag           "prepping files"
   label         "process_single"
-  container     'staphb/pandas:3.0.5'
+  container     'staphb/pandas:3.1.0'
   
   input:
   file(input)
