@@ -24,12 +24,15 @@ process MENINGOTYPE {
     meningotype \
       ${args} \
       ${contigs} \
-      > meningotype/${prefix}.tsv
+      > meningotype/${prefix}.tsv || \
+      echo "failed finetype"
 
-    # ensure prefix is in summary file
-    head -n 1  meningotype/${prefix}.tsv | awk '{print "sample\\t"    \$0 }' >  ${prefix}_meningotype.tsv
-    tail -n +2 meningotype/${prefix}.tsv | awk '{print "${prefix}\\t" \$0 }' >> ${prefix}_meningotype.tsv
-
+    if [ -f "meningotype/${prefix}.tsv" ]
+    then
+      # ensure prefix is in summary file
+      head -n 1  meningotype/${prefix}.tsv | awk '{print "sample\\t"    \$0 }' >  ${prefix}_meningotype.tsv
+      tail -n +2 meningotype/${prefix}.tsv | awk '{print "${prefix}\\t" \$0 }' >> ${prefix}_meningotype.tsv
+    fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
