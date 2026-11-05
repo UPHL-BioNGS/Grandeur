@@ -109,7 +109,7 @@ def add_mlst_warnings(df):
 
     return df
 
-def add_fastqc_warnings(df, min_seqs=500000, max_flagged_pct=5.0, min_len=100):
+def add_fastqc_warnings(df, min_seqs=500000, min_len=100):
     """
     Checks FastQC metrics and appends warnings to the 'warnings' column:
     - Low total sequences (< min_seqs, default 500,000)
@@ -129,12 +129,6 @@ def add_fastqc_warnings(df, min_seqs=500000, max_flagged_pct=5.0, min_len=100):
         total_seqs = pd.to_numeric(df['fastqc_total_sequences'], errors='coerce')
         mask_low_seqs = total_seqs < min_seqs
         append_warning(mask_low_seqs, f"Low total sequences (<{min_seqs})")
-
-    # Check: High Flagged Sequences
-    if 'fastqc_percent_flagged' in df.columns:
-        flagged_pct = pd.to_numeric(df['fastqc_percent_flagged'], errors='coerce')
-        mask_high_flagged = flagged_pct > max_flagged_pct
-        append_warning(mask_high_flagged, f"High flagged sequences (>{max_flagged_pct}%)")
 
     # Check: Short Average Length
     if 'fastqc_avg_length' in df.columns:
@@ -627,14 +621,10 @@ if exists(fastqc):
     # Safely convert to integers
     new_df['R1_Total Sequences'] = new_df['R1_Total Sequences'].astype(int)
     new_df['R2_Total Sequences'] = new_df['R2_Total Sequences'].astype(int)
-    new_df['R1_Sequences flagged as poor quality'] = new_df['R1_Sequences flagged as poor quality'].astype(int)
-    new_df['R2_Sequences flagged as poor quality'] = new_df['R2_Sequences flagged as poor quality'].astype(int)
     
-    # Calculate total and flagged sequences (with the fastqc_ prefix your final script expects)
+    # Calculate total sequences (with the fastqc_ prefix your final script expects)
     new_df['fastqc_total_sequences'] = new_df['R1_Total Sequences'] + new_df['R2_Total Sequences']
-    new_df['fastqc_flagged_sequences'] = new_df['R1_Sequences flagged as poor quality'] + new_df['R2_Sequences flagged as poor quality']
-    new_df['fastqc_percent_flagged'] = (new_df['fastqc_flagged_sequences'] / new_df['fastqc_total_sequences']) * 100
-
+    
     # Split ranges like "35-251" by '-' and grab the last item (the max length), then convert to int
     new_df['R1_max_len'] = new_df['R1_Sequence length'].astype(str).apply(lambda x: int(x.split('-')[-1]))
     new_df['R2_max_len'] = new_df['R2_Sequence length'].astype(str).apply(lambda x: int(x.split('-')[-1]))
@@ -643,7 +633,7 @@ if exists(fastqc):
     new_df['fastqc_avg_length'] = (new_df['R1_max_len'] + new_df['R2_max_len']) / 2
     
     # Drop the intermediate R1/R2 calculation columns so they don't clutter
-    cols_to_keep = ['sample', 'fastqc_total_sequences', 'fastqc_flagged_sequences', 'fastqc_percent_flagged', 'fastqc_avg_length']
+    cols_to_keep = ['sample', 'fastqc_total_sequences', 'fastqc_avg_length']
     fastqc_final_df = new_df[cols_to_keep].copy()
     
     # Merge into your main summary dataframe
@@ -1182,7 +1172,7 @@ if len(existing_cols) >= 2:
 
 summary_df = add_quast_warnings(summary_df)
 
-summary_df = add_fastqc_warnings(summary_df, min_seqs=500000, max_flagged_pct=5.0, min_len=100)
+summary_df = add_fastqc_warnings(summary_df, min_seqs=500000, min_len=100)
 
 summary_df = add_checkm2_warnings(summary_df, min_completeness=90.0, max_contamination=5.0)
 
@@ -1255,7 +1245,6 @@ final_columns = [
     'coverage',
     'per_core_genome_genes',
     'fastqc_total_sequences',
-    'fastqc_flagged_sequences',
     'fastqc_avg_length',
     'fastp_pct_passed_reads',
     'quast_total_length',
