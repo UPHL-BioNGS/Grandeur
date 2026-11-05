@@ -128,8 +128,8 @@ Relevant params and their values:
     .filter { it ->
       def genes = it[0][1] as int
       def per   = it[0][2] as float
-      def pass_genes = params.min_core_genes ? (genes >= params.min_core_genes) : true
-      def pass_per   = params.min_core_per   ? (per >= params.min_core_per) : true
+      def pass_genes = params.min_core_genes ? (genes >= params.min_core_genes as int) : true
+      def pass_per   = params.min_core_per   ? (per >= params.min_core_per as float) : true
         
       return pass_genes && pass_per
     }
