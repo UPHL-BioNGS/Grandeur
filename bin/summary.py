@@ -90,7 +90,26 @@ def add_quast_warnings(df):
     
     return df
 
-def add_fastqc_warnings(df, min_seqs=500000, max_flagged_pct=5.0, min_len=100):
+def add_mlst_warnings(df):
+    """
+    Checks MLST status and appends a warning if the hit is not PERFECT.
+    """
+    def append_warning(mask, warn_msg):
+        df.loc[mask, 'warnings'] += np.where(
+            df.loc[mask, 'warnings'] == '',
+            warn_msg,
+            ',' + warn_msg
+        )
+
+    if 'mlst_status' in df.columns:
+        status_clean = df['mlst_status'].fillna('').astype(str).str.strip().str.upper()
+        # Flags rows with a non-empty status that isn't PERFECT (e.g. OK, BAD, NONE)
+        mask_imperfect = (status_clean != '') & (status_clean != 'PERFECT')
+        append_warning(mask_imperfect, "MLST hit not PERFECT")
+
+    return df
+
+def add_fastqc_warnings(df, min_seqs=500000, min_len=100):
     """
     Checks FastQC metrics and appends warnings to the 'warnings' column:
     - Low total sequences (< min_seqs, default 500,000)
@@ -110,12 +129,6 @@ def add_fastqc_warnings(df, min_seqs=500000, max_flagged_pct=5.0, min_len=100):
         total_seqs = pd.to_numeric(df['fastqc_total_sequences'], errors='coerce')
         mask_low_seqs = total_seqs < min_seqs
         append_warning(mask_low_seqs, f"Low total sequences (<{min_seqs})")
-
-    # Check: High Flagged Sequences
-    if 'fastqc_percent_flagged' in df.columns:
-        flagged_pct = pd.to_numeric(df['fastqc_percent_flagged'], errors='coerce')
-        mask_high_flagged = flagged_pct > max_flagged_pct
-        append_warning(mask_high_flagged, f"High flagged sequences (>{max_flagged_pct}%)")
 
     # Check: Short Average Length
     if 'fastqc_avg_length' in df.columns:
@@ -608,14 +621,10 @@ if exists(fastqc):
     # Safely convert to integers
     new_df['R1_Total Sequences'] = new_df['R1_Total Sequences'].astype(int)
     new_df['R2_Total Sequences'] = new_df['R2_Total Sequences'].astype(int)
-    new_df['R1_Sequences flagged as poor quality'] = new_df['R1_Sequences flagged as poor quality'].astype(int)
-    new_df['R2_Sequences flagged as poor quality'] = new_df['R2_Sequences flagged as poor quality'].astype(int)
     
-    # Calculate total and flagged sequences (with the fastqc_ prefix your final script expects)
+    # Calculate total sequences (with the fastqc_ prefix your final script expects)
     new_df['fastqc_total_sequences'] = new_df['R1_Total Sequences'] + new_df['R2_Total Sequences']
-    new_df['fastqc_flagged_sequences'] = new_df['R1_Sequences flagged as poor quality'] + new_df['R2_Sequences flagged as poor quality']
-    new_df['fastqc_percent_flagged'] = (new_df['fastqc_flagged_sequences'] / new_df['fastqc_total_sequences']) * 100
-
+    
     # Split ranges like "35-251" by '-' and grab the last item (the max length), then convert to int
     new_df['R1_max_len'] = new_df['R1_Sequence length'].astype(str).apply(lambda x: int(x.split('-')[-1]))
     new_df['R2_max_len'] = new_df['R2_Sequence length'].astype(str).apply(lambda x: int(x.split('-')[-1]))
@@ -624,7 +633,7 @@ if exists(fastqc):
     new_df['fastqc_avg_length'] = (new_df['R1_max_len'] + new_df['R2_max_len']) / 2
     
     # Drop the intermediate R1/R2 calculation columns so they don't clutter
-    cols_to_keep = ['sample', 'fastqc_total_sequences', 'fastqc_flagged_sequences', 'fastqc_percent_flagged', 'fastqc_avg_length']
+    cols_to_keep = ['sample', 'fastqc_total_sequences', 'fastqc_avg_length']
     fastqc_final_df = new_df[cols_to_keep].copy()
     
     # Merge into your main summary dataframe
@@ -1163,7 +1172,7 @@ if len(existing_cols) >= 2:
 
 summary_df = add_quast_warnings(summary_df)
 
-summary_df = add_fastqc_warnings(summary_df, min_seqs=500000, max_flagged_pct=5.0, min_len=100)
+summary_df = add_fastqc_warnings(summary_df, min_seqs=500000, min_len=100)
 
 summary_df = add_checkm2_warnings(summary_df, min_completeness=90.0, max_contamination=5.0)
 
@@ -1172,6 +1181,7 @@ summary_df = add_taxonomy_warnings(summary_df)
 summary_df = add_sylph_warnings(summary_df, min_abundance=85.0, min_ani=95.0)
 
 summary_df = add_st_mismatch_warning(summary_df)
+summary_df = add_mlst_warnings(summary_df)
 
 
 # Identify existing SeqSero note columns
@@ -1235,9 +1245,9 @@ final_columns = [
     'coverage',
     'per_core_genome_genes',
     'fastqc_total_sequences',
-    'fastqc_flagged_sequences',
     'fastqc_avg_length',
     'fastp_pct_passed_reads',
+    'quast_total_length',
     'quast_#_contigs',
     'quast_mapped_(%)',
     'quast_gc_(%)',
@@ -1248,8 +1258,9 @@ final_columns = [
 
     # species
     'predicted_organism',
-    'mlst_matching_pubmlst_scheme',
+    'mlst_scheme',
     'mlst_st',
+    'mlst_score',
     'skani_ANI',
     'skani_organism',
     'spestimator_num_refs',

@@ -1,7 +1,7 @@
 process FASTQC {
   tag           "${meta.id}"
   label         "process_single"
-  container     'staphb/fastqc:0.12.1'
+  container     'staphb/fastqc:0.13.0'
     
   input:
   tuple val(meta), file(fastq)
